@@ -19,9 +19,9 @@ CATEGORIAS = [
     "Sinal Ato",
     "Sinal",
     "Diferença",
-    "Parc. Entrada Direcional",
-    "ITBI e Registro",
     "Evolução de Obra",
+    "ITBI e Registro",
+    "Parc. Entrada Direcional",
     "Financiamento Caixa",
 ]
 
@@ -30,9 +30,10 @@ LIMITES = {
     "Sinal Ato": 3,
     "Sinal": 3,
     "Diferença": 6,
-    "Parc. Entrada Direcional (57x)": 57,
     "Evolução de Obra": 28,
-    "Financiamento Caixa (420x)": 420,
+    "ITBI e Registro": 43,
+    "Parc. Entrada Direcional": 57,
+    "Financiamento Caixa": 420,
 }
 
 def brl(v):
