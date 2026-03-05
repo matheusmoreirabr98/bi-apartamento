@@ -5,8 +5,9 @@ from supabase import create_client
 import plotly.express as px
 
 # ====== Secrets (Streamlit Cloud / Local) ======
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+SUPABASE_URL = st.secrets["https://omcpscluuqqltnqlfonr.supabase.co"]
+SUPABASE_KEY = st.secrets["sb_publishable_197rwel7HzEvJUp7QRGJTw_3XYqked5"]
+APP_PASSWORD = st.secrets["teste123"] 
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
