@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -117,7 +118,8 @@ with tab1:
                 "valor": float(valor),
                 "observacao": obs
             }).execute()
-            st.success("✅ Lançamento salvo!")
+            st.success("✅ Lançamento registrado!")
+            time.sleep(2)
             st.rerun()
 
 # ================== TAB 2: DASHBOARD ==================
