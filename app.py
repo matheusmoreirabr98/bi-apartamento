@@ -64,6 +64,16 @@ if not st.session_state.logged_in:
             st.error("Senha incorreta")
     st.stop()
 
+
+if "form_categoria" not in st.session_state:
+    st.session_state.form_categoria = None
+
+if "form_valor" not in st.session_state:
+    st.session_state.form_valor = 0.0
+
+if "form_obs" not in st.session_state:
+    st.session_state.form_obs = ""
+
 tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 
 # ================== TAB 1: LANÇAR ==================
@@ -74,7 +84,6 @@ with tab1:
 
     with c1:
         d = st.date_input("Data do pagamento", value=date.today())
-
     with c2:
         df_tmp = get_df()
 
@@ -100,17 +109,33 @@ with tab1:
             st.warning("✅ Todas as categorias com limite já foram concluídas.")
             st.stop()
 
-        label_escolhido = st.selectbox("Categoria", opcoes)
-        cat = label_to_cat[label_escolhido]
+        label_escolhido = st.selectbox(
+            "Categoria",
+            [""] + opcoes,               # <- começa vazio
+            index=0,
+            key="form_categoria_label"
+        )
+
+        cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
     with c3:
-        valor = st.number_input("Valor (R$)", min_value=0.0, step=10.0)
+        valor = st.number_input(
+            "Valor (R$)",
+            min_value=0.0,
+            step=10.0,
+            value=st.session_state.form_valor,
+            key="form_valor"
+        )
 
-    obs = st.text_input("Observação (opcional)")
+    obs = st.text_input(
+        "Observação (opcional)",
+        value=st.session_state.form_obs,
+        key="form_obs"
+    )
 
     if st.button("Salvar", type="primary"):
-        if valor <= 0:
-            st.error("Informe um valor maior que 0.")
+        if d is None or cat is None or valor <= 0:
+            st.error("Preencha Data, Categoria e um Valor maior que 0.")
         else:
             supabase.table("pagamentos").insert({
                 "data_pagamento": str(d),
@@ -118,8 +143,16 @@ with tab1:
                 "valor": float(valor),
                 "observacao": obs
             }).execute()
+
             st.success("✅ Lançamento registrado!")
-            time.sleep(2)
+
+            # limpar campos
+            st.session_state.form_data = None
+            st.session_state.form_categoria_label = ""
+            st.session_state.form_valor = 0.0
+            st.session_state.form_obs = ""
+
+            time.sleep(1)
             st.rerun()
 
 # ================== TAB 2: DASHBOARD ==================
