@@ -1,3 +1,4 @@
+import re
 import time
 import streamlit as st
 import pandas as pd
@@ -76,6 +77,24 @@ if "form_obs" not in st.session_state:
 
 tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 
+
+def parse_cent_mask(s: str) -> float:
+    """
+    Aceita somente dígitos e interpreta como centavos:
+    '1' -> 0.01
+    '11' -> 0.11
+    '111' -> 1.11
+    '1111' -> 11.11
+    """
+    digits = re.sub(r"\D", "", s or "")
+    if digits == "":
+        return 0.0
+    return int(digits) / 100.0
+
+def format_brl(v: float) -> str:
+    return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
 # ================== TAB 1: LANÇAR ==================
 with tab1:
     st.subheader("Adicionar pagamento")
@@ -115,7 +134,9 @@ with tab1:
             cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
         with c3:
-            valor = st.number_input("Valor (R$)", min_value=0.0, step=10.0, value=0.0)
+            raw = st.text_input("Valor (R$)", value="", placeholder="Digite: 111111 -> 1.111,11")
+            valor = parse_cent_mask(raw)
+            st.caption(f"Valor: R$ {format_brl(valor)}")
 
         obs = st.text_input("Observação (opcional)", value="")
 
