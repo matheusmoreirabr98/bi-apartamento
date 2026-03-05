@@ -79,13 +79,6 @@ tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 
 
 def parse_cent_mask(s: str) -> float:
-    """
-    Aceita somente dígitos e interpreta como centavos:
-    '1' -> 0.01
-    '11' -> 0.11
-    '111' -> 1.11
-    '1111' -> 11.11
-    """
     digits = re.sub(r"\D", "", s or "")
     if digits == "":
         return 0.0
@@ -134,9 +127,14 @@ with tab1:
             cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
         with c3:
-            raw = st.text_input("Valor (R$)", value="", placeholder="Digite: 111111 -> 1.111,11")
+            raw = st.text_input(
+                "Valor (R$)",
+                value="",
+                placeholder="Digite só números: 111111 -> 1.111,11",
+                key="form_valor_raw"
+            )
             valor = parse_cent_mask(raw)
-            st.caption(f"Valor: R$ {format_brl(valor)}")
+            st.caption(f"Valor formatado: R$ {format_brl(valor)}")
 
         obs = st.text_input("Observação (opcional)", value="")
 
@@ -154,6 +152,7 @@ with tab1:
             }).execute()
 
             st.success("✅ Lançamento registrado!")
+            st.session_state["form_valor_raw"] = ""
             time.sleep(0.8)
             st.rerun()
 
