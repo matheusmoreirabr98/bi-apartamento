@@ -1,4 +1,3 @@
-import re
 import time
 import streamlit as st
 import pandas as pd
@@ -77,32 +76,6 @@ if "form_obs" not in st.session_state:
 
 tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 
-def parse_digits_to_float(s: str) -> float:
-    digits = re.sub(r"\D", "", s or "")
-    if digits == "":
-        return 0.0
-    return int(digits) / 100.0  # centavos
-
-def format_brl_number(v: float) -> str:
-    # 1111.1 -> "1.111,10"
-    return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-if "valor_raw" not in st.session_state:
-    st.session_state.valor_raw = ""
-if "valor_num" not in st.session_state:
-    st.session_state.valor_num = 0.0
-
-def on_valor_change():
-    v = parse_digits_to_float(st.session_state.valor_raw)
-    st.session_state.valor_num = v
-    # faz o input já virar "1.111,11"
-    st.session_state.valor_raw = format_brl_number(v)
-
-
-def format_brl(v: float) -> str:
-    return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-
 # ================== TAB 1: LANÇAR ==================
 with tab1:
     st.subheader("Adicionar pagamento")
@@ -142,13 +115,7 @@ with tab1:
             cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
         with c3:
-            st.text_input(
-                "Valor (R$)",
-                key="valor_raw",
-                placeholder="Digite só números: 111111 -> 1.111,11",
-                on_change=on_valor_change
-            )
-            valor = float(st.session_state.valor_num)
+            valor = st.number_input("Valor (R$)", min_value=0.0, step=10.0, value=0.0)
 
         obs = st.text_input("Observação (opcional)", value="")
 
@@ -161,23 +128,13 @@ with tab1:
             supabase.table("pagamentos").insert({
                 "data_pagamento": str(d),
                 "categoria": cat,
-                "valor": valor,
+                "valor": float(valor),
                 "observacao": obs
             }).execute()
 
             st.success("✅ Lançamento registrado!")
-            time.sleep(0.6)
+            time.sleep(0.8)
             st.rerun()
-
-    st.markdown("### Progresso das categorias")
-    dfp = get_df()
-    counts = {} if dfp.empty else dfp["categoria"].value_counts().to_dict()
-
-    for c, limite in LIMITES.items():
-        atual = counts.get(c, 0)
-        pct = min(atual / limite, 1.0)
-        st.write(f"**{c}** — {atual}/{limite}")
-        st.progress(pct)
 
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
