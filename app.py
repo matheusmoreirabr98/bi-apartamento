@@ -80,62 +80,50 @@ tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 with tab1:
     st.subheader("Adicionar pagamento")
 
-    c1, c2, c3 = st.columns([1, 1, 1])
+    with st.form("form_lancamento", clear_on_submit=True):
+        c1, c2, c3 = st.columns([1, 1, 1])
 
-    with c1:
-        d = st.date_input("Data do pagamento", value=date.today())
-    with c2:
-        df_tmp = get_df()
+        with c1:
+            d = st.date_input("Data do pagamento", value=date.today(), format="DD/MM/YYYY")
 
-        counts = {}
-        if not df_tmp.empty and "categoria" in df_tmp.columns:
-            counts = df_tmp["categoria"].value_counts().to_dict()
+        with c2:
+            df_tmp = get_df()
 
-        opcoes = []
-        label_to_cat = {}
+            counts = {}
+            if not df_tmp.empty and "categoria" in df_tmp.columns:
+                counts = df_tmp["categoria"].value_counts().to_dict()
 
-        for c in CATEGORIAS:
-            limite = LIMITES.get(c, None)
-            atual = counts.get(c, 0)
+            opcoes = []
+            label_to_cat = {}
 
-            if limite is not None and atual >= limite:
-                continue
+            for c in CATEGORIAS:
+                limite = LIMITES.get(c, None)
+                atual = counts.get(c, 0)
 
-            label = f"{c} ({atual}/{limite})" if limite is not None else c
-            opcoes.append(label)
-            label_to_cat[label] = c
+                if limite is not None and atual >= limite:
+                    continue
 
-        if not opcoes:
-            st.warning("✅ Todas as categorias com limite já foram concluídas.")
-            st.stop()
+                label = f"{c} ({atual}/{limite})" if limite is not None else c
+                opcoes.append(label)
+                label_to_cat[label] = c
 
-        label_escolhido = st.selectbox(
-            "Categoria",
-            [""] + opcoes,               # <- começa vazio
-            index=0,
-            key="form_categoria_label"
-        )
+            if not opcoes:
+                st.warning("✅ Todas as categorias com limite já foram concluídas.")
+                st.stop()
 
-        cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
+            label_escolhido = st.selectbox("Categoria", [""] + opcoes, index=0)
+            cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
-    with c3:
-        valor = st.number_input(
-            "Valor (R$)",
-            min_value=0.0,
-            step=10.0,
-            value=st.session_state.form_valor,
-            key="form_valor"
-        )
+        with c3:
+            valor = st.number_input("Valor (R$)", min_value=0.0, step=10.0, value=0.0)
 
-    obs = st.text_input(
-        "Observação (opcional)",
-        value=st.session_state.form_obs,
-        key="form_obs"
-    )
+        obs = st.text_input("Observação (opcional)", value="")
 
-    if st.button("Salvar", type="primary"):
-        if d is None or cat is None or valor <= 0:
-            st.error("Preencha Data, Categoria e um Valor maior que 0.")
+        submitted = st.form_submit_button("Salvar")
+
+    if submitted:
+        if cat is None or valor <= 0:
+            st.error("Preencha a Categoria e um Valor maior que 0.")
         else:
             supabase.table("pagamentos").insert({
                 "data_pagamento": str(d),
@@ -145,14 +133,7 @@ with tab1:
             }).execute()
 
             st.success("✅ Lançamento registrado!")
-
-            # limpar campos
-            st.session_state.form_data = None
-            st.session_state.form_categoria_label = ""
-            st.session_state.form_valor = 0.0
-            st.session_state.form_obs = ""
-
-            time.sleep(1)
+            time.sleep(0.8)
             st.rerun()
 
 # ================== TAB 2: DASHBOARD ==================
