@@ -77,12 +77,27 @@ if "form_obs" not in st.session_state:
 
 tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 
-
-def parse_cent_mask(s: str) -> float:
+def parse_digits_to_float(s: str) -> float:
     digits = re.sub(r"\D", "", s or "")
     if digits == "":
         return 0.0
-    return int(digits) / 100.0
+    return int(digits) / 100.0  # centavos
+
+def format_brl_number(v: float) -> str:
+    # 1111.1 -> "1.111,10"
+    return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+if "valor_raw" not in st.session_state:
+    st.session_state.valor_raw = ""
+if "valor_num" not in st.session_state:
+    st.session_state.valor_num = 0.0
+
+def on_valor_change():
+    v = parse_digits_to_float(st.session_state.valor_raw)
+    st.session_state.valor_num = v
+    # faz o input já virar "1.111,11"
+    st.session_state.valor_raw = format_brl_number(v)
+
 
 def format_brl(v: float) -> str:
     return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -127,14 +142,13 @@ with tab1:
             cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
         with c3:
-            raw = st.text_input(
+            st.text_input(
                 "Valor (R$)",
-                value="",
+                key="valor_raw",
                 placeholder="Digite só números: 111111 -> 1.111,11",
-                key="form_valor_raw"
+                on_change=on_valor_change
             )
-            valor = parse_cent_mask(raw)
-            st.caption(f"Valor formatado: R$ {format_brl(valor)}")
+            valor = float(st.session_state.valor_num)
 
         obs = st.text_input("Observação (opcional)", value="")
 
@@ -147,14 +161,23 @@ with tab1:
             supabase.table("pagamentos").insert({
                 "data_pagamento": str(d),
                 "categoria": cat,
-                "valor": float(valor),
+                "valor": valor,
                 "observacao": obs
             }).execute()
 
             st.success("✅ Lançamento registrado!")
-            st.session_state["form_valor_raw"] = ""
-            time.sleep(0.8)
+            time.sleep(0.6)
             st.rerun()
+
+    st.markdown("### Progresso das categorias")
+    dfp = get_df()
+    counts = {} if dfp.empty else dfp["categoria"].value_counts().to_dict()
+
+    for c, limite in LIMITES.items():
+        atual = counts.get(c, 0)
+        pct = min(atual / limite, 1.0)
+        st.write(f"**{c}** — {atual}/{limite}")
+        st.progress(pct)
 
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
