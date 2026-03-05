@@ -21,6 +21,16 @@ CATEGORIAS = [
     "Financiamento Caixa (420x)",
 ]
 
+# Limites por categoria (pra mostrar progresso e ocultar quando completar)
+LIMITES = {
+    "Sinal Ato": 3,
+    "Sinal": 3,
+    "Diferença": 6,
+    "Parc. Entrada Direcional (57x)": 57,
+    "Evolução de Obra": 28,
+    "Financiamento Caixa (420x)": 420,
+}
+
 def brl(v):
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
@@ -62,8 +72,25 @@ with tab1:
     c1, c2, c3 = st.columns([1, 1, 1])
     with c1:
         d = st.date_input("Data do pagamento", value=date.today())
+    # Puxa dados do banco pra saber quantas vezes cada categoria já foi lançada
+    df_cat = get_df()
+    if df_cat.empty:
+        contagens = {}
+    else:
+        contagens = df_cat["categoria"].value_counts().to_dict()
+
+    categorias_disponiveis = []
+    for c in CATEGORIAS:
+        limite = LIMITES_CATEGORIA.get(c)  # se não tiver limite, fica sempre disponível
+        usado = contagens.get(c, 0)
+        if limite is None or usado < limite:
+            categorias_disponiveis.append(c)
+
     with c2:
-        cat = st.selectbox("Categoria", CATEGORIAS)
+        if not categorias_disponiveis:
+            st.warning("✅ Todas as categorias com limite já foram totalmente lançadas.")
+            st.stop()
+        cat = st.selectbox("Categoria", categorias_disponiveis)
     with c3:
         valor = st.number_input("Valor (R$)", min_value=0.0, step=10.0)
 
@@ -80,7 +107,7 @@ with tab1:
                 "observacao": obs
             }).execute()
             st.success("✅ Lançamento salvo!")
-
+            st.rerun()
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
     st.subheader("Dashboard")
