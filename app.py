@@ -19,10 +19,10 @@ CATEGORIAS = [
     "Sinal Ato",
     "Sinal",
     "Diferença",
-    "Parc. Entrada Direcional (57x)",
-    "ITBI e Registro (40x)",
+    "Parc. Entrada Direcional",
+    "ITBI e Registro",
     "Evolução de Obra",
-    "Financiamento Caixa (420x)",
+    "Financiamento Caixa",
 ]
 
 # ====== Limites por categoria ======
