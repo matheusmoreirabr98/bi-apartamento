@@ -5,7 +5,6 @@ from supabase import create_client
 import plotly.express as px
 
 # ====== Secrets (Streamlit Cloud / Local) ======
-
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 APP_PASSWORD = st.secrets["APP_PASSWORD"]
@@ -38,8 +37,20 @@ def get_df():
 st.set_page_config(page_title="BI Apartamento", layout="wide")
 st.title("🏠 BI do Apartamento")
 
-pw = st.text_input("Senha", type="password")
-if pw != st.secrets["APP_PASSWORD"]:
+# ====== LOGIN ======
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+
+    pw = st.text_input("Senha", type="password")
+
+    if st.button("Entrar"):
+        if pw == APP_PASSWORD:
+            st.session_state.logged_in = True
+            st.rerun()
+        else:
+            st.error("Senha incorreta")
     st.stop()
 
 tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
