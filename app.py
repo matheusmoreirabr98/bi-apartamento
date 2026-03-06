@@ -8,17 +8,12 @@ import plotly.express as px
 
 st.set_page_config(
     page_title="Apartamento",
-    page_icon="imagens/icone_apartamento.png",
+    page_icon="https://github.com/matheusmoreirabr98/bi-apartamento/blob/main/imagens/icone_apartamento.png",
     layout="wide"
 )
 
 st.markdown("""
-<link rel="apple-touch-icon" href="imagens/icone_apartamento.png">
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Apartamento">
+<link rel="apple-touch-icon" href="https://github.com/matheusmoreirabr98/bi-apartamento/blob/main/imagens/icone_apartamento.png">
 """, unsafe_allow_html=True)
 
 
