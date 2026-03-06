@@ -22,6 +22,8 @@ USUARIOS = {
     st.secrets["PASSWORD_MATHEUS"]: "Matheus Moreira",
 }
 
+USUARIO_PODE_EDITAR = "Matheus Moreira"
+
 CATEGORIAS = [
     "Sinal Ato",
     "Sinal",
@@ -133,6 +135,7 @@ if st.button("Sair"):
     st.rerun()
 
 usuario_logado = st.session_state.user_name
+pode_editar = usuario_logado == USUARIO_PODE_EDITAR
 
 # =========================================================
 # TABS
@@ -260,7 +263,14 @@ with tab3:
         df_show["data_pagamento"] = df_show["data_pagamento"].dt.date
         df_show["valor_fmt"] = df_show["valor"].apply(lambda x: brl(float(x)))
 
-        cols_hist = ["id", "data_pagamento", "categoria", "valor_fmt", "created_by", "updated_by"]
+        cols_hist = [
+            "id",
+            "data_pagamento",
+            "categoria",
+            "valor_fmt",
+            "created_by",
+            "updated_by",
+        ]
         cols_hist = [c for c in cols_hist if c in df_show.columns]
 
         st.dataframe(
@@ -269,81 +279,88 @@ with tab3:
             hide_index=True
         )
 
-        st.markdown("---")
-        st.subheader("Editar lançamento")
+        if pode_editar:
+            st.markdown("---")
+            st.subheader("Editar lançamento")
 
-        ids = df["id"].tolist()
-        registro_id = st.selectbox("Selecione o ID para editar", ids)
+            ids = df["id"].tolist()
+            registro_id = st.selectbox("Selecione o ID para editar", ids)
 
-        registro = df[df["id"] == registro_id].iloc[0]
+            registro = df[df["id"] == registro_id].iloc[0]
 
-        df_sem_registro = df[df["id"] != registro_id].copy()
-        opcoes_edit, label_to_cat_edit = get_categoria_options(df_sem_registro, categoria_atual=registro["categoria"])
+            df_sem_registro = df[df["id"] != registro_id].copy()
+            opcoes_edit, label_to_cat_edit = get_categoria_options(
+                df_sem_registro,
+                categoria_atual=registro["categoria"]
+            )
 
-        label_default = None
-        for label, cat_nome in label_to_cat_edit.items():
-            if cat_nome == registro["categoria"]:
-                label_default = label
-                break
+            label_default = None
+            for label, cat_nome in label_to_cat_edit.items():
+                if cat_nome == registro["categoria"]:
+                    label_default = label
+                    break
 
-        with st.form("form_edicao"):
-            c1, c2, c3 = st.columns([1, 1, 1])
+            with st.form("form_edicao"):
+                c1, c2, c3 = st.columns([1, 1, 1])
 
-            with c1:
-                data_edit = st.date_input(
-                    "Data do pagamento",
-                    value=registro["data_pagamento"].date() if pd.notnull(registro["data_pagamento"]) else date.today(),
-                    format="DD/MM/YYYY",
-                    key="edit_data"
-                )
+                with c1:
+                    data_edit = st.date_input(
+                        "Data do pagamento",
+                        value=registro["data_pagamento"].date() if pd.notnull(registro["data_pagamento"]) else date.today(),
+                        format="DD/MM/YYYY",
+                        key="edit_data"
+                    )
 
-            with c2:
-                label_escolhido_edit = st.selectbox(
-                    "Categoria",
-                    opcoes_edit,
-                    index=opcoes_edit.index(label_default) if label_default in opcoes_edit else 0,
-                    key="edit_cat"
-                )
-                categoria_edit = label_to_cat_edit[label_escolhido_edit]
+                with c2:
+                    label_escolhido_edit = st.selectbox(
+                        "Categoria",
+                        opcoes_edit,
+                        index=opcoes_edit.index(label_default) if label_default in opcoes_edit else 0,
+                        key="edit_cat"
+                    )
+                    categoria_edit = label_to_cat_edit[label_escolhido_edit]
 
-            with c3:
-                valor_edit = st.number_input(
-                    "Valor (R$)",
-                    min_value=0.0,
-                    step=10.0,
-                    value=float(registro["valor"]),
-                    key="edit_valor"
-                )
+                with c3:
+                    valor_edit = st.number_input(
+                        "Valor (R$)",
+                        min_value=0.0,
+                        step=10.0,
+                        value=float(registro["valor"]),
+                        key="edit_valor"
+                    )
 
-            salvar_edicao = st.form_submit_button("Salvar alterações")
+                salvar_edicao = st.form_submit_button("Salvar alterações")
 
-        if salvar_edicao:
-            if valor_edit <= 0:
-                st.error("Informe um valor maior que 0.")
-            else:
+            if salvar_edicao:
+                if valor_edit <= 0:
+                    st.error("Informe um valor maior que 0.")
+                else:
+                    supabase.table("pagamentos").update({
+                        "data_pagamento": str(data_edit),
+                        "categoria": categoria_edit,
+                        "valor": float(valor_edit),
+                        "updated_by": usuario_logado,
+                    }).eq("id", int(registro_id)).execute()
+
+                    st.success("✅ Registro atualizado com sucesso!")
+                    time.sleep(0.8)
+                    st.rerun()
+
+            st.markdown("---")
+            st.subheader("Excluir lançamento")
+
+            del_id = st.selectbox("Selecione o ID para excluir", ids, key="delete_id")
+
+            if st.button("Excluir", type="secondary"):
                 supabase.table("pagamentos").update({
-                    "data_pagamento": str(data_edit),
-                    "categoria": categoria_edit,
-                    "valor": float(valor_edit),
+                    "deleted_at": now_iso(),
+                    "deleted_by": usuario_logado,
                     "updated_by": usuario_logado,
-                }).eq("id", int(registro_id)).execute()
+                }).eq("id", int(del_id)).execute()
 
-                st.success("✅ Registro atualizado com sucesso!")
+                st.success(f"Lançamento {int(del_id)} removido.")
                 time.sleep(0.8)
                 st.rerun()
-
-        st.markdown("---")
-        st.subheader("Excluir lançamento")
-
-        del_id = st.selectbox("Selecione o ID para excluir", ids, key="delete_id")
-
-        if st.button("Excluir", type="secondary"):
-            supabase.table("pagamentos").update({
-                "deleted_at": now_iso(),
-                "deleted_by": usuario_logado,
-                "updated_by": usuario_logado,
-            }).eq("id", int(del_id)).execute()
-
-            st.success(f"Lançamento {int(del_id)} removido.")
-            time.sleep(0.8)
-            st.rerun()
+        else:
+            st.markdown("---")
+            st.info("Você tem permissão apenas para visualizar o histórico. Edição e exclusão estão disponíveis somente para Matheus Moreira.")
