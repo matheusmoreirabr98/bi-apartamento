@@ -59,7 +59,6 @@ def load_parcelas(include_deleted=False):
             q = q.is_("deleted_at", None)
 
         res = q.execute()
-        st.write("DEBUG parcelas raw:", res.data)
 
         df = pd.DataFrame(res.data)
         if df.empty:
@@ -81,7 +80,6 @@ def load_pagamentos(include_deleted=False):
             q = q.is_("deleted_at", None)
 
         res = q.execute()
-        st.write("DEBUG pagamentos raw:", res.data)
 
         df = pd.DataFrame(res.data)
         if df.empty:
@@ -101,7 +99,6 @@ def load_pagamento_itens(include_deleted=False):
             q = q.is_("deleted_at", None)
 
         res = q.execute()
-        st.write("DEBUG itens raw:", res.data)
 
         df = pd.DataFrame(res.data)
         if df.empty:
