@@ -115,7 +115,11 @@ with tab1:
             cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
         with c3:
-            valor = st.number_input("Valor (R$)", min_value=0.0, step=10.0, value=0.0)
+            valor_input = st.text_input("Valor (digite só números)")
+            valor = 0.0
+            if valor_input.isdigit():
+                valor = int(valor_input) / 100
+                st.caption(f"Valor: {brl(valor)}")
 
         submitted = st.form_submit_button("Salvar")
 
