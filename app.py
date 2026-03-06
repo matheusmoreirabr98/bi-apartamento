@@ -7,7 +7,7 @@ import plotly.express as px
 
 # ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
 st.set_page_config(page_title="Apartamento", layout="wide")
-st.title("🏠 Apartamento")
+st.title("🏠Apartamento")
 
 # ====== Secrets (Streamlit Cloud / Local) ======
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -143,55 +143,42 @@ with tab2:
     df = get_df()
     if df.empty:
         st.info("Ainda não há lançamentos.")
-        st.stop()
+    else:
+        anos = sorted(df["data_pagamento"].dt.year.unique().tolist())
+        c1, c2 = st.columns([1, 2])
 
-    # ---- filtros (apenas sidebar) ----
-    st.sidebar.title("Filtros")
+        with c1:
+            ano = st.selectbox("Ano", ["Todos"] + [str(a) for a in anos])
 
-    anos = sorted(df["data_pagamento"].dt.year.unique().tolist())
-    ano = st.sidebar.selectbox("Ano", ["Todos"] + [str(a) for a in anos], key="ano_sidebar")
-    categoria = st.sidebar.selectbox(
-        "Categoria",
-        ["Todas"] + sorted(df["categoria"].unique().tolist()),
-        key="categoria_sidebar"
-    )
+        with c2:
+            categoria = st.selectbox("Categoria", ["Todas"] + sorted(df["categoria"].unique().tolist()))
 
-    # ---- progresso por categoria (com base no df inteiro) ----
-    st.markdown("### Progresso por categoria")
-    counts_all = df["categoria"].value_counts().to_dict()
+        df_f = df.copy()
+        if ano != "Todos":
+            df_f = df_f[df_f["data_pagamento"].dt.year == int(ano)]
+        if categoria != "Todas":
+            df_f = df_f[df_f["categoria"] == categoria]
 
-    for cat_nome, limite in LIMITES.items():
-        atual = counts_all.get(cat_nome, 0)
-        prog = min(atual / limite, 1.0)
-        st.write(f"**{cat_nome}** — {atual}/{limite}")
-        st.progress(prog)
+        total = df_f["valor"].sum()
+        por_mes = df_f.groupby("mes", as_index=False)["valor"].sum()
+        por_cat = df_f.groupby("categoria", as_index=False)["valor"].sum().sort_values("valor", ascending=False)
 
-    # ---- aplica filtros ----
-    df_f = df.copy()
-    if ano != "Todos":
-        df_f = df_f[df_f["data_pagamento"].dt.year == int(ano)]
-    if categoria != "Todas":
-        df_f = df_f[df_f["categoria"] == categoria]
+        k1, k2, k3 = st.columns(3)
+        k1.metric("Total pago (filtros)", brl(total))
+        k2.metric("Média mensal (filtros)", brl(por_mes["valor"].mean() if not por_mes.empty else 0))
+        k3.metric("Nº lançamentos", str(len(df_f)))
 
-    total = df_f["valor"].sum()
-    por_mes = df_f.groupby("mes", as_index=False)["valor"].sum()
-    por_cat = df_f.groupby("categoria", as_index=False)["valor"].sum().sort_values("valor", ascending=False)
+        c1, c2 = st.columns(2)
 
-    k1, k2, k3 = st.columns(3)
-    k1.metric("Total pago (filtros)", brl(total))
-    k2.metric("Média mensal (filtros)", brl(por_mes["valor"].mean() if not por_mes.empty else 0))
-    k3.metric("Nº lançamentos", str(len(df_f)))
+        with c1:
+            st.markdown("### 📅 Total por mês")
+            fig = px.line(por_mes, x="mes", y="valor", markers=True)
+            st.plotly_chart(fig, use_container_width=True)
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("### 📅 Total por mês")
-        fig = px.line(por_mes, x="mes", y="valor", markers=True)
-        st.plotly_chart(fig, use_container_width=True)
-
-    with c2:
-        st.markdown("### 🧩 Total por categoria")
-        fig2 = px.bar(por_cat, x="categoria", y="valor")
-        st.plotly_chart(fig2, use_container_width=True)
+        with c2:
+            st.markdown("### 🧩 Total por categoria")
+            fig2 = px.bar(por_cat, x="categoria", y="valor")
+            st.plotly_chart(fig2, use_container_width=True)
 
 # ================== TAB 3: HISTÓRICO ==================
 with tab3:
