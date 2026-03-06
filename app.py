@@ -7,6 +7,7 @@ import plotly.express as px
 
 # ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
 st.set_page_config(page_title="Apartamento", layout="wide")
+
 st.markdown("""
 <script>
 document.addEventListener("DOMContentLoaded", function() {
@@ -17,7 +18,9 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 """, unsafe_allow_html=True)
-st.title("🏠Apartamento")
+
+st.title("🏠 Apartamento")
+
 st.markdown("""
 <style>
 .stApp {
@@ -140,7 +143,6 @@ CATEGORIAS = [
     "Financiamento Caixa",
 ]
 
-# ====== Limites por categoria ======
 LIMITES = {
     "Sinal Ato": 3,
     "Sinal": 3,
@@ -163,18 +165,23 @@ CORES_CATEGORIAS = {
     "Financiamento Caixa": "#6366F1",
 }
 
+
 def brl(v):
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
 
 def get_df():
     res = supabase.table("pagamentos").select("*").order("data_pagamento").execute()
     df = pd.DataFrame(res.data)
+
     if df.empty:
         return df
+
     df["data_pagamento"] = pd.to_datetime(df["data_pagamento"])
     df["valor"] = pd.to_numeric(df["valor"])
     df["mes"] = df["data_pagamento"].dt.to_period("M").astype(str)
     return df
+
 
 # ====== LOGIN ======
 if "logged_in" not in st.session_state:
@@ -190,7 +197,7 @@ if not st.session_state.logged_in:
             st.error("Senha incorreta")
     st.stop()
 
-
+# ====== SESSION STATE ======
 if "form_categoria" not in st.session_state:
     st.session_state.form_categoria = None
 
@@ -198,8 +205,17 @@ if "form_valor" not in st.session_state:
     st.session_state.form_valor = 0.0
 
 if "form_obs" not in st.session_state:
-    if "clear_valor_input" not in st.session_state:
-        st.session_state.clear_valor_input = False
+    st.session_state.form_obs = ""
+
+if "clear_valor_input" not in st.session_state:
+    st.session_state.clear_valor_input = False
+
+if "valor_digits" not in st.session_state:
+    st.session_state.valor_digits = ""
+
+if "valor_mask" not in st.session_state:
+    st.session_state.valor_mask = ""
+
 
 tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 
@@ -241,24 +257,26 @@ with tab1:
         cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
     with c3:
-        # estado do input com máscara
-        if "valor_digits" not in st.session_state:
+        # limpa antes de renderizar o widget
+        if st.session_state.clear_valor_input:
             st.session_state.valor_digits = ""
-        if "valor_mask" not in st.session_state:
             st.session_state.valor_mask = ""
-    
+            st.session_state.clear_valor_input = False
+
         def on_valor_change():
             s = st.session_state.valor_mask
             digits = "".join(ch for ch in s if ch.isdigit())
             st.session_state.valor_digits = digits
             v = (int(digits) / 100) if digits else 0.0
+
+            # cuidado: no callback pode atualizar a chave do próprio widget
             st.session_state.valor_mask = brl(v)
 
         st.text_input(
             "Valor",
             key="valor_mask",
             on_change=on_valor_change,
-            placeholder="0,00"
+            placeholder="R$ 0,00"
         )
 
         valor = (int(st.session_state.valor_digits) / 100) if st.session_state.valor_digits else 0.0
@@ -274,13 +292,10 @@ with tab1:
                 "valor": float(valor)
             }).execute()
 
-            # limpa o campo depois de salvar
             st.session_state.clear_valor_input = True
             st.success("✅ Lançamento registrado!")
             time.sleep(0.8)
             st.rerun()
-
-
 
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
@@ -334,7 +349,6 @@ with tab2:
             unsafe_allow_html=True
         )
 
-        # ===== KPIs =====
         k1, k2, k3, k4 = st.columns(4)
 
         with k1:
@@ -375,7 +389,6 @@ with tab2:
 
         st.markdown("")
 
-        # ===== PROGRESSO =====
         c1, c2 = st.columns([1.7, 1])
 
         with c1:
@@ -395,11 +408,7 @@ with tab2:
                 st.metric("Meses analisados", f"{len(meses_sel)}")
                 st.markdown('<span class="metric-chip">Visão tecnológica</span>', unsafe_allow_html=True)
 
-        # ===== BASES =====
-        por_mes = (
-            df_f.groupby("mes_ref", as_index=False)["valor"]
-            .sum()
-        )
+        por_mes = df_f.groupby("mes_ref", as_index=False)["valor"].sum()
         por_mes["mes_ord"] = pd.to_datetime(por_mes["mes_ref"], format="%m/%Y")
         por_mes = por_mes.sort_values("mes_ord")
 
@@ -420,7 +429,6 @@ with tab2:
         resumo_cat["percentual"] = ((resumo_cat["qtd_paga"] / resumo_cat["limite"]) * 100).round(1)
         resumo_cat["status"] = resumo_cat["qtd_paga"].astype(str) + "/" + resumo_cat["limite"].astype(str)
 
-        # ===== LINHA 1 =====
         g1, g2 = st.columns([1.6, 1])
 
         with g1:
@@ -432,7 +440,10 @@ with tab2:
                     y="valor",
                     markers=True
                 )
-                fig1.update_traces(line=dict(width=4, color="#38BDF8"), marker=dict(size=9, color="#38BDF8"))
+                fig1.update_traces(
+                    line=dict(width=4, color="#38BDF8"),
+                    marker=dict(size=9, color="#38BDF8")
+                )
                 fig1.update_layout(
                     template="plotly_dark",
                     height=360,
@@ -469,7 +480,6 @@ with tab2:
                 )
                 st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
-        # ===== LINHA 2 =====
         g3, g4 = st.columns([1.6, 1])
 
         with g3:
@@ -517,7 +527,6 @@ with tab2:
                     height=360
                 )
 
-        # ===== HISTÓRICO =====
         with st.container(border=True):
             st.markdown("### 🧾 Histórico filtrado")
             df_show = df_f.copy().sort_values("data_pagamento", ascending=False)
@@ -531,34 +540,27 @@ with tab2:
                 height=280
             )
 
-
 # ================== TAB 3: HISTÓRICO ==================
-with c3:
-    if "valor_digits" not in st.session_state:
-        st.session_state.valor_digits = ""
+with tab3:
+    st.subheader("Histórico")
 
-    if "valor_mask" not in st.session_state:
-        st.session_state.valor_mask = ""
+    df = get_df()
+    if df.empty:
+        st.info("Sem lançamentos ainda.")
+    else:
+        df_show = df.copy()
+        df_show["data_pagamento"] = df_show["data_pagamento"].dt.date
+        df_show["valor"] = df_show["valor"].apply(lambda x: brl(float(x)))
 
-    # limpa o campo antes de renderizar o widget
-    if st.session_state.clear_valor_input:
-        st.session_state.valor_digits = ""
-        st.session_state.valor_mask = ""
-        st.session_state.clear_valor_input = False
+        st.dataframe(
+            df_show[["id", "data_pagamento", "categoria", "valor"]],
+            use_container_width=True,
+            hide_index=True
+        )
 
-    def on_valor_change():
-        s = st.session_state.valor_mask
-        digits = "".join(ch for ch in s if ch.isdigit())
-        st.session_state.valor_digits = digits
-        v = (int(digits) / 100) if digits else 0.0
-        st.session_state.valor_mask = brl(v)
-
-    st.text_input(
-        "Valor",
-        key="valor_mask",
-        on_change=on_valor_change,
-        placeholder="0,00"
-    )
-
-    valor = (int(st.session_state.valor_digits) / 100) if st.session_state.valor_digits else 0.0
-    st.caption(f"Valor: {brl(valor)}")
+        st.markdown("### 🗑️ Excluir lançamento por ID")
+        del_id = st.number_input("ID", min_value=1, step=1)
+        if st.button("Excluir", type="secondary"):
+            supabase.table("pagamentos").delete().eq("id", int(del_id)).execute()
+            st.success(f"Excluído ID {int(del_id)}.")
+            st.rerun()
