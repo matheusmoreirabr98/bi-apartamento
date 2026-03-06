@@ -7,8 +7,26 @@ from supabase import create_client
 import plotly.express as px
 
 # ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
-st.set_page_config(page_title="Apartamento", layout="wide")
-st.title("🏠Apartamento")
+st.set_page_config(
+    page_title="Apartamento",
+    page_icon="Imagens/icone_apartamento.png",
+    layout="wide"
+)
+
+st.set_page_config(
+    page_title="Apartamento",
+    page_icon="Imagens/icone_apartamento.png",
+    layout="wide"
+)
+
+st.markdown(
+"""
+<link rel="icon" href="Imagens/icone_apartamento.png">
+<link rel="apple-touch-icon" href="Imagens/icone_apartamento.png">
+""",
+unsafe_allow_html=True
+)
+
 
 # ====== Secrets (Streamlit Cloud / Local) ======
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
