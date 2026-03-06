@@ -15,7 +15,7 @@ st.set_page_config(
 
 st.markdown(
 """
-<link rel="icon" href="Imagens/icone_apartamento.png">
+<link rel="icon" href="imagens/icone_apartamento.png">
 <link rel="apple-touch-icon" href="Imagens/icone_apartamento.png">
 """,
 unsafe_allow_html=True
