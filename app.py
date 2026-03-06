@@ -6,18 +6,9 @@ from datetime import date
 from supabase import create_client
 import plotly.express as px
 
-ICON_URL = "https://raw.githubusercontent.com/matheusmoreirabr98/bi-apartamento/main/imagens/icone_apartamento.png"
-
-st.set_page_config(
-    page_title="Apartamento",
-    page_icon=ICON_URL,
-    layout="wide"
-)
-
-st.markdown(f"""
-<link rel="apple-touch-icon" href="{ICON_URL}">
-""", unsafe_allow_html=True)
-
+# ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
+st.set_page_config(page_title="Apartamento", layout="wide")
+st.title("🏠Apartamento")
 
 # ====== Secrets (Streamlit Cloud / Local) ======
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
