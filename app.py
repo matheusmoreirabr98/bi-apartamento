@@ -80,91 +80,81 @@ tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 with tab1:
     st.subheader("Adicionar pagamento")
 
-    with st.form("form_lancamento", clear_on_submit=True):
-        c1, c2, c3 = st.columns([1, 1, 1])
+    c1, c2, c3 = st.columns([1, 1, 1])
 
-        with c1:
-            d = st.date_input("Data do pagamento", value=date.today(), format="DD/MM/YYYY")
+    with c1:
+        d = st.date_input("Data do pagamento", value=date.today(), format="DD/MM/YYYY")
 
-        with c2:
-            df_tmp = get_df()
+    with c2:
+        df_tmp = get_df()
 
-            counts = {}
-            if not df_tmp.empty and "categoria" in df_tmp.columns:
-                counts = df_tmp["categoria"].value_counts().to_dict()
+        counts = {}
+        if not df_tmp.empty and "categoria" in df_tmp.columns:
+            counts = df_tmp["categoria"].value_counts().to_dict()
 
-            opcoes = []
-            label_to_cat = {}
+        opcoes = []
+        label_to_cat = {}
 
-            for c in CATEGORIAS:
-                limite = LIMITES.get(c, None)
-                atual = counts.get(c, 0)
+        for c in CATEGORIAS:
+            limite = LIMITES.get(c, None)
+            atual = counts.get(c, 0)
 
-                if limite is not None and atual >= limite:
-                    continue
+            if limite is not None and atual >= limite:
+                continue
 
-                label = f"{c} ({atual}/{limite})" if limite is not None else c
-                opcoes.append(label)
-                label_to_cat[label] = c
+            label = f"{c} ({atual}/{limite})" if limite is not None else c
+            opcoes.append(label)
+            label_to_cat[label] = c
 
-            if not opcoes:
-                st.warning("✅ Todas as categorias com limite já foram concluídas.")
-                st.stop()
+        if not opcoes:
+            st.warning("✅ Todas as categorias com limite já foram concluídas.")
+            st.stop()
 
-            label_escolhido = st.selectbox("Categoria", [""] + opcoes, index=0)
-            cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
+        label_escolhido = st.selectbox("Categoria", [""] + opcoes, index=0)
+        cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
-        with c3:
-            valor_input = st.text_input("Valor (digite só números)")
-            valor = 0.0
-            if valor_input.isdigit():
-                valor = int(valor_input) / 100
-                st.caption(f"Valor: {brl(valor)}")
+    with c3:
+        # estado do input com máscara
+        if "valor_digits" not in st.session_state:
+            st.session_state.valor_digits = ""
+        if "valor_mask" not in st.session_state:
+            st.session_state.valor_mask = ""
 
-        submitted = st.form_submit_button("Salvar")
+        def on_valor_change():
+            s = st.session_state.valor_mask
+            digits = "".join(ch for ch in s if ch.isdigit())
+            st.session_state.valor_digits = digits
+            v = (int(digits) / 100) if digits else 0.0
+            st.session_state.valor_mask = brl(v).replace("R$ ", "")
 
+        st.text_input(
+            "Valor (digite só números)",
+            key="valor_mask",
+            on_change=on_valor_change,
+            placeholder="0,00"
+        )
 
-        with c3:
-            # ====== Campo Valor com máscara (digitou 111111 -> 1.111,11) ======
-            if "valor_digits" not in st.session_state:
-                st.session_state.valor_digits = ""   # só números (centavos)
-            if "valor_mask" not in st.session_state:
-                st.session_state.valor_mask = ""     # o que aparece no input
+        valor = (int(st.session_state.valor_digits) / 100) if st.session_state.valor_digits else 0.0
+        st.caption(f"Valor: {brl(valor)}")
 
-            def on_valor_change():
-                s = st.session_state.valor_mask
-                digits = "".join(ch for ch in s if ch.isdigit())  # remove ponto, vírgula, etc.
-                st.session_state.valor_digits = digits
+    if st.button("Salvar"):
+        if cat is None or valor <= 0:
+            st.error("Preencha a Categoria e um Valor maior que 0.")
+        else:
+            supabase.table("pagamentos").insert({
+                "data_pagamento": str(d),
+                "categoria": cat,
+                "valor": float(valor)
+            }).execute()
 
-                v = (int(digits) / 100) if digits else 0.0
-                # mostra "1.111,11" dentro do input
-                st.session_state.valor_mask = brl(v).replace("R$ ", "")
+            # limpa o campo depois de salvar
+            st.session_state.valor_digits = ""
+            st.session_state.valor_mask = ""
 
-            st.text_input(
-                "Valor (digite só números)",
-                key="valor_mask",
-                on_change=on_valor_change,
-                placeholder="0,00"
-            )
+            st.success("✅ Lançamento registrado!")
+            time.sleep(0.8)
+            st.rerun()
 
-            # valor final (float) pra salvar no banco
-            valor = (int(st.session_state.valor_digits) / 100) if st.session_state.valor_digits else 0.0
-
-        submitted = st.form_submit_button("Salvar")
-
-        if submitted:
-            if cat is None or valor <= 0:
-                st.error("Preencha a Categoria e um Valor maior que 0.")
-            else:
-                supabase.table("pagamentos").insert({
-                    "data_pagamento": str(d),
-                    "categoria": cat,
-                    "valor": float(valor)
-                }).execute()
-
-                st.success("✅ Lançamento registrado!")
-                time.sleep(0.8)
-                st.rerun()
 
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
