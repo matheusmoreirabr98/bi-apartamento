@@ -7,6 +7,16 @@ import plotly.express as px
 
 # ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
 st.set_page_config(page_title="Apartamento", layout="wide")
+st.markdown("""
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const inputs = window.parent.document.querySelectorAll('input[data-testid="stTextInput"]');
+    inputs.forEach(input => {
+        input.setAttribute("inputmode", "numeric");
+    });
+});
+</script>
+""", unsafe_allow_html=True)
 st.title("🏠Apartamento")
 
 # ====== Secrets (Streamlit Cloud / Local) ======
