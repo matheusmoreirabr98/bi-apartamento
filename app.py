@@ -21,32 +21,53 @@ st.title("🏠Apartamento")
 st.markdown("""
 <style>
 .stApp {
-    background-color: #f3f4f6;
+    background-color: #eef2f7;
 }
 
-div[data-testid="stMetric"] {
-    background-color: white;
-    border: 1px solid #e5e7eb;
-    padding: 16px;
-    border-radius: 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+.block-container {
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+.kpi-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #d9e2f1;
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    min-height: 120px;
+}
+
+.kpi-label {
+    font-size: 14px;
+    color: #667085;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.kpi-value {
+    font-size: 34px;
+    color: #0f172a;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.kpi-sub {
+    font-size: 13px;
+    color: #475467;
+    margin-top: 8px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 8px 0 16px 0;
 }
 
 div[data-testid="stDataFrame"] {
-    background-color: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 6px;
-}
-
-div[data-baseweb="select"] > div {
-    background-color: white;
-    border-radius: 10px;
-}
-
-div[data-testid="stMultiSelect"] > div {
-    background-color: white;
-    border-radius: 10px;
+    border-radius: 16px;
+    overflow: hidden;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -200,57 +221,119 @@ with tab1:
 
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
-    st.subheader("📊 Dashboard Financeiro")
-
     df = get_df()
+
     if df.empty:
         st.info("Ainda não há lançamentos.")
     else:
-        anos = sorted(df["data_pagamento"].dt.year.unique().tolist())
+        df["ano"] = df["data_pagamento"].dt.year.astype(str)
+        df["mes_ref"] = df["data_pagamento"].dt.strftime("%m/%Y")
 
-        # ===== FILTROS =====
-        filtro1, filtro2, filtro3 = st.columns([1, 1, 2])
+        anos = sorted(df["ano"].unique().tolist())
+        categorias_disp = sorted(df["categoria"].unique().tolist())
+        meses_disp = sorted(
+            df["mes_ref"].unique().tolist(),
+            key=lambda x: pd.to_datetime(x, format="%m/%Y")
+        )
 
-        with filtro1:
-            ano = st.selectbox("Ano", ["Todos"] + [str(a) for a in anos])
-
-        with filtro2:
-            categoria = st.selectbox("Categoria", ["Todas"] + sorted(df["categoria"].unique().tolist()))
-
-        with filtro3:
-            meses = sorted(df["mes"].unique().tolist())
-            meses_sel = st.multiselect("Meses", meses, default=meses)
+        with st.sidebar:
+            st.markdown("## 📊 Filtros")
+            ano = st.selectbox("Ano", ["Todos"] + anos, key="dash_ano")
+            categoria = st.selectbox("Categoria", ["Todas"] + categorias_disp, key="dash_categoria")
+            meses_sel = st.multiselect("Meses", meses_disp, default=meses_disp, key="dash_meses")
 
         df_f = df.copy()
 
         if ano != "Todos":
-            df_f = df_f[df_f["data_pagamento"].dt.year == int(ano)]
+            df_f = df_f[df_f["ano"] == ano]
 
         if categoria != "Todas":
             df_f = df_f[df_f["categoria"] == categoria]
 
         if meses_sel:
-            df_f = df_f[df_f["mes"].isin(meses_sel)]
+            df_f = df_f[df_f["mes_ref"].isin(meses_sel)]
 
-        total = df_f["valor"].sum()
-        media = df_f["valor"].mean() if not df_f.empty else 0
-        qtd = len(df_f)
-        maior = df_f["valor"].max() if not df_f.empty else 0
+        if df_f.empty:
+            st.warning("Nenhum dado encontrado para os filtros selecionados.")
+            st.stop()
 
-        # ===== KPIs =====
-        st.markdown("### Indicadores")
+        st.markdown('<div class="section-title">Dashboard Financeiro</div>', unsafe_allow_html=True)
 
-        k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Total Pago", brl(total))
-        k2.metric("Média por Lançamento", brl(media))
-        k3.metric("Nº de Lançamentos", qtd)
-        k4.metric("Maior Pagamento", brl(maior))
+        total_pago = df_f["valor"].sum()
+        media_lanc = df_f["valor"].mean()
+        qtd_lanc = len(df_f)
+        maior_pag = df_f["valor"].max()
 
-        por_mes = (
-            df_f.groupby("mes", as_index=False)["valor"]
-            .sum()
-            .sort_values("mes")
-        )
+        total_previsto = 0
+        for cat_lim, qtd_lim in LIMITES.items():
+            cat_vals = df[df["categoria"] == cat_lim]["valor"]
+            if not cat_vals.empty:
+                total_previsto += cat_vals.mean() * qtd_lim
+
+        total_geral_pago = df["valor"].sum()
+        total_restante = max(total_previsto - total_geral_pago, 0)
+        perc_concluido = (total_geral_pago / total_previsto * 100) if total_previsto > 0 else 0
+
+        c1, c2, c3, c4 = st.columns(4)
+
+        with c1:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Total Pago</div>
+                <div class="kpi-value">{brl(total_pago)}</div>
+                <div class="kpi-sub">Com os filtros atuais</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c2:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Média por Lançamento</div>
+                <div class="kpi-value">{brl(media_lanc)}</div>
+                <div class="kpi-sub">Valor médio filtrado</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c3:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Nº de Lançamentos</div>
+                <div class="kpi-value">{qtd_lanc}</div>
+                <div class="kpi-sub">Registros filtrados</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with c4:
+            st.markdown(f"""
+            <div class="kpi-card">
+                <div class="kpi-label">Maior Pagamento</div>
+                <div class="kpi-value">{brl(maior_pag)}</div>
+                <div class="kpi-sub">Maior valor no filtro</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("")
+
+        prog1, prog2 = st.columns([2, 1])
+
+        with prog1:
+            with st.container(border=True):
+                st.markdown("### Progresso geral")
+                st.progress(min(max(perc_concluido / 100, 0), 1))
+                a, b, c = st.columns(3)
+                a.metric("Pago", brl(total_geral_pago))
+                b.metric("Previsto", brl(total_previsto))
+                c.metric("Restante", brl(total_restante))
+
+        with prog2:
+            with st.container(border=True):
+                st.markdown("### Resumo")
+                st.metric("Categorias com pagamentos", f"{df_f['categoria'].nunique()}")
+                st.metric("Meses analisados", f"{len(meses_sel)}")
+
+        por_mes = df_f.groupby("mes_ref", as_index=False)["valor"].sum()
+        por_mes["mes_ord"] = pd.to_datetime(por_mes["mes_ref"], format="%m/%Y")
+        por_mes = por_mes.sort_values("mes_ord")
 
         por_cat = (
             df_f.groupby("categoria", as_index=False)["valor"]
@@ -258,68 +341,110 @@ with tab2:
             .sort_values("valor", ascending=False)
         )
 
-        # ===== GRÁFICOS 1 =====
-        g1, g2 = st.columns(2)
+        resumo_cat = (
+            df.groupby("categoria")
+            .size()
+            .reindex(CATEGORIAS, fill_value=0)
+            .reset_index(name="qtd_paga")
+            .rename(columns={"index": "categoria"})
+        )
+        resumo_cat["limite"] = resumo_cat["categoria"].map(LIMITES)
+        resumo_cat["percentual"] = (resumo_cat["qtd_paga"] / resumo_cat["limite"] * 100).round(1)
+
+        g1, g2 = st.columns([1.5, 1])
 
         with g1:
-            st.markdown("### Evolução mensal")
-            fig1 = px.area(
-                por_mes,
-                x="mes",
-                y="valor",
-                markers=True
-            )
-            fig1.update_layout(
-                template="plotly_white",
-                height=420,
-                margin=dict(l=20, r=20, t=30, b=20),
-                xaxis_title="Mês",
-                yaxis_title="Valor (R$)"
-            )
-            st.plotly_chart(fig1, use_container_width=True)
+            with st.container(border=True):
+                st.markdown("### Evolução mensal")
+                fig1 = px.area(
+                    por_mes,
+                    x="mes_ord",
+                    y="valor",
+                    markers=True
+                )
+                fig1.update_traces(line=dict(width=3))
+                fig1.update_layout(
+                    template="plotly_white",
+                    height=380,
+                    margin=dict(l=10, r=10, t=10, b=10),
+                    xaxis_title="",
+                    yaxis_title="Valor (R$)",
+                    paper_bgcolor="white",
+                    plot_bgcolor="white",
+                    font=dict(color="#0f172a")
+                )
+                fig1.update_xaxes(
+                    tickformat="%m/%Y",
+                    showgrid=False
+                )
+                fig1.update_yaxes(gridcolor="#e5e7eb")
+                st.plotly_chart(fig1, use_container_width=True, config={"displayModeBar": False})
 
         with g2:
-            st.markdown("### Total por categoria")
-            fig2 = px.bar(
-                por_cat,
-                x="valor",
-                y="categoria",
-                orientation="h",
-                text="valor"
-            )
-            fig2.update_traces(
-                texttemplate="R$ %{text:,.2f}",
-                textposition="outside"
-            )
-            fig2.update_layout(
-                template="plotly_white",
-                height=420,
-                margin=dict(l=20, r=20, t=30, b=20),
-                xaxis_title="Valor (R$)",
-                yaxis_title="Categoria",
-                yaxis={"categoryorder": "total ascending"}
-            )
-            st.plotly_chart(fig2, use_container_width=True)
+            with st.container(border=True):
+                st.markdown("### Participação por categoria")
+                fig2 = px.pie(
+                    por_cat,
+                    names="categoria",
+                    values="valor",
+                    hole=0.62
+                )
+                fig2.update_layout(
+                    template="plotly_white",
+                    height=380,
+                    margin=dict(l=10, r=10, t=10, b=10),
+                    paper_bgcolor="white",
+                    font=dict(color="#0f172a"),
+                    legend_title_text=""
+                )
+                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
 
-        # ===== GRÁFICOS 2 =====
-        g3, g4 = st.columns(2)
+        g3, g4 = st.columns([1.5, 1])
 
         with g3:
-            st.markdown("### Participação por categoria")
-            fig3 = px.pie(
-                por_cat,
-                names="categoria",
-                values="valor",
-                hole=0.55
-            )
-            fig3.update_layout(
-                template="plotly_white",
-                height=420,
-                margin=dict(l=20, r=20, t=30, b=20)
-            )
-            st.plotly_chart(fig3, use_container_width=True)
+            with st.container(border=True):
+                st.markdown("### Ranking por categoria")
+                fig3 = px.bar(
+                    por_cat,
+                    x="valor",
+                    y="categoria",
+                    orientation="h",
+                    text="valor"
+                )
+                fig3.update_traces(
+                    texttemplate="R$ %{text:,.2f}",
+                    textposition="outside"
+                )
+                fig3.update_layout(
+                    template="plotly_white",
+                    height=380,
+                    margin=dict(l=10, r=20, t=10, b=10),
+                    xaxis_title="Valor (R$)",
+                    yaxis_title="",
+                    paper_bgcolor="white",
+                    plot_bgcolor="white",
+                    font=dict(color="#0f172a"),
+                    yaxis={"categoryorder": "total ascending"}
+                )
+                fig3.update_yaxes(showgrid=False)
+                fig3.update_xaxes(gridcolor="#e5e7eb")
+                st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
 
         with g4:
+            with st.container(border=True):
+                st.markdown("### Progresso por categoria")
+                resumo_show = resumo_cat.copy()
+                resumo_show["status"] = resumo_show["qtd_paga"].astype(str) + "/" + resumo_show["limite"].astype(str)
+                resumo_show = resumo_show[["categoria", "status", "percentual"]]
+                resumo_show.columns = ["Categoria", "Pago", "% Concluído"]
+                st.dataframe(
+                    resumo_show,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=380
+                )
+
+        with st.container(border=True):
             st.markdown("### Histórico filtrado")
             df_show = df_f.copy().sort_values("data_pagamento", ascending=False)
             df_show["data_pagamento"] = df_show["data_pagamento"].dt.strftime("%d/%m/%Y")
@@ -329,7 +454,7 @@ with tab2:
                 df_show[["data_pagamento", "categoria", "valor"]],
                 use_container_width=True,
                 hide_index=True,
-                height=420
+                height=300
             )
 
 
