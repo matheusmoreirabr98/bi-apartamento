@@ -198,7 +198,8 @@ if "form_valor" not in st.session_state:
     st.session_state.form_valor = 0.0
 
 if "form_obs" not in st.session_state:
-    st.session_state.form_obs = ""
+    if "clear_valor_input" not in st.session_state:
+        st.session_state.clear_valor_input = False
 
 tab1, tab2, tab3 = st.tabs(["➕ Lançar", "📊 Dashboard", "🧾 Histórico"])
 
@@ -274,12 +275,11 @@ with tab1:
             }).execute()
 
             # limpa o campo depois de salvar
-            st.session_state.valor_digits = ""
-            st.session_state.valor_mask = ""
-
+            st.session_state.clear_valor_input = True
             st.success("✅ Lançamento registrado!")
             time.sleep(0.8)
             st.rerun()
+
 
 
 # ================== TAB 2: DASHBOARD ==================
@@ -533,26 +533,32 @@ with tab2:
 
 
 # ================== TAB 3: HISTÓRICO ==================
-with tab3:
-    st.subheader("Histórico")
+with c3:
+    if "valor_digits" not in st.session_state:
+        st.session_state.valor_digits = ""
 
-    df = get_df()
-    if df.empty:
-        st.info("Sem lançamentos ainda.")
-    else:
-        df_show = df.copy()
-        df_show["data_pagamento"] = df_show["data_pagamento"].dt.date
-        df_show["valor"] = df_show["valor"].apply(lambda x: brl(float(x)))
+    if "valor_mask" not in st.session_state:
+        st.session_state.valor_mask = ""
 
-        st.dataframe(
-            df_show[["id", "data_pagamento", "categoria", "valor"]],
-            use_container_width=True,
-            hide_index=True
-        )
+    # limpa o campo antes de renderizar o widget
+    if st.session_state.clear_valor_input:
+        st.session_state.valor_digits = ""
+        st.session_state.valor_mask = ""
+        st.session_state.clear_valor_input = False
 
-        st.markdown("### 🗑️ Excluir lançamento por ID")
-        del_id = st.number_input("ID", min_value=1, step=1)
-        if st.button("Excluir", type="secondary"):
-            supabase.table("pagamentos").delete().eq("id", int(del_id)).execute()
-            st.success(f"Excluído ID {int(del_id)}. (Atualize a página)")
-            st.rerun()
+    def on_valor_change():
+        s = st.session_state.valor_mask
+        digits = "".join(ch for ch in s if ch.isdigit())
+        st.session_state.valor_digits = digits
+        v = (int(digits) / 100) if digits else 0.0
+        st.session_state.valor_mask = brl(v)
+
+    st.text_input(
+        "Valor",
+        key="valor_mask",
+        on_change=on_valor_change,
+        placeholder="0,00"
+    )
+
+    valor = (int(st.session_state.valor_digits) / 100) if st.session_state.valor_digits else 0.0
+    st.caption(f"Valor: {brl(valor)}")
