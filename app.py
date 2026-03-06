@@ -53,53 +53,71 @@ def to_df(res):
 
 
 def load_parcelas(include_deleted=False):
-    q = supabase.table("parcelas").select("*")
-    if not include_deleted:
-        q = q.is_("deleted_at", None)
-    res = q.execute()
-    df = to_df(res)
+    try:
+        q = supabase.table("parcelas").select("*")
+        if not include_deleted:
+            q = q.is_("deleted_at", None)
 
-    if df.empty:
+        res = q.execute()
+        st.write("DEBUG parcelas raw:", res.data)
+
+        df = pd.DataFrame(res.data)
+        if df.empty:
+            return df
+
+        df["vencimento"] = pd.to_datetime(df["vencimento"], errors="coerce")
+        df["valor_principal"] = pd.to_numeric(df["valor_principal"], errors="coerce").fillna(0.0)
+        df["valor_total_atual"] = pd.to_numeric(df["valor_total_atual"], errors="coerce").fillna(0.0)
         return df
-
-    df["vencimento"] = pd.to_datetime(df["vencimento"], errors="coerce")
-    df["valor_principal"] = pd.to_numeric(df["valor_principal"], errors="coerce").fillna(0.0)
-    df["valor_total_atual"] = pd.to_numeric(df["valor_total_atual"], errors="coerce").fillna(0.0)
-    return df
+    except Exception as e:
+        st.error(f"Erro ao carregar parcelas: {e}")
+        return pd.DataFrame()
 
 
 def load_pagamentos(include_deleted=False):
-    q = supabase.table("pagamentos").select("*").order("data_pagamento", desc=True)
-    if not include_deleted:
-        q = q.is_("deleted_at", None)
-    res = q.execute()
-    df = to_df(res)
+    try:
+        q = supabase.table("pagamentos").select("*").order("data_pagamento", desc=True)
+        if not include_deleted:
+            q = q.is_("deleted_at", None)
 
-    if df.empty:
+        res = q.execute()
+        st.write("DEBUG pagamentos raw:", res.data)
+
+        df = pd.DataFrame(res.data)
+        if df.empty:
+            return df
+
+        df["data_pagamento"] = pd.to_datetime(df["data_pagamento"], errors="coerce")
         return df
-
-    df["data_pagamento"] = pd.to_datetime(df["data_pagamento"], errors="coerce")
-    return df
+    except Exception as e:
+        st.error(f"Erro ao carregar pagamentos: {e}")
+        return pd.DataFrame()
 
 
 def load_pagamento_itens(include_deleted=False):
-    q = supabase.table("pagamento_itens").select("*")
-    if not include_deleted:
-        q = q.is_("deleted_at", None)
-    res = q.execute()
-    df = to_df(res)
+    try:
+        q = supabase.table("pagamento_itens").select("*")
+        if not include_deleted:
+            q = q.is_("deleted_at", None)
 
-    if df.empty:
+        res = q.execute()
+        st.write("DEBUG itens raw:", res.data)
+
+        df = pd.DataFrame(res.data)
+        if df.empty:
+            return df
+
+        df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce").fillna(0.0)
+        df["valor_total_atual_na_data"] = pd.to_numeric(
+            df["valor_total_atual_na_data"], errors="coerce"
+        ).fillna(0.0)
+        df["desconto_amortizacao"] = pd.to_numeric(
+            df["desconto_amortizacao"], errors="coerce"
+        ).fillna(0.0)
         return df
-
-    df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce").fillna(0.0)
-    df["valor_total_atual_na_data"] = pd.to_numeric(
-        df["valor_total_atual_na_data"], errors="coerce"
-    ).fillna(0.0)
-    df["desconto_amortizacao"] = pd.to_numeric(
-        df["desconto_amortizacao"], errors="coerce"
-    ).fillna(0.0)
-    return df
+    except Exception as e:
+        st.error(f"Erro ao carregar itens: {e}")
+        return pd.DataFrame()
 
 
 def calcular_status(parcelas_df, itens_df):
