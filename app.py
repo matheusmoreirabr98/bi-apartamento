@@ -115,11 +115,30 @@ with tab1:
             cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
         with c3:
-            valor_input = st.text_input("Valor (digite só números)")
-            valor = 0.0
-            if valor_input.isdigit():
-                valor = int(valor_input) / 100
-                st.caption(f"Valor: {brl(valor)}")
+            # ====== Campo Valor com máscara (digitou 111111 -> 1.111,11) ======
+            if "valor_digits" not in st.session_state:
+                st.session_state.valor_digits = ""   # só números (centavos)
+            if "valor_mask" not in st.session_state:
+                st.session_state.valor_mask = ""     # o que aparece no input
+
+            def on_valor_change():
+                s = st.session_state.valor_mask
+                digits = "".join(ch for ch in s if ch.isdigit())  # remove ponto, vírgula, etc.
+                st.session_state.valor_digits = digits
+
+                v = (int(digits) / 100) if digits else 0.0
+                # mostra "1.111,11" dentro do input
+                st.session_state.valor_mask = brl(v).replace("R$ ", "")
+
+            st.text_input(
+                "Valor (digite só números)",
+                key="valor_mask",
+                on_change=on_valor_change,
+                placeholder="0,00"
+            )
+
+            # valor final (float) pra salvar no banco
+            valor = (int(st.session_state.valor_digits) / 100) if st.session_state.valor_digits else 0.0
 
         submitted = st.form_submit_button("Salvar")
 
