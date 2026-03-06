@@ -6,8 +6,8 @@ from supabase import create_client
 import plotly.express as px
 
 # ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
-st.set_page_config(page_title="BI Apartamento", layout="wide")
-st.title("🏠 BI do Apartamento")
+st.set_page_config(page_title="Apartamento", layout="wide")
+st.title("🏠 Apartamento")
 
 # ====== Secrets (Streamlit Cloud / Local) ======
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
