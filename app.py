@@ -18,6 +18,62 @@ document.addEventListener("DOMContentLoaded", function() {
 </script>
 """, unsafe_allow_html=True)
 st.title("🏠Apartamento")
+st.markdown("""
+<style>
+/* Fundo geral */
+.stApp {
+    background-color: #f5f7fb;
+}
+
+/* Títulos */
+h1, h2, h3 {
+    color: #1f2937;
+    font-weight: 700;
+}
+
+/* Cards/containers */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+div[data-testid="stMetric"] {
+    background: white;
+    border-radius: 16px;
+    padding: 18px 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+}
+
+div[data-testid="stVerticalBlock"] div:has(> div[data-testid="stMetric"]) {
+    background: transparent;
+}
+
+/* Inputs */
+div[data-baseweb="select"],
+div[data-testid="stDateInput"],
+div[data-testid="stTextInput"] {
+    background: white;
+    border-radius: 12px;
+}
+
+/* Botões */
+.stButton > button {
+    border-radius: 12px;
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+}
+
+/* Dataframe */
+div[data-testid="stDataFrame"] {
+    background: white;
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid #e5e7eb;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ====== Secrets (Streamlit Cloud / Local) ======
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -168,47 +224,142 @@ with tab1:
 
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
-    st.subheader("Dashboard")
+    st.subheader("Dashboard Financeiro")
 
     df = get_df()
     if df.empty:
         st.info("Ainda não há lançamentos.")
     else:
         anos = sorted(df["data_pagamento"].dt.year.unique().tolist())
-        c1, c2 = st.columns([1, 2])
 
-        with c1:
-            ano = st.selectbox("Ano", ["Todos"] + [str(a) for a in anos])
+        # ====== FILTROS TOPO ======
+        st.markdown("### Filtros")
+        f1, f2, f3 = st.columns([1, 1, 2])
 
-        with c2:
-            categoria = st.selectbox("Categoria", ["Todas"] + sorted(df["categoria"].unique().tolist()))
+        with f1:
+            ano = st.selectbox("Ano", ["Todos"] + [str(a) for a in anos], key="filtro_ano")
 
+        with f2:
+            categoria = st.selectbox(
+                "Categoria",
+                ["Todas"] + sorted(df["categoria"].unique().tolist()),
+                key="filtro_categoria"
+            )
+
+        with f3:
+            meses = sorted(df["mes"].unique().tolist())
+            meses_sel = st.multiselect("Mês", meses, default=meses)
+
+        # ====== APLICA FILTROS ======
         df_f = df.copy()
+
         if ano != "Todos":
             df_f = df_f[df_f["data_pagamento"].dt.year == int(ano)]
+
         if categoria != "Todas":
             df_f = df_f[df_f["categoria"] == categoria]
 
+        if meses_sel:
+            df_f = df_f[df_f["mes"].isin(meses_sel)]
+
+        # ====== KPIs ======
         total = df_f["valor"].sum()
-        por_mes = df_f.groupby("mes", as_index=False)["valor"].sum()
-        por_cat = df_f.groupby("categoria", as_index=False)["valor"].sum().sort_values("valor", ascending=False)
+        qtd = len(df_f)
+        ticket_medio = df_f["valor"].mean() if not df_f.empty else 0
+        maior_pagamento = df_f["valor"].max() if not df_f.empty else 0
 
-        k1, k2, k3 = st.columns(3)
-        k1.metric("Total pago (filtros)", brl(total))
-        k2.metric("Média mensal (filtros)", brl(por_mes["valor"].mean() if not por_mes.empty else 0))
-        k3.metric("Nº lançamentos", str(len(df_f)))
+        st.markdown("### Indicadores")
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Total Pago", brl(total))
+        k2.metric("Quantidade de Lançamentos", f"{qtd}")
+        k3.metric("Ticket Médio", brl(ticket_medio))
+        k4.metric("Maior Pagamento", brl(maior_pagamento))
 
-        c1, c2 = st.columns(2)
+        # ====== PREPARAÇÃO DOS DADOS ======
+        por_mes = (
+            df_f.groupby("mes", as_index=False)["valor"]
+            .sum()
+            .sort_values("mes")
+        )
 
-        with c1:
-            st.markdown("### 📅 Total por mês")
-            fig = px.line(por_mes, x="mes", y="valor", markers=True)
-            st.plotly_chart(fig, use_container_width=True)
+        por_cat = (
+            df_f.groupby("categoria", as_index=False)["valor"]
+            .sum()
+            .sort_values("valor", ascending=False)
+        )
 
-        with c2:
-            st.markdown("### 🧩 Total por categoria")
-            fig2 = px.bar(por_cat, x="categoria", y="valor")
+        # ====== GRÁFICOS ======
+        g1, g2 = st.columns(2)
+
+        with g1:
+            st.markdown("### Evolução por mês")
+            fig1 = px.line(
+                por_mes,
+                x="mes",
+                y="valor",
+                markers=True,
+                template="plotly_white"
+            )
+            fig1.update_layout(
+                height=380,
+                margin=dict(l=20, r=20, t=30, b=20),
+                xaxis_title="Mês",
+                yaxis_title="Valor (R$)",
+                title=None
+            )
+            fig1.update_traces(line=dict(width=3), marker=dict(size=8))
+            st.plotly_chart(fig1, use_container_width=True)
+
+        with g2:
+            st.markdown("### Total por categoria")
+            fig2 = px.bar(
+                por_cat,
+                x="categoria",
+                y="valor",
+                template="plotly_white",
+                text_auto=".2s"
+            )
+            fig2.update_layout(
+                height=380,
+                margin=dict(l=20, r=20, t=30, b=20),
+                xaxis_title="Categoria",
+                yaxis_title="Valor (R$)",
+                title=None
+            )
             st.plotly_chart(fig2, use_container_width=True)
+
+        # ====== GRÁFICOS EXTRAS ======
+        g3, g4 = st.columns(2)
+
+        with g3:
+            st.markdown("### Participação por categoria")
+            fig3 = px.pie(
+                por_cat,
+                names="categoria",
+                values="valor",
+                hole=0.55,
+                template="plotly_white"
+            )
+            fig3.update_layout(
+                height=380,
+                margin=dict(l=20, r=20, t=30, b=20),
+                showlegend=True
+            )
+            st.plotly_chart(fig3, use_container_width=True)
+
+        with g4:
+            st.markdown("### Pagamentos filtrados")
+            df_tabela = df_f.copy().sort_values("data_pagamento", ascending=False)
+            df_tabela["data_pagamento"] = df_tabela["data_pagamento"].dt.strftime("%d/%m/%Y")
+            df_tabela["valor"] = df_tabela["valor"].apply(brl)
+
+            st.dataframe(
+                df_tabela[["data_pagamento", "categoria", "valor"]],
+                use_container_width=True,
+                hide_index=True,
+                height=380
+            )
+
 
 # ================== TAB 3: HISTÓRICO ==================
 with tab3:
