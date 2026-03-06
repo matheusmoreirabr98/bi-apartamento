@@ -128,7 +128,7 @@ with tab1:
             st.session_state.valor_mask = brl(v).replace("R$ ", "")
 
         st.text_input(
-            "Valor (digite só números)",
+            "Valor",
             key="valor_mask",
             on_change=on_valor_change,
             placeholder="0,00"
