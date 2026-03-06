@@ -6,14 +6,16 @@ from datetime import date
 from supabase import create_client
 import plotly.express as px
 
+ICON_URL = "https://raw.githubusercontent.com/matheusmoreirabr98/bi-apartamento/main/imagens/icone_apartamento.png"
+
 st.set_page_config(
     page_title="Apartamento",
-    page_icon="https://github.com/matheusmoreirabr98/bi-apartamento/blob/main/imagens/icone_apartamento.png",
+    page_icon=ICON_URL,
     layout="wide"
 )
 
-st.markdown("""
-<link rel="apple-touch-icon" href="https://github.com/matheusmoreirabr98/bi-apartamento/blob/main/imagens/icone_apartamento.png">
+st.markdown(f"""
+<link rel="apple-touch-icon" href="{ICON_URL}">
 """, unsafe_allow_html=True)
 
 
