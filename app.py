@@ -6,20 +6,20 @@ from datetime import date
 from supabase import create_client
 import plotly.express as px
 
-# ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
 st.set_page_config(
     page_title="Apartamento",
-    page_icon="./imagens/icone_apartamento.png",
+    page_icon="imagens/icone_apartamento.png",
     layout="wide"
 )
 
-st.markdown(
-"""
-<link rel="icon" href="imagens/icone_apartamento.png">
-<link rel="apple-touch-icon" href="Imagens/icone_apartamento.png">
-""",
-unsafe_allow_html=True
-)
+st.markdown("""
+<link rel="apple-touch-icon" href="imagens/icone_apartamento.png">
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Apartamento">
+""", unsafe_allow_html=True)
 
 
 # ====== Secrets (Streamlit Cloud / Local) ======
