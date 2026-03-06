@@ -129,13 +129,13 @@ with tab1:
             st.session_state.valor_digits = ""
         if "valor_mask" not in st.session_state:
             st.session_state.valor_mask = ""
-
+    
         def on_valor_change():
             s = st.session_state.valor_mask
             digits = "".join(ch for ch in s if ch.isdigit())
             st.session_state.valor_digits = digits
             v = (int(digits) / 100) if digits else 0.0
-            st.session_state.valor_mask = brl(v).replace("R$ ", "")
+            st.session_state.valor_mask = brl(v)
 
         st.text_input(
             "Valor",
