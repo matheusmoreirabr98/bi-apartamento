@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -41,7 +42,14 @@ def brl(v):
     return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 def get_df():
-    res = supabase.table("pagamentos").select("*").order("data_pagamento").execute()
+    res = (
+    supabase
+    .table("pagamentos")
+    .select("*")
+    .is_("deleted_at", None)
+    .order("data_pagamento")
+    .execute()
+    )
     df = pd.DataFrame(res.data)
     if df.empty:
         return df
@@ -201,6 +209,9 @@ with tab3:
         st.markdown("### 🗑️ Excluir lançamento por ID")
         del_id = st.number_input("ID", min_value=1, step=1)
         if st.button("Excluir", type="secondary"):
-            supabase.table("pagamentos").delete().eq("id", int(del_id)).execute()
-            st.success(f"Excluído ID {int(del_id)}. (Atualize a página)")
+            supabase.table("pagamentos").update({
+                "deleted_at": datetime.utcnow().isoformat()
+            }).eq("id", int(del_id)).execute()
+
+            st.success(f"Lançamento {int(del_id)} removido.")
             st.rerun()
