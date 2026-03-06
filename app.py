@@ -115,6 +115,16 @@ with tab1:
             cat = None if label_escolhido == "" else label_to_cat[label_escolhido]
 
         with c3:
+            valor_input = st.text_input("Valor (digite só números)")
+            valor = 0.0
+            if valor_input.isdigit():
+                valor = int(valor_input) / 100
+                st.caption(f"Valor: {brl(valor)}")
+
+        submitted = st.form_submit_button("Salvar")
+
+
+        with c3:
             # ====== Campo Valor com máscara (digitou 111111 -> 1.111,11) ======
             if "valor_digits" not in st.session_state:
                 st.session_state.valor_digits = ""   # só números (centavos)
@@ -142,19 +152,19 @@ with tab1:
 
         submitted = st.form_submit_button("Salvar")
 
-    if submitted:
-        if cat is None or valor <= 0:
-            st.error("Preencha a Categoria e um Valor maior que 0.")
-        else:
-            supabase.table("pagamentos").insert({
-                "data_pagamento": str(d),
-                "categoria": cat,
-                "valor": float(valor)
-            }).execute()
+        if submitted:
+            if cat is None or valor <= 0:
+                st.error("Preencha a Categoria e um Valor maior que 0.")
+            else:
+                supabase.table("pagamentos").insert({
+                    "data_pagamento": str(d),
+                    "categoria": cat,
+                    "valor": float(valor)
+                }).execute()
 
-            st.success("✅ Lançamento registrado!")
-            time.sleep(0.8)
-            st.rerun()
+                st.success("✅ Lançamento registrado!")
+                time.sleep(0.8)
+                st.rerun()
 
 # ================== TAB 2: DASHBOARD ==================
 with tab2:
