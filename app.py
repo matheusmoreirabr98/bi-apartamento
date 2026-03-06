@@ -10,8 +10,8 @@ from supabase import create_client
 # CONFIG
 # =========================================================
 
-st.set_page_config(page_title="Apartamento 2.0", layout="wide")
-st.title("🏠 Apartamento 2.0")
+st.set_page_config(page_title="Apartamento 2.1", layout="wide")
+st.title("🏠 Apartamento 2.1")
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
@@ -35,7 +35,6 @@ STATUS_ORDEM = {
 # =========================================================
 # FUNÇÕES UTILITÁRIAS
 # =========================================================
-
 
 def brl(v):
     try:
@@ -141,6 +140,7 @@ def montar_base(parcelas_df, pagamentos_df, itens_df):
         base["valor_pago"] = None
         base["desconto_amortizacao"] = None
         base["pagamento_id"] = None
+        base["parcela_id"] = base["id"]
         return base
 
     itens_x = itens_df.rename(columns={"id": "pagamento_item_id"})
@@ -216,8 +216,8 @@ base = montar_base(parcelas, pagamentos, itens)
 # TABS
 # =========================================================
 
-tab1, tab2, tab3, tab4 = st.tabs(
-    ["💳 Lançar Pagamento", "📊 Dashboard", "📁 Parcelas", "🧾 Histórico"]
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    ["💳 Lançar Pagamento", "📊 Dashboard", "📁 Parcelas", "🧾 Histórico", "🛠 Atualizar Parcelas"]
 )
 
 # =========================================================
@@ -678,3 +678,113 @@ with tab4:
         elif not pode_editar:
             st.markdown("---")
             st.info("Você tem permissão apenas para visualizar o histórico. Edição e exclusão estão disponíveis somente para Matheus Moreira.")
+
+# =========================================================
+# TAB 5 — ATUALIZAR PARCELAS
+# =========================================================
+
+with tab5:
+    st.subheader("Atualizar parcelas")
+
+    if not pode_editar:
+        st.info("Somente Matheus Moreira pode atualizar parcelas.")
+    elif parcelas.empty:
+        st.info("Sem parcelas cadastradas.")
+    else:
+        u1, u2 = st.columns(2)
+
+        with u1:
+            categorias_upd = ["Todas"] + sorted(parcelas["categoria_app"].dropna().unique().tolist())
+            categoria_upd = st.selectbox("Categoria", categorias_upd, key="upd_categoria")
+
+        with u2:
+            status_upd = ["Todos", "a vencer", "pendente", "atrasada", "paga"]
+            status_upd_sel = st.selectbox("Status", status_upd, key="upd_status")
+
+        parcelas_upd = parcelas.copy()
+
+        if categoria_upd != "Todas":
+            parcelas_upd = parcelas_upd[parcelas_upd["categoria_app"] == categoria_upd]
+
+        if status_upd_sel != "Todos":
+            parcelas_upd = parcelas_upd[parcelas_upd["status"] == status_upd_sel]
+
+        parcelas_upd = parcelas_upd.sort_values(
+            ["status_ordem", "vencimento", "categoria_app", "numero_parcela"]
+        ).copy()
+
+        if parcelas_upd.empty:
+            st.info("Nenhuma parcela encontrada com esses filtros.")
+        else:
+            parcelas_upd["vencimento_edit"] = parcelas_upd["vencimento"].dt.date
+            parcelas_upd["valor_total_atual"] = parcelas_upd["valor_total_atual"].round(2)
+
+            edit_df = parcelas_upd[
+                [
+                    "id",
+                    "categoria_app",
+                    "descricao_parcela",
+                    "status",
+                    "vencimento_edit",
+                    "valor_principal",
+                    "valor_total_atual",
+                ]
+            ].rename(columns={"vencimento_edit": "vencimento"}).copy()
+
+            edit_df["valor_principal"] = edit_df["valor_principal"].round(2)
+
+            st.markdown("### Edite os campos abaixo e clique em salvar")
+            edited = st.data_editor(
+                edit_df,
+                use_container_width=True,
+                hide_index=True,
+                disabled=["id", "categoria_app", "descricao_parcela", "status", "valor_principal"],
+                column_config={
+                    "id": st.column_config.NumberColumn("ID"),
+                    "categoria_app": st.column_config.TextColumn("Categoria"),
+                    "descricao_parcela": st.column_config.TextColumn("Parcela"),
+                    "status": st.column_config.TextColumn("Status"),
+                    "vencimento": st.column_config.DateColumn("Vencimento", format="DD/MM/YYYY"),
+                    "valor_principal": st.column_config.NumberColumn("Valor principal", format="%.2f"),
+                    "valor_total_atual": st.column_config.NumberColumn("Valor atual", format="%.2f"),
+                },
+                key="editor_parcelas",
+            )
+
+            if st.button("Salvar alterações das parcelas", type="primary"):
+                try:
+                    original = edit_df.set_index("id")
+                    novo = edited.set_index("id")
+
+                    alteradas = 0
+
+                    for parcela_id in novo.index:
+                        row_old = original.loc[parcela_id]
+                        row_new = novo.loc[parcela_id]
+
+                        venc_old = pd.to_datetime(row_old["vencimento"]).date()
+                        venc_new = pd.to_datetime(row_new["vencimento"]).date()
+
+                        valor_old = round(float(row_old["valor_total_atual"]), 2)
+                        valor_new = round(float(row_new["valor_total_atual"]), 2)
+
+                        if venc_old != venc_new or valor_old != valor_new:
+                            supabase.table("parcelas").update(
+                                {
+                                    "vencimento": str(venc_new),
+                                    "valor_total_atual": valor_new,
+                                    "updated_by": usuario_logado,
+                                    "updated_at": now_iso(),
+                                }
+                            ).eq("id", int(parcela_id)).execute()
+                            alteradas += 1
+
+                    if alteradas == 0:
+                        st.info("Nenhuma alteração detectada.")
+                    else:
+                        st.success(f"✅ {alteradas} parcela(s) atualizada(s) com sucesso!")
+                        time.sleep(0.8)
+                        st.rerun()
+
+                except Exception as e:
+                    st.error(f"Erro ao salvar alterações: {e}")
