@@ -117,8 +117,6 @@ with tab1:
         with c3:
             valor = st.number_input("Valor (R$)", min_value=0.0, step=10.0, value=0.0)
 
-        obs = st.text_input("Observação (opcional)", value="")
-
         submitted = st.form_submit_button("Salvar")
 
     if submitted:
@@ -128,8 +126,7 @@ with tab1:
             supabase.table("pagamentos").insert({
                 "data_pagamento": str(d),
                 "categoria": cat,
-                "valor": float(valor),
-                "observacao": obs
+                "valor": float(valor)
             }).execute()
 
             st.success("✅ Lançamento registrado!")
@@ -193,7 +190,7 @@ with tab3:
         df_show["valor"] = df_show["valor"].apply(lambda x: brl(float(x)))
 
         st.dataframe(
-            df_show[["id", "data_pagamento", "categoria", "valor", "observacao"]],
+            df_show[["id", "data_pagamento", "categoria", "valor"]],
             use_container_width=True,
             hide_index=True
         )
