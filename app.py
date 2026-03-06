@@ -9,13 +9,7 @@ import plotly.express as px
 # ✅ TEM QUE SER O PRIMEIRO COMANDO STREAMLIT
 st.set_page_config(
     page_title="Apartamento",
-    page_icon="Imagens/icone_apartamento.png",
-    layout="wide"
-)
-
-st.set_page_config(
-    page_title="Apartamento",
-    page_icon="Imagens/icone_apartamento.png",
+    page_icon="./imagens/icone_apartamento.png",
     layout="wide"
 )
 
