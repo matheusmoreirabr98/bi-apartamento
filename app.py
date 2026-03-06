@@ -140,6 +140,23 @@ with tab1:
 with tab2:
     st.subheader("Dashboard")
 
+    st.sidebar.title("Filtros")
+
+    df = get_df()
+    anos = sorted(df["data_pagamento"].dt.year.unique().tolist()) if not df.empty else []
+
+    ano = st.sidebar.selectbox("Ano", ["Todos"] + [str(a) for a in anos])
+    categoria = st.sidebar.selectbox("Categoria", ["Todas"] + (sorted(df["categoria"].unique().tolist()) if not df.empty else []))
+
+    st.markdown("### Progresso por categoria")
+
+    for cat, limite in LIMITES.items():
+        atual = counts.get(cat, 0)
+        prog = min(atual / limite, 1.0)
+        st.write(f"**{cat}** — {atual}/{limite}")
+        st.progress(prog)
+
+
     df = get_df()
     if df.empty:
         st.info("Ainda não há lançamentos.")
