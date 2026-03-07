@@ -313,14 +313,19 @@ with tab1:
                     x="situacao_grafico",
                     y="Quantidade",
                     color="situacao_grafico",
+                    labels={
+                        "situacao_grafico": "Quant. de Parcelas",
+                        "Quantidade": "Quantidade"
+                    },
                     color_discrete_map={
                         "Pago": "green",
                         "Pendente": "red",
                     },
                 )
-                fig_status.update_layout(showlegend=False)
-                st.plotly_chart(fig_status, use_container_width=True)
 
+                fig_status.update_layout(showlegend=False)
+
+                st.plotly_chart(fig_status, use_container_width=True)
         with c2:
             st.markdown("### Total Pago")
 
@@ -374,7 +379,7 @@ with tab2:
             categoria_filtro = st.selectbox("Categoria", categorias_disp)
 
         with f2:
-            status_disp = ["Todos", "pendente", "atrasado", "pago"]
+            status_disp = ["Todos", "Pendente", "Atrasado", "Pago"]
             status_filtro = st.selectbox("Status", status_disp)
 
         with f3:
@@ -425,7 +430,7 @@ with tab2:
 
         st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
-        st.markdown("### Resumo por status")
+        st.markdown("### Resumo Por Status")
         resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
 
         resumo_status = (
