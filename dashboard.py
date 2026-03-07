@@ -20,6 +20,19 @@ CORES_RESPONSAVEL = {
 }
 
 
+def _render_quatro_cards_em_linha(cards_html):
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        st.markdown(cards_html[0], unsafe_allow_html=True)
+    with c2:
+        st.markdown(cards_html[1], unsafe_allow_html=True)
+    with c3:
+        st.markdown(cards_html[2], unsafe_allow_html=True)
+    with c4:
+        st.markdown(cards_html[3], unsafe_allow_html=True)
+
+
 def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado):
     eh_direcional = contrato_selecionado == CONTRATO_DIRECIONAL
     eh_taxas = contrato_selecionado == CONTRATO_TAXAS
@@ -194,7 +207,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
-
     # =========================================================
     # PRÓXIMA PARCELA
     # =========================================================
@@ -205,25 +217,25 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     if abertas.empty:
         st.success("✅ Não há parcelas em aberto.")
     else:
-
         if eh_todos:
-
             prox_taxas = (
                 abertas[abertas["contrato"] == CONTRATO_TAXAS]
                 .sort_values(["data_vencimento", "numero_parcela"])
                 .head(1)
+                .copy()
             )
 
             prox_direcional = (
                 abertas[abertas["contrato"] == CONTRATO_DIRECIONAL]
                 .sort_values(["data_vencimento", "numero_parcela"])
                 .head(1)
+                .copy()
             )
 
             if not prox_taxas.empty:
                 row = prox_taxas.iloc[0]
 
-                render_cards_grid([
+                _render_quatro_cards_em_linha([
                     card_html("Contrato", CONTRATO_TAXAS, small=True),
                     card_html(
                         "Parcela",
@@ -238,12 +250,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         small=True,
                     ),
                     card_html("Valor", brl(row["valor_total"]), small=True),
-                ], cols=4)
+                ])
 
             if not prox_direcional.empty:
                 row = prox_direcional.iloc[0]
 
-                render_cards_grid([
+                _render_quatro_cards_em_linha([
                     card_html("Contrato", CONTRATO_DIRECIONAL, small=True),
                     card_html(
                         "Parcela",
@@ -258,12 +270,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         small=True,
                     ),
                     card_html("Valor", brl(row["valor_total"]), small=True),
-                ], cols=4)
+                ])
 
         else:
             proxima_parcela = (
                 abertas.sort_values(["data_vencimento", "numero_parcela"])
                 .head(1)
+                .copy()
             )
 
             prox = proxima_parcela.iloc[0]
