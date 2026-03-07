@@ -21,8 +21,37 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         st.info("Sem dados para exibir.")
         return
 
-    total_pago_geral = parcelas_contrato.loc[
-        parcelas_contrato["status"] == "pago", "valor_pago"
+    # =========================================================
+    # BASES DE CÁLCULO
+    # =========================================================
+    # Regra:
+    # - Taxas Cartoriais: dashboard principal considera apenas Compradores
+    # - Corretora aparece separadamente
+    # - Entrada Direcional: usa tudo
+    # - Todos os contratos: usa tudo
+
+    if eh_taxas:
+        parcelas_base = parcelas_contrato[
+            parcelas_contrato["responsavel_pagamento"] == "Compradores"
+        ].copy()
+
+        contagem_base = parcelas_contagem[
+            parcelas_contagem["responsavel_pagamento"] == "Compradores"
+        ].copy()
+
+        parcelas_corretora = parcelas_contrato[
+            parcelas_contrato["responsavel_pagamento"] == "Corretora"
+        ].copy()
+    else:
+        parcelas_base = parcelas_contrato.copy()
+        contagem_base = parcelas_contagem.copy()
+        parcelas_corretora = parcelas_contrato.iloc[0:0].copy()
+
+    # =========================================================
+    # TOTAIS PRINCIPAIS
+    # =========================================================
+    total_pago_geral = parcelas_base.loc[
+        parcelas_base["status"] == "pago", "valor_pago"
     ].fillna(0).sum()
 
     total_pago_compradores = parcelas_contrato.loc[
@@ -37,23 +66,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         "valor_pago",
     ].fillna(0).sum()
 
-    total_restante = parcelas_contrato.loc[
-        parcelas_contrato["status"] != "pago", "valor_total"
+    total_restante = parcelas_base.loc[
+        parcelas_base["status"] != "pago", "valor_total"
     ].fillna(0).sum()
 
-    total_geral = parcelas_contrato["valor_total"].fillna(0).sum()
+    total_geral = parcelas_base["valor_total"].fillna(0).sum()
 
-    total_pago_qtd = (parcelas_contagem["status"] == "pago").sum()
-    total_pendente_qtd = (parcelas_contagem["status_exibicao"] == "pendente").sum()
-    total_atrasado_qtd = (parcelas_contagem["status_exibicao"] == "atrasado").sum()
+    total_pago_qtd = (contagem_base["status"] == "pago").sum()
+    total_pendente_qtd = (contagem_base["status_exibicao"] == "pendente").sum()
+    total_atrasado_qtd = (contagem_base["status_exibicao"] == "atrasado").sum()
 
     progresso_pct = (total_pago_geral / total_geral * 100) if total_geral else 0
 
     juros_futuros = (
-        parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_total"].fillna(0)
-        - parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_principal"].fillna(0)
+        parcelas_base.loc[parcelas_base["status"] != "pago", "valor_total"].fillna(0)
+        - parcelas_base.loc[parcelas_base["status"] != "pago", "valor_principal"].fillna(0)
     ).sum()
 
+    # =========================================================
+    # CARDS
+    # =========================================================
     if eh_taxas:
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral))
@@ -129,10 +161,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
+    # =========================================================
+    # PRÓXIMA PARCELA
+    # =========================================================
     st.markdown("### Próxima Parcela")
 
     proxima_parcela = (
-        parcelas_contagem[parcelas_contagem["status"] != "pago"]
+        contagem_base[contagem_base["status"] != "pago"]
         .sort_values(["data_vencimento", "numero_parcela"])
         .head(1)
         .copy()
@@ -165,32 +200,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 card_html("Valor", brl(prox["valor_total"]), small=True),
             ], cols=3)
 
+    # =========================================================
+    # GRÁFICOS
+    # =========================================================
     c1, c2 = st.columns(2)
 
     with c1:
         st.markdown("### Evolução por Mês")
 
-        evolucao_df = parcelas_contrato.copy()
-
-        if "contrato" in evolucao_df.columns:
-            if eh_taxas:
-                evolucao_df = evolucao_df[evolucao_df["contrato"] == CONTRATO_TAXAS].copy()
-            elif eh_direcional:
-                evolucao_df = evolucao_df[evolucao_df["contrato"] == CONTRATO_DIRECIONAL].copy()
-            elif eh_todos:
-                evolucao_df = evolucao_df.copy()
+        evolucao_df = parcelas_base.copy()
 
         if "data_pagamento" in evolucao_df.columns:
             evolucao_df = evolucao_df[
-                (evolucao_df["status"] == "pago") &
-                (evolucao_df["data_pagamento"].notna())
+                (evolucao_df["status"] == "pago")
+                & (evolucao_df["data_pagamento"].notna())
             ].copy()
 
             if not evolucao_df.empty:
                 evolucao_df["data_pagamento"] = pd.to_datetime(
                     evolucao_df["data_pagamento"], errors="coerce"
                 )
-
                 evolucao_df = evolucao_df[evolucao_df["data_pagamento"].notna()].copy()
 
                 evolucao_df["mes_ref"] = evolucao_df["data_pagamento"].dt.to_period("M")
@@ -231,14 +260,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
 
     with c2:
-        st.markdown("### Total Pago")
+        st.markdown("### Distribuição dos Valores")
 
         grupos = []
 
         if total_pago_compradores > 0:
             grupos.append({"grupo": "Compradores", "valor": total_pago_compradores})
 
-        if total_pago_corretora > 0:
+        if not eh_taxas and total_pago_corretora > 0:
             grupos.append({"grupo": "Corretora", "valor": total_pago_corretora})
 
         if total_restante > 0:
