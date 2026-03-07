@@ -297,12 +297,12 @@ with tab1:
             st.markdown("### Situação das Parcelas")
 
             situacao_df = parcelas_contagem.copy()
-            situacao_df["Quant. Parcelas"] = situacao_df["status"].apply(
+            situacao_df["situacao_grafico"] = situacao_df["status"].apply(
                 lambda x: "Pago" if x == "pago" else "Pendente"
             )
 
             status_df = (
-                situacao_df.groupby("Quant. Parcelas", as_index=False)
+                situacao_df.groupby("situacao_grafico", as_index=False)
                 .size()
                 .rename(columns={"size": "Quantidade"})
             )
@@ -310,9 +310,9 @@ with tab1:
             if not status_df.empty:
                 fig_status = px.bar(
                     status_df,
-                    x="sQuant. Parcelas",
+                    x="situacao_grafico",
                     y="Quantidade",
-                    color="Quant. Parcelas",
+                    color="situacao_grafico",
                     color_discrete_map={
                         "Pago": "green",
                         "Pendente": "red",
