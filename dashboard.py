@@ -208,7 +208,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     with c1:
         st.markdown("### Evolução por Mês")
 
-        evolucao_df = parcelas_base.copy()
+        evolucao_df = parcelas_contrato.copy()
 
         if "data_pagamento" in evolucao_df.columns:
             evolucao_df = evolucao_df[
@@ -224,21 +224,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 evolucao_df["mes_ref"] = evolucao_df["data_pagamento"].dt.to_period("M")
                 evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
+                evolucao_df["Mes"] = evolucao_df["data_pagamento"].dt.strftime("%m/%Y")
 
                 mensal_df = (
-                    evolucao_df.groupby("mes_ordem", as_index=False)
+                    evolucao_df.groupby(["mes_ordem", "responsavel_pagamento"], as_index=False)
                     .agg(
                         **{
                             "Total Pago": ("valor_pago", "sum"),
                             "Qtd Parcelas": ("valor_pago", "size"),
                         }
                     )
-                    .sort_values("mes_ordem")
+                    .sort_values(["mes_ordem", "responsavel_pagamento"])
                 )
 
                 mensal_df["Mes"] = pd.to_datetime(
                     mensal_df["mes_ordem"], format="%Y-%m", errors="coerce"
                 ).dt.strftime("%m/%Y")
+
+                if eh_taxas:
+                    mensal_df = mensal_df[
+                        mensal_df["responsavel_pagamento"].isin(["Compradores", "Corretora"])
+                    ].copy()
+                elif eh_direcional:
+                    mensal_df = mensal_df[
+                        mensal_df["responsavel_pagamento"] == "Compradores"
+                    ].copy()
 
                 mensal_df["Texto"] = mensal_df["Qtd Parcelas"].apply(lambda x: f"{int(x)}")
 
@@ -246,26 +256,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     mensal_df,
                     x="Mes",
                     y="Total Pago",
+                    color="responsavel_pagamento",
                     markers=True,
                     text="Texto",
                     labels={
                         "Mes": "Mês",
                         "Total Pago": "Valor Pago",
+                        "responsavel_pagamento": "Responsável",
+                    },
+                    color_discrete_map={
+                        "Compradores": "green",
+                        "Corretora": "yellow",
                     },
                 )
 
                 fig_mensal.update_traces(
                     textposition="top center",
-                    hovertemplate="<b>%{x}</b><br>Valor Pago: R$ %{y:,.2f}<br>Parcelas Pagas: %{text}<extra></extra>",
+                    textfont_size=12,
                 )
 
                 fig_mensal.update_layout(
-                    showlegend=False,
                     xaxis_title="Mês",
                     yaxis_title="Valor Pago",
-)
-                fig_mensal.update_traces(textfont_size=12)
-                
+                    legend_title_text="",
+                )
+
                 st.plotly_chart(fig_mensal, use_container_width=True)
             else:
                 st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
@@ -296,7 +311,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 color="grupo",
                 color_discrete_map={
                     "Compradores": "#bcfb9bc7",
-                    "Corretora": "#80c98b",
+                    "Corretora": "#c9c780",
                     "Pendente": "#db8181",
                 },
             )
