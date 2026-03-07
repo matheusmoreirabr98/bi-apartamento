@@ -109,6 +109,7 @@ def load_parcelas():
         if "valor_pago" in df.columns:
             df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
 
+        # Linha resumo existe só no cenário das Taxas Cartoriais / Taxas Banco
         df["eh_linha_resumo"] = (
             df["categoria"].fillna("").astype(str).str.lower().eq("taxas banco")
             | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
@@ -406,22 +407,18 @@ with tab1:
         with c2:
             st.markdown("### Total Pago")
 
-            valor_pendente = parcelas_contrato.loc[
-                parcelas_contrato["status"] != "pago", "valor_total"
-            ].fillna(0).sum()
+            grupos = []
 
-            resp_df = pd.DataFrame(
-                {
-                    "grupo": ["Compradores", "Corretora", "Pendente"],
-                    "valor": [
-                        total_pago_compradores,
-                        total_pago_corretora,
-                        valor_pendente,
-                    ],
-                }
-            )
+            if total_pago_compradores > 0:
+                grupos.append({"grupo": "Compradores", "valor": total_pago_compradores})
 
-            resp_df = resp_df[resp_df["valor"] > 0].copy()
+            if total_pago_corretora > 0:
+                grupos.append({"grupo": "Corretora", "valor": total_pago_corretora})
+
+            if total_restante > 0:
+                grupos.append({"grupo": "Pendente", "valor": total_restante})
+
+            resp_df = pd.DataFrame(grupos)
 
             if not resp_df.empty:
                 fig_resp = px.pie(
@@ -508,6 +505,7 @@ with tab2:
 
         st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
+        # Regra especial só faz sentido para Taxas Cartoriais / Taxas Banco
         if categoria_filtro == "Taxas Banco" or resp_filtro == "Corretora":
             resumo_base = parc_f[parc_f["categoria"] == "Taxas Banco"].copy()
         else:
@@ -571,6 +569,10 @@ with tab3:
             )
             parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
 
+            responsaveis_opcoes = ["Compradores"]
+            if parcelas_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any():
+                responsaveis_opcoes.append("Corretora")
+
             c1, c2, c3 = st.columns(3)
             with c1:
                 data_pagamento = st.date_input(
@@ -589,10 +591,14 @@ with tab3:
                     key="novo_pagamento_valor",
                 )
             with c3:
+                idx_resp = 0
+                if parcela_sel["responsavel_pagamento"] in responsaveis_opcoes:
+                    idx_resp = responsaveis_opcoes.index(parcela_sel["responsavel_pagamento"])
+
                 responsavel_pagamento = st.selectbox(
                     "Responsável pelo pagamento",
-                    options=["Compradores", "Corretora"],
-                    index=0 if parcela_sel["responsavel_pagamento"] != "Corretora" else 1,
+                    options=responsaveis_opcoes,
+                    index=idx_resp,
                     key="novo_pagamento_resp",
                 )
 
@@ -650,6 +656,10 @@ with tab3:
             )
             parcela_paga = pagas[pagas["label"] == parcela_paga_label].iloc[0]
 
+            responsaveis_opcoes_edit = ["Compradores"]
+            if parcelas_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any():
+                responsaveis_opcoes_edit.append("Corretora")
+
             e1, e2, e3 = st.columns(3)
             with e1:
                 nova_data_pagamento = st.date_input(
@@ -670,10 +680,14 @@ with tab3:
                     key="edit_valor_pago",
                 )
             with e3:
+                idx_edit = 0
+                if parcela_paga["responsavel_pagamento"] in responsaveis_opcoes_edit:
+                    idx_edit = responsaveis_opcoes_edit.index(parcela_paga["responsavel_pagamento"])
+
                 novo_responsavel = st.selectbox(
                     "Responsável",
-                    options=["Compradores", "Corretora"],
-                    index=0 if parcela_paga["responsavel_pagamento"] != "Corretora" else 1,
+                    options=responsaveis_opcoes_edit,
+                    index=idx_edit,
                     key="edit_responsavel",
                 )
 
@@ -749,6 +763,10 @@ with tab4:
         edit_df["valor_principal"] = edit_df["valor_principal"].round(2)
         edit_df["valor_total"] = edit_df["valor_total"].round(2)
 
+        responsaveis_editor = ["Compradores"]
+        if parcelas_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any():
+            responsaveis_editor.append("Corretora")
+
         st.markdown("### Edite os campos abaixo e clique em salvar")
         edited = st.data_editor(
             edit_df.drop(columns=["eh_linha_resumo"]),
@@ -771,7 +789,7 @@ with tab4:
                 ),
                 "responsavel_pagamento": st.column_config.SelectboxColumn(
                     "Responsável",
-                    options=["Compradores", "Corretora"],
+                    options=responsaveis_editor,
                 ),
             },
             key="editor_parcelas_novo",
