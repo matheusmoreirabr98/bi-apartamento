@@ -146,7 +146,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         return
 
     # =========================================================
-    # REGISTRAR PAGAMENTO - SOMENTE PRÓXIMA PENDENTE
+    # REGISTRAR PAGAMENTO - PARCELAS PENDENTES
     # =========================================================
     st.markdown("### Marcar parcela como paga")
 
@@ -156,11 +156,16 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         st.success("✅ Todas as parcelas desse contrato já estão pagas.")
     else:
         pendentes = pendentes.sort_values(["data_vencimento", "numero_parcela"]).copy()
+        pendentes["label"] = pendentes.apply(lambda row: _build_label_pendente(row, eh_todos=eh_todos), axis=1)
 
-        # somente a próxima pendente
-        parcela_sel = pendentes.iloc[0]
+        parcela_label = st.selectbox(
+            "Selecione a parcela",
+            pendentes["label"].tolist(),
+            index=0,
+            key="tab3_selecao_pendente",
+        )
 
-        st.info(_build_label_pendente(parcela_sel, eh_todos=eh_todos))
+        parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
 
         if parcela_sel["contrato"] == CONTRATO_DIRECIONAL:
             responsaveis_opcoes = ["Compradores"]
@@ -263,14 +268,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     e1, e2, e3 = st.columns(3)
 
     with e1:
+        valor_data_atual = _to_date_or_none(parcela_paga.get("data_pagamento")) or date.today()
         nova_data_pagamento = st.date_input(
             "Nova data do pagamento",
-            value=(
-                parcela_paga["data_pagamento"].date()
-                if pd.notnull(parcela_paga.get("data_pagamento"))
-                and hasattr(parcela_paga["data_pagamento"], "date")
-                else _to_date_or_none(parcela_paga.get("data_pagamento")) or date.today()
-            ),
+            value=valor_data_atual,
             format="DD/MM/YYYY",
             key="edit_data_pagamento",
         )
