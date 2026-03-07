@@ -26,10 +26,9 @@ USUARIOS = {
 USUARIO_PODE_EDITAR = "Matheus Moreira"
 
 STATUS_ORDEM = {
-    "a vencer": 1,
-    "pendente": 2,
-    "atrasado": 3,
-    "pago": 4,
+    "pendente": 1,
+    "atrasado": 2,
+    "pago": 3,
 }
 
 # =========================================================
@@ -45,11 +44,6 @@ def brl(v):
 
 def now_iso():
     return datetime.utcnow().isoformat()
-
-
-def to_df(res):
-    df = pd.DataFrame(res.data)
-    return df if not df.empty else pd.DataFrame()
 
 
 def load_parcelas():
@@ -70,7 +64,14 @@ def load_parcelas():
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
 
-        for col in ["contrato", "categoria", "origem", "descricao_parcela", "status", "responsavel_pagamento"]:
+        for col in [
+            "contrato",
+            "categoria",
+            "origem",
+            "descricao_parcela",
+            "status",
+            "responsavel_pagamento",
+        ]:
             if col not in df.columns:
                 df[col] = None
 
@@ -82,32 +83,25 @@ def load_parcelas():
 
 
 def normalizar_status(df):
-    """
-    Padroniza visualmente o status no app sem depender 100% do que está no banco.
-    """
     if df.empty:
         return df
 
     hoje = pd.Timestamp.today().normalize()
-    mes_atual = hoje.to_period("M")
 
     df = df.copy()
     df["status_exibicao"] = df["status"].fillna("pendente")
 
-    # se estiver pago, mantém pago
-    # se não estiver pago e vencer neste mês, mostra "a vencer"
-    # se não estiver pago e já venceu, mostra "atrasado"
     nao_pago = df["status_exibicao"] != "pago"
-
-    df.loc[
-        nao_pago & (df["data_vencimento"].dt.to_period("M") == mes_atual),
-        "status_exibicao",
-    ] = "a vencer"
 
     df.loc[
         nao_pago & (df["data_vencimento"] < hoje),
         "status_exibicao",
     ] = "atrasado"
+
+    df.loc[
+        nao_pago & (df["data_vencimento"] >= hoje),
+        "status_exibicao",
+    ] = "pendente"
 
     df["status_ordem"] = df["status_exibicao"].map(STATUS_ORDEM).fillna(999)
     return df
@@ -202,68 +196,112 @@ with tab1:
     if parcelas_contrato.empty:
         st.info("Sem dados para exibir.")
     else:
-        total_parcelas = len(parcelas_contrato)
-        total_pago = parcelas_contrato.loc[parcelas_contrato["status"] == "pago", "valor_pago"].sum()
-        total_restante = parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_total"].sum()
+        total_pago_geral = parcelas_contrato.loc[
+            parcelas_contrato["status"] == "pago", "valor_pago"
+        ].sum()
+
+        total_pago_compradores = parcelas_contrato.loc[
+            (parcelas_contrato["status"] == "pago")
+            & (parcelas_contrato["responsavel_pagamento"] == "Compradores"),
+            "valor_pago",
+        ].sum()
+
+        total_pago_corretora = parcelas_contrato.loc[
+            (parcelas_contrato["status"] == "pago")
+            & (parcelas_contrato["responsavel_pagamento"] == "Corretora"),
+            "valor_pago",
+        ].sum()
+
+        total_restante = parcelas_contrato.loc[
+            parcelas_contrato["status"] != "pago", "valor_total"
+        ].sum()
+
         total_geral = parcelas_contrato["valor_total"].sum()
 
         total_pago_qtd = (parcelas_contrato["status"] == "pago").sum()
-        total_avencer_qtd = (parcelas_contrato["status_exibicao"] == "a vencer").sum()
         total_pendente_qtd = (parcelas_contrato["status_exibicao"] == "pendente").sum()
         total_atrasado_qtd = (parcelas_contrato["status_exibicao"] == "atrasado").sum()
 
-        progresso_pct = (total_pago / total_geral * 100) if total_geral else 0
+        progresso_pct = (total_pago_geral / total_geral * 100) if total_geral else 0
 
-        juros_previstos = (
+        juros_futuros = (
             parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_total"]
             - parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_principal"]
         ).sum()
 
-        economia_real = (
-            parcelas_contrato.loc[parcelas_contrato["status"] == "pago", "valor_total"]
-            - parcelas_contrato.loc[parcelas_contrato["status"] == "pago", "valor_pago"]
-        ).sum()
-
         k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Total pago", brl(total_pago))
-        k2.metric("Total restante", brl(total_restante))
-        k3.metric("Total geral", brl(total_geral))
-        k4.metric("Progresso financeiro", f"{progresso_pct:.1f}%")
+        k1.metric("Total pago geral", brl(total_pago_geral))
+        k2.metric("Total pago compradores", brl(total_pago_compradores))
+        k3.metric("Total pago corretora", brl(total_pago_corretora))
+        k4.metric("Total geral", brl(total_geral))
 
         k5, k6, k7, k8 = st.columns(4)
-        k5.metric("Parcelas pagas", int(total_pago_qtd))
-        k6.metric("A vencer", int(total_avencer_qtd))
+        k5.metric("Progresso", f"{progresso_pct:.1f}%")
+        k6.metric("Parcelas pagas", int(total_pago_qtd))
         k7.metric("Pendentes", int(total_pendente_qtd))
         k8.metric("Atrasadas", int(total_atrasado_qtd))
 
         k9, k10 = st.columns(2)
-        k9.metric("Juros futuros embutidos", brl(juros_previstos))
-        k10.metric("Economia real obtida", brl(economia_real))
+        k9.metric("Total restante", brl(total_restante))
+        k10.metric("Juros futuros embutidos", brl(juros_futuros))
 
         st.progress(min(max(progresso_pct / 100, 0), 1.0))
+
+        st.markdown("### Próxima parcela a pagar")
+
+        proxima_parcela = (
+            parcelas_contrato[parcelas_contrato["status"] != "pago"]
+            .sort_values(["data_vencimento", "numero_parcela"])
+            .head(1)
+            .copy()
+        )
+
+        if proxima_parcela.empty:
+            st.success("✅ Não há parcelas em aberto.")
+        else:
+            prox = proxima_parcela.iloc[0]
+
+            p1, p2, p3, p4 = st.columns(4)
+            p1.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
+            p2.metric("Descrição", prox["descricao_parcela"])
+            p3.metric(
+                "Vencimento",
+                prox["data_vencimento"].strftime("%d/%m/%Y")
+                if pd.notnull(prox["data_vencimento"])
+                else "-",
+            )
+            p4.metric("Valor", brl(prox["valor_total"]))
 
         c1, c2 = st.columns(2)
 
         with c1:
             st.markdown("### Situação das parcelas")
+            situacao_df = parcelas_contrato.copy()
+            situacao_df["situacao_grafico"] = situacao_df["status"].apply(
+                lambda x: "Pago" if x == "pago" else "Pendente"
+            )
+
             status_df = (
-                parcelas_contrato.groupby("status_exibicao", as_index=False)
+                situacao_df.groupby("situacao_grafico", as_index=False)
                 .size()
                 .rename(columns={"size": "quantidade"})
             )
+
             if not status_df.empty:
-                fig_status = px.bar(status_df, x="status_exibicao", y="quantidade")
+                fig_status = px.bar(status_df, x="situacao_grafico", y="quantidade")
                 st.plotly_chart(fig_status, use_container_width=True)
 
         with c2:
-            st.markdown("### Total por responsável")
+            st.markdown("### Total pago por responsável")
             resp_df = (
-                parcelas_contrato.groupby("responsavel_pagamento", as_index=False)["valor_total"]
+                parcelas_contrato[parcelas_contrato["status"] == "pago"]
+                .groupby("responsavel_pagamento", as_index=False)["valor_pago"]
                 .sum()
-                .sort_values("valor_total", ascending=False)
+                .sort_values("valor_pago", ascending=False)
             )
+
             if not resp_df.empty:
-                fig_resp = px.pie(resp_df, names="responsavel_pagamento", values="valor_total")
+                fig_resp = px.pie(resp_df, names="responsavel_pagamento", values="valor_pago")
                 st.plotly_chart(fig_resp, use_container_width=True)
 
         c3, c4 = st.columns(2)
@@ -317,7 +355,9 @@ with tab1:
                 ]
             ].copy()
 
-            proximas_show["data_vencimento"] = pd.to_datetime(proximas_show["data_vencimento"]).dt.date
+            proximas_show["data_vencimento"] = pd.to_datetime(
+                proximas_show["data_vencimento"]
+            ).dt.date
             proximas_show["valor_principal"] = proximas_show["valor_principal"].apply(brl)
             proximas_show["valor_total"] = proximas_show["valor_total"].apply(brl)
 
@@ -336,15 +376,19 @@ with tab2:
         f1, f2, f3 = st.columns(3)
 
         with f1:
-            categorias_disp = ["Todas"] + sorted(parcelas_contrato["categoria"].dropna().unique().tolist())
+            categorias_disp = ["Todas"] + sorted(
+                parcelas_contrato["categoria"].dropna().unique().tolist()
+            )
             categoria_filtro = st.selectbox("Categoria", categorias_disp)
 
         with f2:
-            status_disp = ["Todos", "a vencer", "pendente", "atrasado", "pago"]
+            status_disp = ["Todos", "pendente", "atrasado", "pago"]
             status_filtro = st.selectbox("Status", status_disp)
 
         with f3:
-            resp_disp = ["Todos"] + sorted(parcelas_contrato["responsavel_pagamento"].dropna().unique().tolist())
+            resp_disp = ["Todos"] + sorted(
+                parcelas_contrato["responsavel_pagamento"].dropna().unique().tolist()
+            )
             resp_filtro = st.selectbox("Responsável", resp_disp)
 
         parc_f = parcelas_contrato.copy()
@@ -380,7 +424,9 @@ with tab2:
         ].copy()
 
         parc_show["data_vencimento"] = pd.to_datetime(parc_show["data_vencimento"]).dt.date
-        parc_show["data_pagamento"] = pd.to_datetime(parc_show["data_pagamento"], errors="coerce").dt.date
+        parc_show["data_pagamento"] = pd.to_datetime(
+            parc_show["data_pagamento"], errors="coerce"
+        ).dt.date
         parc_show["valor_principal"] = parc_show["valor_principal"].apply(brl)
         parc_show["valor_total"] = parc_show["valor_total"].apply(brl)
         parc_show["valor_pago"] = parc_show["valor_pago"].apply(brl)
@@ -500,14 +546,20 @@ with tab3:
                 + pagas["valor_pago"].apply(brl)
             )
 
-            parcela_paga_label = st.selectbox("Selecione a parcela paga", pagas["label"].tolist(), key="edit_pago")
+            parcela_paga_label = st.selectbox(
+                "Selecione a parcela paga",
+                pagas["label"].tolist(),
+                key="edit_pago",
+            )
             parcela_paga = pagas[pagas["label"] == parcela_paga_label].iloc[0]
 
             e1, e2, e3 = st.columns(3)
             with e1:
                 nova_data_pagamento = st.date_input(
                     "Nova data do pagamento",
-                    value=parcela_paga["data_pagamento"].date() if pd.notnull(parcela_paga["data_pagamento"]) else date.today(),
+                    value=parcela_paga["data_pagamento"].date()
+                    if pd.notnull(parcela_paga["data_pagamento"])
+                    else date.today(),
                     format="DD/MM/YYYY",
                     key="edit_data_pagamento",
                 )
