@@ -308,7 +308,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "responsavel_pagamento": "Responsável",
                         },
                         color_discrete_map={
-                            "Compradores": "#bcfb9bc7",
+                            "Compradores": "#bcfb9b",
                             "Corretora": "#c9c780",
                         },
                     )
@@ -355,8 +355,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 values="valor",
                 color="grupo",
                 color_discrete_map={
-                    "Compradores": "#bcfb9bc7",
-                    "Corretora": "#c9c780",
+                    "Compradores": "#56c718",
+                    "Corretora": "#d4c300",
                     "Pendente": "#db8181",
                 },
             )
