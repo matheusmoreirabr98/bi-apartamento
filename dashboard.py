@@ -22,6 +22,42 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         return
 
     # =========================================================
+    # NORMALIZAÇÃO DE CAMPOS DE TEXTO
+    # =========================================================
+    parcelas_contrato = parcelas_contrato.copy()
+    parcelas_contagem = parcelas_contagem.copy()
+
+    if "responsavel_pagamento" in parcelas_contrato.columns:
+        parcelas_contrato["responsavel_pagamento"] = (
+            parcelas_contrato["responsavel_pagamento"]
+            .astype(str)
+            .str.strip()
+            .str.title()
+        )
+
+    if "responsavel_pagamento" in parcelas_contagem.columns:
+        parcelas_contagem["responsavel_pagamento"] = (
+            parcelas_contagem["responsavel_pagamento"]
+            .astype(str)
+            .str.strip()
+            .str.title()
+        )
+
+    if "contrato" in parcelas_contrato.columns:
+        parcelas_contrato["contrato"] = (
+            parcelas_contrato["contrato"]
+            .astype(str)
+            .str.strip()
+        )
+
+    if "contrato" in parcelas_contagem.columns:
+        parcelas_contagem["contrato"] = (
+            parcelas_contagem["contrato"]
+            .astype(str)
+            .str.strip()
+        )
+
+    # =========================================================
     # BASES DE CÁLCULO
     # =========================================================
     # Regra:
@@ -38,14 +74,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         contagem_base = parcelas_contagem[
             parcelas_contagem["responsavel_pagamento"] == "Compradores"
         ].copy()
-
-        parcelas_corretora = parcelas_contrato[
-            parcelas_contrato["responsavel_pagamento"] == "Corretora"
-        ].copy()
     else:
         parcelas_base = parcelas_contrato.copy()
         contagem_base = parcelas_contagem.copy()
-        parcelas_corretora = parcelas_contrato.iloc[0:0].copy()
 
     # =========================================================
     # TOTAIS PRINCIPAIS
@@ -210,6 +241,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         evolucao_df = parcelas_contrato.copy()
 
+        if "responsavel_pagamento" in evolucao_df.columns:
+            evolucao_df["responsavel_pagamento"] = (
+                evolucao_df["responsavel_pagamento"]
+                .astype(str)
+                .str.strip()
+                .str.title()
+            )
+
         if "data_pagamento" in evolucao_df.columns:
             evolucao_df = evolucao_df[
                 (evolucao_df["status"] == "pago")
@@ -222,9 +261,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
                 evolucao_df = evolucao_df[evolucao_df["data_pagamento"].notna()].copy()
 
+                evolucao_df = evolucao_df[
+                    evolucao_df["responsavel_pagamento"].isin(["Compradores", "Corretora"])
+                ].copy()
+
                 evolucao_df["mes_ref"] = evolucao_df["data_pagamento"].dt.to_period("M")
                 evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
-                evolucao_df["Mes"] = evolucao_df["data_pagamento"].dt.strftime("%m/%Y")
 
                 mensal_df = (
                     evolucao_df.groupby(["mes_ordem", "responsavel_pagamento"], as_index=False)
@@ -250,38 +292,41 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         mensal_df["responsavel_pagamento"] == "Compradores"
                     ].copy()
 
-                mensal_df["Texto"] = mensal_df["Qtd Parcelas"].apply(lambda x: f"{int(x)}")
+                if not mensal_df.empty:
+                    mensal_df["Texto"] = mensal_df["Qtd Parcelas"].apply(lambda x: f"{int(x)}")
 
-                fig_mensal = px.line(
-                    mensal_df,
-                    x="Mes",
-                    y="Total Pago",
-                    color="responsavel_pagamento",
-                    markers=True,
-                    text="Texto",
-                    labels={
-                        "Mes": "Mês",
-                        "Total Pago": "Valor Pago",
-                        "responsavel_pagamento": "Responsável",
-                    },
-                    color_discrete_map={
-                        "Compradores": "#bcfb9bc7",
-                        "Corretora": "#c9c780",
-                    },
-                )
+                    fig_mensal = px.line(
+                        mensal_df,
+                        x="Mes",
+                        y="Total Pago",
+                        color="responsavel_pagamento",
+                        markers=True,
+                        text="Texto",
+                        labels={
+                            "Mes": "Mês",
+                            "Total Pago": "Valor Pago",
+                            "responsavel_pagamento": "Responsável",
+                        },
+                        color_discrete_map={
+                            "Compradores": "#bcfb9bc7",
+                            "Corretora": "#c9c780",
+                        },
+                    )
 
-                fig_mensal.update_traces(
-                    textposition="top center",
-                    textfont_size=12,
-                )
+                    fig_mensal.update_traces(
+                        textposition="top center",
+                        textfont_size=12,
+                    )
 
-                fig_mensal.update_layout(
-                    xaxis_title="Mês",
-                    yaxis_title="Valor Pago",
-                    legend_title_text="",
-                )
+                    fig_mensal.update_layout(
+                        xaxis_title="Mês",
+                        yaxis_title="Valor Pago",
+                        legend_title_text="",
+                    )
 
-                st.plotly_chart(fig_mensal, use_container_width=True)
+                    st.plotly_chart(fig_mensal, use_container_width=True)
+                else:
+                    st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
             else:
                 st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
@@ -295,7 +340,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         if total_pago_compradores > 0:
             grupos.append({"grupo": "Compradores", "valor": total_pago_compradores})
 
-        if not eh_taxas and total_pago_corretora > 0:
+        if total_pago_corretora > 0:
             grupos.append({"grupo": "Corretora", "valor": total_pago_corretora})
 
         if total_restante > 0:
