@@ -51,7 +51,6 @@ st.markdown("""
 
 </style>
 """, unsafe_allow_html=True)
-st.set_page_config(page_title="Apartamento 3.0", layout="wide")
 st.title("🏠 Apartamento")
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
