@@ -38,6 +38,10 @@ STATUS_MAP_FILTRO = {
     "Pago": "pago",
 }
 
+CONTRATO_TODOS = "Todos os contratos"
+CONTRATO_TAXAS = "Taxas Cartoriais"
+CONTRATO_DIRECIONAL = "Entrada Direcional"
+
 # =========================================================
 # FUNÇÕES UTILITÁRIAS
 # =========================================================
@@ -109,7 +113,6 @@ def load_parcelas():
         if "valor_pago" in df.columns:
             df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
 
-        # Linha resumo existe só no cenário das Taxas Cartoriais / Taxas Banco
         df["eh_linha_resumo"] = (
             df["categoria"].fillna("").astype(str).str.lower().eq("taxas banco")
             | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
@@ -150,7 +153,15 @@ def normalizar_status(df):
 def filtrar_contrato(df, contrato):
     if df.empty:
         return df
+    if contrato == CONTRATO_TODOS:
+        return df.copy()
     return df[df["contrato"] == contrato].copy()
+
+
+def contrato_tem_corretora(df_contrato):
+    if df_contrato.empty:
+        return False
+    return df_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any()
 
 
 def registrar_pagamento(parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
@@ -261,14 +272,20 @@ contratos_disponiveis = []
 if not parcelas.empty and "contrato" in parcelas.columns:
     contratos_disponiveis = sorted(parcelas["contrato"].dropna().unique().tolist())
 
-contrato_padrao = "Taxas Cartoriais" if "Taxas Cartoriais" in contratos_disponiveis else (
+opcoes_contrato = [CONTRATO_TODOS] + contratos_disponiveis if contratos_disponiveis else ["Sem dados"]
+
+contrato_padrao = CONTRATO_TAXAS if CONTRATO_TAXAS in contratos_disponiveis else (
     contratos_disponiveis[0] if contratos_disponiveis else None
 )
 
+indice_padrao = 0
+if contrato_padrao and contrato_padrao in opcoes_contrato:
+    indice_padrao = opcoes_contrato.index(contrato_padrao)
+
 contrato_selecionado = st.selectbox(
     "Selecione o contrato",
-    options=contratos_disponiveis if contratos_disponiveis else ["Sem dados"],
-    index=contratos_disponiveis.index(contrato_padrao) if contrato_padrao in contratos_disponiveis else 0,
+    options=opcoes_contrato,
+    index=indice_padrao if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else 0,
 )
 
 if contrato_selecionado == "Sem dados":
@@ -276,6 +293,10 @@ if contrato_selecionado == "Sem dados":
 
 parcelas_contrato = filtrar_contrato(parcelas, contrato_selecionado)
 parcelas_contagem = parcelas_contrato[~parcelas_contrato["eh_linha_resumo"]].copy()
+
+eh_direcional = contrato_selecionado == CONTRATO_DIRECIONAL
+eh_taxas = contrato_selecionado == CONTRATO_TAXAS
+eh_todos = contrato_selecionado == CONTRATO_TODOS
 
 # =========================================================
 # TABS
@@ -328,11 +349,17 @@ with tab1:
             - parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_principal"].fillna(0)
         ).sum()
 
-        k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Pagamento Total", brl(total_pago_geral))
-        k2.metric("Pagamento - Compradores", brl(total_pago_compradores))
-        k3.metric("Pagamento - Corretora", brl(total_pago_corretora))
-        k4.metric("Total Geral", brl(total_geral))
+        if eh_direcional:
+            k1, k2, k3 = st.columns(3)
+            k1.metric("Pagamento Total", brl(total_pago_geral))
+            k2.metric("Total Geral", brl(total_geral))
+            k3.metric("Total Restante", brl(total_restante))
+        else:
+            k1, k2, k3, k4 = st.columns(4)
+            k1.metric("Pagamento Total", brl(total_pago_geral))
+            k2.metric("Pagamento - Compradores", brl(total_pago_compradores))
+            k3.metric("Pagamento - Corretora", brl(total_pago_corretora))
+            k4.metric("Total Geral", brl(total_geral))
 
         k5, k6, k7, k8 = st.columns(4)
         k5.metric("Progresso", f"{progresso_pct:.1f}%")
@@ -340,9 +367,13 @@ with tab1:
         k7.metric("Quant. Parcelas Pendentes", int(total_pendente_qtd))
         k8.metric("Quant. Parcelas Atrasadas", int(total_atrasado_qtd))
 
-        k9, k10 = st.columns(2)
-        k9.metric("Total Restante", brl(total_restante))
-        k10.metric("Juros Futuros Embutidos", brl(juros_futuros))
+        if eh_direcional:
+            k9 = st.columns(1)[0]
+            k9.metric("Juros Futuros Embutidos", brl(juros_futuros))
+        else:
+            k9, k10 = st.columns(2)
+            k9.metric("Total Restante", brl(total_restante))
+            k10.metric("Juros Futuros Embutidos", brl(juros_futuros))
 
         st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
@@ -360,15 +391,27 @@ with tab1:
         else:
             prox = proxima_parcela.iloc[0]
 
-            p1, p2, p3 = st.columns(3)
-            p1.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
-            p2.metric(
-                "Vencimento",
-                prox["data_vencimento"].strftime("%d/%m/%Y")
-                if pd.notnull(prox["data_vencimento"])
-                else "-",
-            )
-            p3.metric("Valor", brl(prox["valor_total"]))
+            if eh_todos:
+                p1, p2, p3, p4 = st.columns(4)
+                p1.metric("Contrato", prox["contrato"])
+                p2.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
+                p3.metric(
+                    "Vencimento",
+                    prox["data_vencimento"].strftime("%d/%m/%Y")
+                    if pd.notnull(prox["data_vencimento"])
+                    else "-",
+                )
+                p4.metric("Valor", brl(prox["valor_total"]))
+            else:
+                p1, p2, p3 = st.columns(3)
+                p1.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
+                p2.metric(
+                    "Vencimento",
+                    prox["data_vencimento"].strftime("%d/%m/%Y")
+                    if pd.notnull(prox["data_vencimento"])
+                    else "-",
+                )
+                p3.metric("Valor", brl(prox["valor_total"]))
 
         c1, c2 = st.columns(2)
 
@@ -444,56 +487,79 @@ with tab2:
     if parcelas_contrato.empty:
         st.info("Sem parcelas cadastradas.")
     else:
-        f1, f2, f3 = st.columns(3)
+        status_disp = ["Todos", "Pendente", "Atrasado", "Pago"]
 
-        with f1:
-            categorias_disp = ["Todas"] + sorted(
-                parcelas_contrato["categoria"].dropna().unique().tolist()
-            )
-            categoria_filtro = st.selectbox("Categoria", categorias_disp)
+        if eh_direcional:
+            f1, f2, f3 = st.columns(3)
 
-        with f2:
-            status_disp = ["Todos", "Pendente", "Atrasado", "Pago"]
-            status_filtro = st.selectbox("Status", status_disp)
+            with f1:
+                st.selectbox("Categoria", ["Entrada Direcional"], index=0, disabled=True, key="dir_cat_fixa")
+                categoria_filtro = "Entrada Direcional"
 
-        with f3:
-            resp_disp = ["Todos"] + sorted(
-                parcelas_contrato["responsavel_pagamento"].dropna().unique().tolist()
-            )
-            resp_filtro = st.selectbox("Responsável", resp_disp)
+            with f2:
+                status_filtro = st.selectbox("Status", status_disp, key="dir_status")
+
+            with f3:
+                st.selectbox("Responsável", ["Compradores"], index=0, disabled=True, key="dir_resp_fixo")
+                resp_filtro = "Compradores"
+
+        else:
+            f1, f2, f3 = st.columns(3)
+
+            with f1:
+                categorias_disp = ["Todas"] + sorted(
+                    parcelas_contrato["categoria"].dropna().unique().tolist()
+                )
+                categoria_filtro = st.selectbox("Categoria", categorias_disp)
+
+            with f2:
+                status_filtro = st.selectbox("Status", status_disp)
+
+            with f3:
+                resp_disp = ["Todos"] + sorted(
+                    parcelas_contrato["responsavel_pagamento"].dropna().unique().tolist()
+                )
+                resp_filtro = st.selectbox("Responsável", resp_disp)
 
         parc_f = parcelas_contrato.copy()
 
-        if categoria_filtro != "Todas":
-            parc_f = parc_f[parc_f["categoria"] == categoria_filtro]
+        if eh_direcional:
+            parc_f = parc_f[parc_f["categoria"] == "Entrada Direcional"]
+            parc_f = parc_f[parc_f["responsavel_pagamento"] == "Compradores"]
+        else:
+            if categoria_filtro != "Todas":
+                parc_f = parc_f[parc_f["categoria"] == categoria_filtro]
+
+            if resp_filtro != "Todos":
+                parc_f = parc_f[parc_f["responsavel_pagamento"] == resp_filtro]
 
         status_filtro_real = STATUS_MAP_FILTRO.get(status_filtro)
         if status_filtro_real:
             parc_f = parc_f[parc_f["status_exibicao"] == status_filtro_real]
 
-        if resp_filtro != "Todos":
-            parc_f = parc_f[parc_f["responsavel_pagamento"] == resp_filtro]
-
         parc_f = parc_f.sort_values(
             ["status_ordem", "data_vencimento", "numero_parcela"]
         ).copy()
 
-        parc_show = parc_f[
-            [
-                "origem",
-                "categoria",
-                "descricao_parcela",
-                "numero_parcela",
-                "total_parcelas",
-                "data_vencimento",
-                "data_pagamento",
-                "valor_principal",
-                "valor_total",
-                "valor_pago",
-                "status_exibicao",
-                "responsavel_pagamento",
-            ]
-        ].copy()
+        colunas_show = [
+            "origem",
+            "categoria",
+            "descricao_parcela",
+            "numero_parcela",
+            "total_parcelas",
+            "data_vencimento",
+            "data_pagamento",
+            "valor_principal",
+            "valor_total",
+            "valor_pago",
+            "status_exibicao",
+            "responsavel_pagamento",
+        ]
+
+        if eh_todos:
+            colunas_show = ["contrato"] + colunas_show
+
+        parc_show = parc_f[colunas_show].copy()
 
         parc_show["data_vencimento"] = pd.to_datetime(parc_show["data_vencimento"]).dt.date
         parc_show["data_pagamento"] = pd.to_datetime(
@@ -505,11 +571,13 @@ with tab2:
 
         st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
-        # Regra especial só faz sentido para Taxas Cartoriais / Taxas Banco
-        if categoria_filtro == "Taxas Banco" or resp_filtro == "Corretora":
-            resumo_base = parc_f[parc_f["categoria"] == "Taxas Banco"].copy()
+        if eh_direcional:
+            resumo_base = parc_f.copy()
         else:
-            resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
+            if categoria_filtro == "Taxas Banco" or resp_filtro == "Corretora":
+                resumo_base = parc_f[parc_f["categoria"] == "Taxas Banco"].copy()
+            else:
+                resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
 
         if not resumo_base.empty:
             st.markdown("### Resumo Por Status")
@@ -550,17 +618,32 @@ with tab3:
         else:
             pendentes = pendentes.sort_values(["data_vencimento", "numero_parcela"]).copy()
 
-            pendentes["label"] = (
-                pendentes["descricao_parcela"]
-                + " | "
-                + pendentes["numero_parcela"].astype(str)
-                + "/"
-                + pendentes["total_parcelas"].astype(str)
-                + " | vence "
-                + pendentes["data_vencimento"].dt.strftime("%d/%m/%Y")
-                + " | total "
-                + pendentes["valor_total"].apply(brl)
-            )
+            if eh_todos:
+                pendentes["label"] = (
+                    pendentes["contrato"]
+                    + " | "
+                    + pendentes["descricao_parcela"]
+                    + " | "
+                    + pendentes["numero_parcela"].astype(str)
+                    + "/"
+                    + pendentes["total_parcelas"].astype(str)
+                    + " | vence "
+                    + pendentes["data_vencimento"].dt.strftime("%d/%m/%Y")
+                    + " | total "
+                    + pendentes["valor_total"].apply(brl)
+                )
+            else:
+                pendentes["label"] = (
+                    pendentes["descricao_parcela"]
+                    + " | "
+                    + pendentes["numero_parcela"].astype(str)
+                    + "/"
+                    + pendentes["total_parcelas"].astype(str)
+                    + " | vence "
+                    + pendentes["data_vencimento"].dt.strftime("%d/%m/%Y")
+                    + " | total "
+                    + pendentes["valor_total"].apply(brl)
+                )
 
             parcela_label = st.selectbox(
                 "Selecione a parcela",
@@ -569,9 +652,12 @@ with tab3:
             )
             parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
 
-            responsaveis_opcoes = ["Compradores"]
-            if parcelas_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any():
-                responsaveis_opcoes.append("Corretora")
+            if parcela_sel["contrato"] == CONTRATO_DIRECIONAL:
+                responsaveis_opcoes = ["Compradores"]
+            else:
+                responsaveis_opcoes = ["Compradores"]
+                if parcelas_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any():
+                    responsaveis_opcoes.append("Corretora")
 
             c1, c2, c3 = st.columns(3)
             with c1:
@@ -591,16 +677,26 @@ with tab3:
                     key="novo_pagamento_valor",
                 )
             with c3:
-                idx_resp = 0
-                if parcela_sel["responsavel_pagamento"] in responsaveis_opcoes:
-                    idx_resp = responsaveis_opcoes.index(parcela_sel["responsavel_pagamento"])
+                if parcela_sel["contrato"] == CONTRATO_DIRECIONAL:
+                    st.selectbox(
+                        "Responsável pelo pagamento",
+                        options=["Compradores"],
+                        index=0,
+                        disabled=True,
+                        key="novo_pagamento_resp_dir",
+                    )
+                    responsavel_pagamento = "Compradores"
+                else:
+                    idx_resp = 0
+                    if parcela_sel["responsavel_pagamento"] in responsaveis_opcoes:
+                        idx_resp = responsaveis_opcoes.index(parcela_sel["responsavel_pagamento"])
 
-                responsavel_pagamento = st.selectbox(
-                    "Responsável pelo pagamento",
-                    options=responsaveis_opcoes,
-                    index=idx_resp,
-                    key="novo_pagamento_resp",
-                )
+                    responsavel_pagamento = st.selectbox(
+                        "Responsável pelo pagamento",
+                        options=responsaveis_opcoes,
+                        index=idx_resp,
+                        key="novo_pagamento_resp",
+                    )
 
             if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
                 try:
@@ -637,17 +733,32 @@ with tab3:
         else:
             pagas = pagas.sort_values(["data_pagamento", "numero_parcela"], ascending=[False, True]).copy()
 
-            pagas["label"] = (
-                pagas["descricao_parcela"]
-                + " | "
-                + pagas["numero_parcela"].astype(str)
-                + "/"
-                + pagas["total_parcelas"].astype(str)
-                + " | pago em "
-                + pagas["data_pagamento"].dt.strftime("%d/%m/%Y")
-                + " | "
-                + pagas["valor_pago"].fillna(0).apply(brl)
-            )
+            if eh_todos:
+                pagas["label"] = (
+                    pagas["contrato"]
+                    + " | "
+                    + pagas["descricao_parcela"]
+                    + " | "
+                    + pagas["numero_parcela"].astype(str)
+                    + "/"
+                    + pagas["total_parcelas"].astype(str)
+                    + " | pago em "
+                    + pagas["data_pagamento"].dt.strftime("%d/%m/%Y")
+                    + " | "
+                    + pagas["valor_pago"].fillna(0).apply(brl)
+                )
+            else:
+                pagas["label"] = (
+                    pagas["descricao_parcela"]
+                    + " | "
+                    + pagas["numero_parcela"].astype(str)
+                    + "/"
+                    + pagas["total_parcelas"].astype(str)
+                    + " | pago em "
+                    + pagas["data_pagamento"].dt.strftime("%d/%m/%Y")
+                    + " | "
+                    + pagas["valor_pago"].fillna(0).apply(brl)
+                )
 
             parcela_paga_label = st.selectbox(
                 "Selecione a parcela paga",
@@ -656,9 +767,12 @@ with tab3:
             )
             parcela_paga = pagas[pagas["label"] == parcela_paga_label].iloc[0]
 
-            responsaveis_opcoes_edit = ["Compradores"]
-            if parcelas_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any():
-                responsaveis_opcoes_edit.append("Corretora")
+            if parcela_paga["contrato"] == CONTRATO_DIRECIONAL:
+                responsaveis_opcoes_edit = ["Compradores"]
+            else:
+                responsaveis_opcoes_edit = ["Compradores"]
+                if parcelas_contrato["responsavel_pagamento"].fillna("").eq("Corretora").any():
+                    responsaveis_opcoes_edit.append("Corretora")
 
             e1, e2, e3 = st.columns(3)
             with e1:
@@ -680,16 +794,26 @@ with tab3:
                     key="edit_valor_pago",
                 )
             with e3:
-                idx_edit = 0
-                if parcela_paga["responsavel_pagamento"] in responsaveis_opcoes_edit:
-                    idx_edit = responsaveis_opcoes_edit.index(parcela_paga["responsavel_pagamento"])
+                if parcela_paga["contrato"] == CONTRATO_DIRECIONAL:
+                    st.selectbox(
+                        "Responsável",
+                        options=["Compradores"],
+                        index=0,
+                        disabled=True,
+                        key="edit_responsavel_dir",
+                    )
+                    novo_responsavel = "Compradores"
+                else:
+                    idx_edit = 0
+                    if parcela_paga["responsavel_pagamento"] in responsaveis_opcoes_edit:
+                        idx_edit = responsaveis_opcoes_edit.index(parcela_paga["responsavel_pagamento"])
 
-                novo_responsavel = st.selectbox(
-                    "Responsável",
-                    options=responsaveis_opcoes_edit,
-                    index=idx_edit,
-                    key="edit_responsavel",
-                )
+                    novo_responsavel = st.selectbox(
+                        "Responsável",
+                        options=responsaveis_opcoes_edit,
+                        index=idx_edit,
+                        key="edit_responsavel",
+                    )
 
             b1, b2 = st.columns(2)
 
@@ -758,7 +882,7 @@ with tab4:
             "responsavel_pagamento",
         ]
 
-        edit_df = parcelas_contrato[edit_cols + ["eh_linha_resumo"]].copy()
+        edit_df = parcelas_contrato[edit_cols + ["eh_linha_resumo", "contrato"]].copy()
         edit_df["data_vencimento"] = pd.to_datetime(edit_df["data_vencimento"]).dt.date
         edit_df["valor_principal"] = edit_df["valor_principal"].round(2)
         edit_df["valor_total"] = edit_df["valor_total"].round(2)
@@ -772,9 +896,10 @@ with tab4:
             edit_df.drop(columns=["eh_linha_resumo"]),
             use_container_width=True,
             hide_index=True,
-            disabled=["id"],
+            disabled=["id", "contrato"] if eh_todos else ["id"],
             column_config={
                 "id": st.column_config.NumberColumn("ID"),
+                "contrato": st.column_config.TextColumn("Contrato"),
                 "categoria": st.column_config.TextColumn("Categoria"),
                 "origem": st.column_config.TextColumn("Origem"),
                 "descricao_parcela": st.column_config.TextColumn("Descrição"),
