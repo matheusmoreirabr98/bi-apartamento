@@ -430,9 +430,11 @@ with tab2:
 
         st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
-        if not (categoria_filtro == "Taxas Banco" and resp_filtro == "Corretora"):
+        st.markdown("### Resumo Por Status")
+        resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
+
+        if not resumo_base.empty:
             st.markdown("### Resumo Por Status")
-            resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
 
             resumo_status = (
                 resumo_base.groupby("status_exibicao", as_index=False)
@@ -446,6 +448,13 @@ with tab2:
             if not resumo_status.empty:
                 resumo_status["total"] = resumo_status["total"].apply(brl)
                 st.dataframe(resumo_status, use_container_width=True, hide_index=True)
+            st.dataframe(parc_show, use_container_width=True, hide_index=True)
+
+            resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
+
+            if not resumo_base.empty:
+                st.markdown("### Resumo Por Status")
+                ...
 
 # =========================================================
 # TAB 3 — REGISTRAR / EDITAR PAGAMENTO
