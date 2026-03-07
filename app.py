@@ -250,24 +250,24 @@ with tab1:
         ).sum()
 
         k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Pagamento Geral", brl(total_pago_geral))
-        k2.metric("Pagamento - Compradores", brl(total_pago_compradores))
-        k3.metric("Pagamento - Corretora", brl(total_pago_corretora))
-        k4.metric("Total Geral", brl(total_geral))
+        k1.metric("Total pago geral", brl(total_pago_geral))
+        k2.metric("Total pago compradores", brl(total_pago_compradores))
+        k3.metric("Total pago corretora", brl(total_pago_corretora))
+        k4.metric("Total geral", brl(total_geral))
 
         k5, k6, k7, k8 = st.columns(4)
         k5.metric("Progresso", f"{progresso_pct:.1f}%")
-        k6.metric("Quant. Parcelas Paga", int(total_pago_qtd))
-        k7.metric("Quant. ParcelasP endentes", int(total_pendente_qtd))
-        k8.metric("Quant. Parcelas Atrasadas", int(total_atrasado_qtd))
+        k6.metric("Parcelas pagas", int(total_pago_qtd))
+        k7.metric("Pendentes", int(total_pendente_qtd))
+        k8.metric("Atrasadas", int(total_atrasado_qtd))
 
         k9, k10 = st.columns(2)
-        k9.metric("Total Restante", brl(total_restante))
-        k10.metric("Juros Futuros Embutidos", brl(juros_futuros))
+        k9.metric("Total restante", brl(total_restante))
+        k10.metric("Juros futuros embutidos", brl(juros_futuros))
 
         st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
-        st.markdown("### Próxima Parcela")
+        st.markdown("### Próxima parcela a pagar")
 
         proxima_parcela = (
             parcelas_contagem[parcelas_contagem["status"] != "pago"]
@@ -294,7 +294,7 @@ with tab1:
         c1, c2 = st.columns(2)
 
         with c1:
-            st.markdown("### Situação das Parcelas")
+            st.markdown("### Situação das parcelas")
 
             situacao_df = parcelas_contagem.copy()
             situacao_df["situacao_grafico"] = situacao_df["status"].apply(
@@ -304,7 +304,7 @@ with tab1:
             status_df = (
                 situacao_df.groupby("situacao_grafico", as_index=False)
                 .size()
-                .rename(columns={"size": "Quantidade"})
+                .rename(columns={"size": "quantidade"})
             )
 
             if not status_df.empty:
@@ -322,7 +322,7 @@ with tab1:
                 st.plotly_chart(fig_status, use_container_width=True)
 
         with c2:
-            st.markdown("### Total Pago")
+            st.markdown("### Total pago por responsável")
 
             valor_pendente = parcelas_contrato.loc[
                 parcelas_contrato["status"] != "pago", "valor_total"
