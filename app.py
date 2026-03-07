@@ -14,7 +14,7 @@ st.set_page_config(page_title="Apartamento 3.0", layout="wide")
 st.title("🏠 Apartamento 3.0")
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -567,7 +567,7 @@ with tab3:
             parcela_label = st.selectbox(
                 "Selecione a parcela",
                 pendentes["label"].tolist(),
-                key="tab3_selecao_pendente"
+                key="tab3_selecao_pendente",
             )
             parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
 
@@ -680,30 +680,6 @@ with tab3:
             b1, b2 = st.columns(2)
 
             with b1:
-                if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
-                    try:
-                        dados_atualizados = registrar_pagamento(
-                            parcela_id=parcela_sel["id"],
-                            data_pagamento=data_pagamento,
-                            valor_pago=valor_pago,
-                            responsavel_pagamento=responsavel_pagamento,
-                        )
-
-                        if not dados_atualizados:
-                            st.error("O banco não retornou a parcela atualizada.")
-                        else:
-                            linha = dados_atualizados[0]
-                            if linha.get("status") != "pago":
-                                st.error("A parcela não foi marcada como paga no banco.")
-                            else:
-                                st.success("✅ Pagamento registrado com sucesso!")
-                                time.sleep(0.8)
-                                st.rerun()
-
-                    except Exception as e:
-                        st.error(f"Erro ao registrar pagamento: {e}")
-
-            with b2:
                 if st.button("Salvar edição do pagamento", key="btn_salvar_edicao_pagamento"):
                     try:
                         dados_atualizados = atualizar_pagamento_existente(
@@ -722,6 +698,25 @@ with tab3:
 
                     except Exception as e:
                         st.error(f"Erro ao atualizar pagamento: {e}")
+
+            with b2:
+                if st.button("Desfazer pagamento", key="btn_desfazer_pagamento"):
+                    try:
+                        dados_atualizados = desfazer_pagamento(parcela_paga["id"])
+
+                        if not dados_atualizados:
+                            st.error("O banco não retornou a parcela atualizada.")
+                        else:
+                            linha = dados_atualizados[0]
+                            if linha.get("status") != "pendente":
+                                st.error("A parcela não voltou para pendente no banco.")
+                            else:
+                                st.success("✅ Pagamento desfeito com sucesso!")
+                                time.sleep(0.8)
+                                st.rerun()
+
+                    except Exception as e:
+                        st.error(f"Erro ao desfazer pagamento: {e}")
 
 # =========================================================
 # TAB 4 — ATUALIZAR PARCELAS
