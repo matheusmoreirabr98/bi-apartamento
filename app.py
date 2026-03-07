@@ -153,49 +153,61 @@ def filtrar_contrato(df, contrato):
 
 
 def registrar_pagamento(parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
-    return (
+    supabase.table("parcelas").update(
+        {
+            "status": "pago",
+            "data_pagamento": str(data_pagamento),
+            "valor_pago": float(valor_pago),
+            "responsavel_pagamento": responsavel_pagamento,
+        }
+    ).eq("id", int(parcela_id)).execute()
+
+    res_check = (
         supabase.table("parcelas")
-        .update(
-            {
-                "status": "pago",
-                "data_pagamento": str(data_pagamento),
-                "valor_pago": float(valor_pago),
-                "responsavel_pagamento": responsavel_pagamento,
-            }
-        )
+        .select("id,status,data_pagamento,valor_pago,responsavel_pagamento")
         .eq("id", int(parcela_id))
         .execute()
     )
+
+    return res_check.data
 
 
 def atualizar_pagamento_existente(parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
-    return (
+    supabase.table("parcelas").update(
+        {
+            "data_pagamento": str(data_pagamento),
+            "valor_pago": float(valor_pago),
+            "responsavel_pagamento": responsavel_pagamento,
+        }
+    ).eq("id", int(parcela_id)).execute()
+
+    res_check = (
         supabase.table("parcelas")
-        .update(
-            {
-                "data_pagamento": str(data_pagamento),
-                "valor_pago": float(valor_pago),
-                "responsavel_pagamento": responsavel_pagamento,
-            }
-        )
+        .select("id,status,data_pagamento,valor_pago,responsavel_pagamento")
         .eq("id", int(parcela_id))
         .execute()
     )
+
+    return res_check.data
 
 
 def desfazer_pagamento(parcela_id):
-    return (
+    supabase.table("parcelas").update(
+        {
+            "status": "pendente",
+            "data_pagamento": None,
+            "valor_pago": None,
+        }
+    ).eq("id", int(parcela_id)).execute()
+
+    res_check = (
         supabase.table("parcelas")
-        .update(
-            {
-                "status": "pendente",
-                "data_pagamento": None,
-                "valor_pago": None,
-            }
-        )
+        .select("id,status,data_pagamento,valor_pago")
         .eq("id", int(parcela_id))
         .execute()
     )
+
+    return res_check.data
 
 
 # =========================================================
@@ -586,16 +598,23 @@ with tab3:
 
             if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
                 try:
-                    registrar_pagamento(
+                    dados_atualizados = registrar_pagamento(
                         parcela_id=parcela_sel["id"],
                         data_pagamento=data_pagamento,
                         valor_pago=valor_pago,
                         responsavel_pagamento=responsavel_pagamento,
                     )
 
-                    st.success("✅ Pagamento registrado com sucesso!")
-                    time.sleep(0.8)
-                    st.rerun()
+                    if not dados_atualizados:
+                        st.error("O banco não retornou a parcela atualizada.")
+                    else:
+                        linha = dados_atualizados[0]
+                        if linha.get("status") != "pago":
+                            st.error("A parcela não foi marcada como paga no banco.")
+                        else:
+                            st.success("✅ Pagamento registrado com sucesso!")
+                            time.sleep(0.8)
+                            st.rerun()
 
                 except Exception as e:
                     st.error(f"Erro ao registrar pagamento: {e}")
@@ -661,33 +680,48 @@ with tab3:
             b1, b2 = st.columns(2)
 
             with b1:
+                if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
+                    try:
+                        dados_atualizados = registrar_pagamento(
+                            parcela_id=parcela_sel["id"],
+                            data_pagamento=data_pagamento,
+                            valor_pago=valor_pago,
+                            responsavel_pagamento=responsavel_pagamento,
+                        )
+
+                        if not dados_atualizados:
+                            st.error("O banco não retornou a parcela atualizada.")
+                        else:
+                            linha = dados_atualizados[0]
+                            if linha.get("status") != "pago":
+                                st.error("A parcela não foi marcada como paga no banco.")
+                            else:
+                                st.success("✅ Pagamento registrado com sucesso!")
+                                time.sleep(0.8)
+                                st.rerun()
+
+                    except Exception as e:
+                        st.error(f"Erro ao registrar pagamento: {e}")
+
+            with b2:
                 if st.button("Salvar edição do pagamento", key="btn_salvar_edicao_pagamento"):
                     try:
-                        atualizar_pagamento_existente(
+                        dados_atualizados = atualizar_pagamento_existente(
                             parcela_id=parcela_paga["id"],
                             data_pagamento=nova_data_pagamento,
                             valor_pago=novo_valor_pago,
                             responsavel_pagamento=novo_responsavel,
                         )
 
-                        st.success("✅ Pagamento atualizado com sucesso!")
-                        time.sleep(0.8)
-                        st.rerun()
+                        if not dados_atualizados:
+                            st.error("O banco não retornou a parcela atualizada.")
+                        else:
+                            st.success("✅ Pagamento atualizado com sucesso!")
+                            time.sleep(0.8)
+                            st.rerun()
 
                     except Exception as e:
                         st.error(f"Erro ao atualizar pagamento: {e}")
-
-            with b2:
-                if st.button("Desfazer pagamento", key="btn_desfazer_pagamento"):
-                    try:
-                        desfazer_pagamento(parcela_paga["id"])
-
-                        st.success("✅ Pagamento desfeito com sucesso!")
-                        time.sleep(0.8)
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error(f"Erro ao desfazer pagamento: {e}")
 
 # =========================================================
 # TAB 4 — ATUALIZAR PARCELAS
