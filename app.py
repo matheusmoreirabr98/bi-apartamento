@@ -347,45 +347,31 @@ with tab1:
             - parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_principal"].fillna(0)
         ).sum()
 
-        # =========================================================
-        # LAYOUT MOBILE FRIENDLY - TAXAS CARTORIAIS
-        # =========================================================
-
-        if eh_taxas:
-
-            # Pagamento total centralizado
-            c = st.columns([1,2,1])
-            with c[1]:
-                st.metric("Pagamento Total", brl(total_pago_geral))
-
-            # Compradores / Corretora
-            c1, c2 = st.columns(2)
-            c1.metric("Pagamento Compradores", brl(total_pago_compradores))
-            c2.metric("Pagamento Corretora", brl(total_pago_corretora))
-
-            # Total geral / progresso
-            c3, c4 = st.columns(2)
-            c3.metric("Total Geral", brl(total_geral))
-            c4.metric("Progresso", f"{progresso_pct:.1f}%")
-
-            # Quantidade parcelas
-            c5, c6, c7 = st.columns(3)
-            c5.metric("Pagas", int(total_pago_qtd))
-            c6.metric("Pendentes", int(total_pendente_qtd))
-            c7.metric("Atrasadas", int(total_atrasado_qtd))
-
-            # Restante / juros
-            c8, c9 = st.columns(2)
-            c8.metric("Total Restante", brl(total_restante))
-            c9.metric("Juros Embutidos", brl(juros_futuros))
-
-        else:
-
-            # Entrada direcional mantém layout simples
+        if eh_direcional:
             k1, k2, k3 = st.columns(3)
             k1.metric("Pagamento Total", brl(total_pago_geral))
             k2.metric("Total Geral", brl(total_geral))
             k3.metric("Total Restante", brl(total_restante))
+        else:
+            k1, k2, k3, k4 = st.columns(4)
+            k1.metric("Pagamento Total", brl(total_pago_geral))
+            k2.metric("Pagamento - Compradores", brl(total_pago_compradores))
+            k3.metric("Pagamento - Corretora", brl(total_pago_corretora))
+            k4.metric("Total Geral", brl(total_geral))
+
+        k5, k6, k7, k8 = st.columns(4)
+        k5.metric("Progresso", f"{progresso_pct:.1f}%")
+        k6.metric("Quant. Parcelas Pagas", int(total_pago_qtd))
+        k7.metric("Quant. Parcelas Pendentes", int(total_pendente_qtd))
+        k8.metric("Quant. Parcelas Atrasadas", int(total_atrasado_qtd))
+
+        if eh_direcional:
+            k9 = st.columns(1)[0]
+            k9.metric("Juros Futuros Embutidos", brl(juros_futuros))
+        else:
+            k9, k10 = st.columns(2)
+            k9.metric("Total Restante", brl(total_restante))
+            k10.metric("Juros Futuros Embutidos", brl(juros_futuros))
 
         st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
@@ -395,23 +381,37 @@ with tab1:
             parcelas_contagem[parcelas_contagem["status"] != "pago"]
             .sort_values(["data_vencimento", "numero_parcela"])
             .head(1)
+            .copy()
         )
 
-        if not proxima_parcela.empty:
+        if proxima_parcela.empty:
+            st.success("✅ Não há parcelas em aberto.")
+        else:
             prox = proxima_parcela.iloc[0]
 
-            p1, p2, p3 = st.columns(3)
+            if eh_todos:
+                p1, p2, p3, p4 = st.columns(4)
+                p1.metric("Contrato", prox["contrato"])
+                p2.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
+                p3.metric(
+                    "Vencimento",
+                    prox["data_vencimento"].strftime("%d/%m/%Y")
+                    if pd.notnull(prox["data_vencimento"])
+                    else "-",
+                )
+                p4.metric("Valor", brl(prox["valor_total"]))
+            else:
+                p1, p2, p3 = st.columns(3)
+                p1.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
+                p2.metric(
+                    "Vencimento",
+                    prox["data_vencimento"].strftime("%d/%m/%Y")
+                    if pd.notnull(prox["data_vencimento"])
+                    else "-",
+                )
+                p3.metric("Valor", brl(prox["valor_total"]))
 
-            p1.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
-
-            p2.metric(
-                "Vencimento",
-                prox["data_vencimento"].strftime("%d/%m/%Y")
-                if pd.notnull(prox["data_vencimento"])
-                else "-"
-            )
-
-            p3.metric("Valor", brl(prox["valor_total"]))
+        c1, c2 = st.columns(2)
 
         with c1:
             st.markdown("### Situação das Parcelas")
