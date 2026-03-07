@@ -265,8 +265,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "responsavel_pagamento": "Responsável",
                     },
                     color_discrete_map={
-                        "Compradores": "green",
-                        "Corretora": "yellow",
+                        "Compradores": "#bcfb9bc7",
+                        "Corretora": "#c9c780",
                     },
                 )
 
