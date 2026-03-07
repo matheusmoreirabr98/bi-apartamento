@@ -14,17 +14,11 @@ st.set_page_config(page_title="Apartamento 3.0", layout="centered")
 
 st.markdown("""
 <style>
-/* Espaçamento geral */
 .block-container{
     padding-top: 1rem;
     padding-bottom: 2rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-}
-
-/* Cards do dashboard */
-.dash-section{
-    margin-bottom: 14px;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
 }
 
 .dash-grid-1,
@@ -33,6 +27,7 @@ st.markdown("""
     display: grid;
     gap: 10px;
     margin-bottom: 10px;
+    width: 100%;
 }
 
 .dash-grid-1{
@@ -40,68 +35,64 @@ st.markdown("""
 }
 
 .dash-grid-2{
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
 }
 
 .dash-grid-3{
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr 1fr;
 }
 
 .metric-card{
     background: #ffffff;
-    border: 1px solid #e9ecef;
+    border: 1px solid #e5e7eb;
     border-radius: 14px;
-    padding: 14px 12px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    padding: 14px 10px;
     text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    min-height: 88px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .metric-label{
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: #6b7280;
     margin-bottom: 6px;
     line-height: 1.2;
 }
 
 .metric-value{
-    font-size: 1.35rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    color: #111827;
-    line-height: 1.15;
+    color: #0f172a;
+    line-height: 1.1;
 }
 
 .metric-value.small{
-    font-size: 1.15rem;
+    font-size: 1.1rem;
 }
 
-.dashboard-subtitle{
-    font-size: 1rem;
-    font-weight: 700;
-    margin: 12px 0 8px 0;
-    color: #111827;
-}
-
-/* Mobile */
 @media (max-width: 768px){
     .dash-grid-2{
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
     }
 
     .dash-grid-3{
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr 1fr 1fr;
     }
 
     .metric-card{
         padding: 12px 8px;
-        border-radius: 12px;
+        min-height: 82px;
     }
 
     .metric-label{
-        font-size: 0.74rem;
+        font-size: 0.70rem;
     }
 
     .metric-value{
-        font-size: 1.05rem;
+        font-size: 1.15rem;
     }
 
     .metric-value.small{
@@ -154,12 +145,23 @@ def brl(v):
 
 def card_html(label, value, small=False):
     css_class = "metric-value small" if small else "metric-value"
-    return f"""
-    <div class="metric-card">
-        <div class="metric-label">{label}</div>
-        <div class="{css_class}">{value}</div>
-    </div>
-    """
+    return (
+        f'<div class="metric-card">'
+        f'<div class="metric-label">{label}</div>'
+        f'<div class="{css_class}">{value}</div>'
+        f'</div>'
+    )
+
+
+def render_cards_grid(cards_html, cols=1):
+    grid_class = {
+        1: "dash-grid-1",
+        2: "dash-grid-2",
+        3: "dash-grid-3",
+    }.get(cols, "dash-grid-1")
+
+    html = f'<div class="{grid_class}">{"".join(cards_html)}</div>'
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def render_cards_grid(cards_html, cols=1):
