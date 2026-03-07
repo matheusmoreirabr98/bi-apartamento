@@ -1,7 +1,12 @@
+from datetime import date
 import pandas as pd
 import streamlit as st
 
-from utils import brl
+from utils import (
+    CONTRATO_DIRECIONAL,
+    CONTRATO_TODOS,
+    brl,
+)
 
 
 # =========================================================
@@ -54,7 +59,7 @@ def _update_parcela(supabase, parcela_id, payload: dict):
     return supabase.table("parcelas").update(payload).eq("id", parcela_id).execute()
 
 
-def _build_label_parcela(row):
+def _build_label_pendente(row, eh_todos=False):
     data_venc = pd.to_datetime(row.get("data_vencimento"), errors="coerce")
     data_venc_str = data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-"
 
@@ -63,17 +68,69 @@ def _build_label_parcela(row):
     total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
     valor = brl(row.get("valor_total", 0))
 
-    contrato = str(row.get("contrato", "")).strip()
-    prefixo = f"{contrato} | " if contrato else ""
+    if eh_todos:
+        contrato = str(row.get("contrato", "")).strip()
+        return f"{contrato} | {descricao} | {num}/{total} | vence {data_venc_str} | total {valor}"
 
-    return f"{prefixo}{descricao} | {num}/{total} | Venc.: {data_venc_str} | {valor}"
+    return f"{descricao} | {num}/{total} | vence {data_venc_str} | total {valor}"
+
+
+def _build_label_pago(row, eh_todos=False):
+    data_pag = pd.to_datetime(row.get("data_pagamento"), errors="coerce")
+    data_pag_str = data_pag.strftime("%d/%m/%Y") if pd.notnull(data_pag) else "-"
+
+    descricao = str(row.get("descricao_parcela", "Parcela"))
+    num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
+    total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
+    valor = brl(row.get("valor_pago", 0))
+
+    if eh_todos:
+        contrato = str(row.get("contrato", "")).strip()
+        return f"{contrato} | {descricao} | {num}/{total} | pago em {data_pag_str} | {valor}"
+
+    return f"{descricao} | {num}/{total} | pago em {data_pag_str} | {valor}"
+
+
+def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+    payload = {
+        "data_pagamento": _date_to_iso(data_pagamento),
+        "valor_pago": float(valor_pago),
+        "responsavel_pagamento": responsavel_pagamento,
+        "status": "pago",
+    }
+    return _update_parcela(supabase, parcela_id, payload)
+
+
+def atualizar_pagamento_existente(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+    payload = {
+        "data_pagamento": _date_to_iso(data_pagamento),
+        "valor_pago": float(valor_pago),
+        "responsavel_pagamento": responsavel_pagamento,
+        "status": "pago",
+    }
+    return _update_parcela(supabase, parcela_id, payload)
+
+
+def desfazer_pagamento(supabase, parcela_id):
+    payload = {
+        "data_pagamento": None,
+        "valor_pago": None,
+        "status": "pendente",
+    }
+    return _update_parcela(supabase, parcela_id, payload)
 
 
 # =========================================================
 # TAB: REGISTRAR / EDITAR PAGAMENTO
 # =========================================================
 def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
+    eh_todos = contrato_selecionado == CONTRATO_TODOS
+
     st.subheader(f"Registrar / Editar Pagamento — {contrato_selecionado}")
+
+    if not pode_editar:
+        st.info("Somente Matheus Moreira pode editar pagamentos.")
+        return
 
     if parcelas_contrato.empty:
         st.info("Sem parcelas cadastradas.")
@@ -85,179 +142,209 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         parcelas = parcelas[~parcelas["eh_linha_resumo"]].copy()
 
     if parcelas.empty:
-        st.info("Sem parcelas disponíveis para pagamento.")
+        st.info("Sem parcelas disponíveis.")
         return
 
-    filtros_col1, filtros_col2 = st.columns(2)
+    # =========================================================
+    # REGISTRAR PAGAMENTO - SOMENTE PRÓXIMA PENDENTE
+    # =========================================================
+    st.markdown("### Marcar parcela como paga")
 
-    with filtros_col1:
-        opcoes_status = ["Todos", "Pendentes/Atrasadas", "Pagas"]
-        status_filtro = st.selectbox(
-            "Filtrar por status",
-            opcoes_status,
-            key="pagamentos_status_filtro",
-        )
+    pendentes = parcelas[parcelas["status"] != "pago"].copy()
 
-    with filtros_col2:
-        opcoes_resp = ["Todos"]
-        if "responsavel_pagamento" in parcelas.columns:
-            opcoes_resp += sorted(
-                parcelas["responsavel_pagamento"].dropna().astype(str).unique().tolist()
+    if pendentes.empty:
+        st.success("✅ Todas as parcelas desse contrato já estão pagas.")
+    else:
+        pendentes = pendentes.sort_values(["data_vencimento", "numero_parcela"]).copy()
+
+        # somente a próxima pendente
+        parcela_sel = pendentes.iloc[0]
+
+        st.info(_build_label_pendente(parcela_sel, eh_todos=eh_todos))
+
+        if parcela_sel["contrato"] == CONTRATO_DIRECIONAL:
+            responsaveis_opcoes = ["Compradores"]
+        else:
+            responsaveis_opcoes = ["Compradores"]
+            if parcelas["responsavel_pagamento"].fillna("").astype(str).eq("Corretora").any():
+                responsaveis_opcoes.append("Corretora")
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            data_pagamento = st.date_input(
+                "Data do pagamento",
+                value=date.today(),
+                format="DD/MM/YYYY",
+                key="novo_pagamento_data",
             )
 
-        responsavel_filtro = st.selectbox(
-            "Responsável",
-            opcoes_resp,
-            key="pagamentos_responsavel_filtro",
-        )
+        with c2:
+            valor_pago = st.number_input(
+                "Valor pago",
+                min_value=0.0,
+                value=float(parcela_sel["valor_total"]) if pd.notnull(parcela_sel.get("valor_total")) else 0.0,
+                step=0.01,
+                format="%.2f",
+                key="novo_pagamento_valor",
+            )
 
-    if status_filtro == "Pendentes/Atrasadas":
-        parcelas = parcelas[parcelas["status"] != "pago"].copy()
-    elif status_filtro == "Pagas":
-        parcelas = parcelas[parcelas["status"] == "pago"].copy()
+        with c3:
+            if parcela_sel["contrato"] == CONTRATO_DIRECIONAL:
+                st.selectbox(
+                    "Responsável pelo pagamento",
+                    options=["Compradores"],
+                    index=0,
+                    disabled=True,
+                    key="novo_pagamento_resp_dir",
+                )
+                responsavel_pagamento = "Compradores"
+            else:
+                idx_resp = 0
+                if parcela_sel.get("responsavel_pagamento") in responsaveis_opcoes:
+                    idx_resp = responsaveis_opcoes.index(parcela_sel["responsavel_pagamento"])
 
-    if responsavel_filtro != "Todos" and "responsavel_pagamento" in parcelas.columns:
-        parcelas = parcelas[parcelas["responsavel_pagamento"] == responsavel_filtro].copy()
+                responsavel_pagamento = st.selectbox(
+                    "Responsável pelo pagamento",
+                    options=responsaveis_opcoes,
+                    index=idx_resp,
+                    key="novo_pagamento_resp",
+                )
 
-    if parcelas.empty:
-        st.info("Nenhuma parcela encontrada com os filtros selecionados.")
+        if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
+            try:
+                dados_atualizados = registrar_pagamento(
+                    supabase=supabase,
+                    parcela_id=parcela_sel["id"],
+                    data_pagamento=data_pagamento,
+                    valor_pago=valor_pago,
+                    responsavel_pagamento=responsavel_pagamento,
+                )
+
+                if not dados_atualizados:
+                    st.error("O banco não retornou a parcela atualizada.")
+                else:
+                    st.success("✅ Pagamento registrado com sucesso!")
+                    st.rerun()
+
+            except Exception as e:
+                st.error(f"Erro ao registrar pagamento: {e}")
+
+    st.markdown("---")
+    st.markdown("### Editar parcela já paga")
+
+    # =========================================================
+    # EDITAR PAGAMENTO JÁ FEITO
+    # =========================================================
+    pagas = parcelas[parcelas["status"] == "pago"].copy()
+
+    if pagas.empty:
+        st.info("Nenhuma parcela paga para editar.")
         return
 
-    parcelas = parcelas.sort_values(
-        ["data_vencimento", "numero_parcela"],
-        ascending=[True, True],
-    ).copy()
+    pagas = pagas.sort_values(["data_pagamento", "numero_parcela"], ascending=[False, True]).copy()
+    pagas["label"] = pagas.apply(lambda row: _build_label_pago(row, eh_todos=eh_todos), axis=1)
 
-    parcelas["label_parcela"] = parcelas.apply(_build_label_parcela, axis=1)
-
-    parcela_escolhida_label = st.selectbox(
-        "Selecione a parcela",
-        parcelas["label_parcela"].tolist(),
-        key="pagamentos_parcela_select",
+    parcela_paga_label = st.selectbox(
+        "Selecione a parcela paga",
+        pagas["label"].tolist(),
+        key="edit_pago",
     )
 
-    parcela_escolhida = parcelas[parcelas["label_parcela"] == parcela_escolhida_label].iloc[0]
+    parcela_paga = pagas[pagas["label"] == parcela_paga_label].iloc[0]
 
-    st.markdown("## Dados da Parcela")
+    if parcela_paga["contrato"] == CONTRATO_DIRECIONAL:
+        responsaveis_opcoes_edit = ["Compradores"]
+    else:
+        responsaveis_opcoes_edit = ["Compradores"]
+        if parcelas["responsavel_pagamento"].fillna("").astype(str).eq("Corretora").any():
+            responsaveis_opcoes_edit.append("Corretora")
 
-    info_cols = st.columns(3)
+    e1, e2, e3 = st.columns(3)
 
-    with info_cols[0]:
-        st.caption("Parcela")
-        st.write(
-            f"{int(parcela_escolhida['numero_parcela'])}/{int(parcela_escolhida['total_parcelas'])}"
+    with e1:
+        nova_data_pagamento = st.date_input(
+            "Nova data do pagamento",
+            value=(
+                parcela_paga["data_pagamento"].date()
+                if pd.notnull(parcela_paga.get("data_pagamento"))
+                and hasattr(parcela_paga["data_pagamento"], "date")
+                else _to_date_or_none(parcela_paga.get("data_pagamento")) or date.today()
+            ),
+            format="DD/MM/YYYY",
+            key="edit_data_pagamento",
         )
 
-        st.caption("Status")
-        st.write(str(parcela_escolhida.get("status_exibicao", parcela_escolhida.get("status", "-"))))
-
-    with info_cols[1]:
-        st.caption("Vencimento")
-        data_venc = pd.to_datetime(parcela_escolhida.get("data_vencimento"), errors="coerce")
-        st.write(data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-")
-
-        st.caption("Responsável")
-        st.write(str(parcela_escolhida.get("responsavel_pagamento", "-")))
-
-    with info_cols[2]:
-        st.caption("Valor total")
-        st.write(brl(parcela_escolhida.get("valor_total", 0)))
-
-        st.caption("Valor pago atual")
-        valor_pago_atual = parcela_escolhida.get("valor_pago")
-        st.write(brl(valor_pago_atual) if pd.notnull(valor_pago_atual) else "-")
-
-    st.markdown("## Edição de Pagamento")
-
-    if not pode_editar:
-        st.warning("Você não tem permissão para editar pagamentos.")
-        return
-
-    valor_pago_inicial = _to_float(parcela_escolhida.get("valor_pago"))
-    data_pagamento_inicial = _to_date_or_none(parcela_escolhida.get("data_pagamento"))
-    status_atual = str(parcela_escolhida.get("status", "")).strip().lower()
-
-    with st.form("form_pagamento"):
+    with e2:
         novo_valor_pago = st.number_input(
-            "Valor pago",
+            "Novo valor pago",
             min_value=0.0,
-            value=valor_pago_inicial,
+            value=float(parcela_paga["valor_pago"]) if pd.notnull(parcela_paga.get("valor_pago")) else 0.0,
             step=0.01,
             format="%.2f",
+            key="edit_valor_pago",
         )
 
-        limpar_data = st.checkbox(
-            "Remover data de pagamento",
-            value=False,
-            key="pagamento_limpar_data",
-        )
-
-        if limpar_data:
-            nova_data_pagamento = None
-            st.caption("A data de pagamento será removida ao salvar.")
+    with e3:
+        if parcela_paga["contrato"] == CONTRATO_DIRECIONAL:
+            st.selectbox(
+                "Responsável",
+                options=["Compradores"],
+                index=0,
+                disabled=True,
+                key="edit_responsavel_dir",
+            )
+            novo_responsavel = "Compradores"
         else:
-            nova_data_pagamento = st.date_input(
-                "Data do pagamento",
-                value=data_pagamento_inicial or pd.Timestamp.today().date(),
+            idx_edit = 0
+            if parcela_paga.get("responsavel_pagamento") in responsaveis_opcoes_edit:
+                idx_edit = responsaveis_opcoes_edit.index(parcela_paga["responsavel_pagamento"])
+
+            novo_responsavel = st.selectbox(
+                "Responsável",
+                options=responsaveis_opcoes_edit,
+                index=idx_edit,
+                key="edit_responsavel",
             )
 
-        marcar_como_pago = st.checkbox(
-            "Marcar parcela como paga",
-            value=(status_atual == "pago"),
-            key="pagamento_status_pago",
-        )
+    b1, b2 = st.columns(2)
 
-        submitted = st.form_submit_button("Salvar pagamento", use_container_width=True)
+    with b1:
+        if st.button("Salvar edição do pagamento", key="btn_salvar_edicao_pagamento"):
+            try:
+                dados_atualizados = atualizar_pagamento_existente(
+                    supabase=supabase,
+                    parcela_id=parcela_paga["id"],
+                    data_pagamento=nova_data_pagamento,
+                    valor_pago=novo_valor_pago,
+                    responsavel_pagamento=novo_responsavel,
+                )
 
-    col_acoes1, col_acoes2 = st.columns(2)
+                if not dados_atualizados:
+                    st.error("O banco não retornou a parcela atualizada.")
+                else:
+                    st.success("✅ Pagamento atualizado com sucesso!")
+                    st.rerun()
 
-    with col_acoes1:
-        limpar_pagamento = st.button(
-            "Limpar pagamento",
-            use_container_width=True,
-            disabled=not pode_editar,
-        )
+            except Exception as e:
+                st.error(f"Erro ao atualizar pagamento: {e}")
 
-    with col_acoes2:
-        pass
+    with b2:
+        if st.button("Desfazer pagamento", key="btn_desfazer_pagamento"):
+            try:
+                dados_atualizados = desfazer_pagamento(
+                    supabase=supabase,
+                    parcela_id=parcela_paga["id"],
+                )
 
-    if submitted:
-        try:
-            parcela_id = parcela_escolhida["id"]
+                if not dados_atualizados:
+                    st.error("O banco não retornou a parcela atualizada.")
+                else:
+                    st.success("✅ Pagamento desfeito com sucesso!")
+                    st.rerun()
 
-            status_novo = "pago" if marcar_como_pago else "pendente"
-
-            payload = {
-                "valor_pago": float(novo_valor_pago) if marcar_como_pago else None,
-                "data_pagamento": _date_to_iso(nova_data_pagamento) if marcar_como_pago else None,
-                "status": status_novo,
-            }
-
-            _update_parcela(supabase, parcela_id, payload)
-
-            st.success("Pagamento atualizado com sucesso.")
-            st.rerun()
-
-        except Exception as e:
-            st.error(f"Erro ao salvar pagamento: {e}")
-
-    if limpar_pagamento:
-        try:
-            parcela_id = parcela_escolhida["id"]
-
-            payload = {
-                "valor_pago": None,
-                "data_pagamento": None,
-                "status": "pendente",
-            }
-
-            _update_parcela(supabase, parcela_id, payload)
-
-            st.success("Pagamento removido com sucesso.")
-            st.rerun()
-
-        except Exception as e:
-            st.error(f"Erro ao limpar pagamento: {e}")
+            except Exception as e:
+                st.error(f"Erro ao desfazer pagamento: {e}")
 
 
 # =========================================================
@@ -331,7 +418,18 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         ascending=[True, True],
     ).copy()
 
-    parcelas["label_parcela"] = parcelas.apply(_build_label_parcela, axis=1)
+    parcelas["label_parcela"] = parcelas.apply(
+        lambda row: (
+            f"{str(row.get('contrato', '')).strip() + ' | ' if str(row.get('contrato', '')).strip() else ''}"
+            f"{str(row.get('descricao_parcela', 'Parcela'))} | "
+            f"{int(row['numero_parcela']) if pd.notnull(row.get('numero_parcela')) else 0}/"
+            f"{int(row['total_parcelas']) if pd.notnull(row.get('total_parcelas')) else 0} | "
+            f"Venc.: "
+            f"{pd.to_datetime(row['data_vencimento'], errors='coerce').strftime('%d/%m/%Y') if pd.notnull(row.get('data_vencimento')) else '-'} | "
+            f"{brl(row.get('valor_total', 0))}"
+        ),
+        axis=1,
+    )
 
     parcela_label = st.selectbox(
         "Selecione a parcela para atualizar",
