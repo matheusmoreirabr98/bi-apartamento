@@ -10,48 +10,108 @@ from supabase import create_client
 # CONFIG
 # =========================================================
 
-st.set_page_config(page_title="Apartamento 3.0", layout="wide")
+st.set_page_config(page_title="Apartamento 3.0", layout="centered")
+
 st.markdown("""
 <style>
-
-/* MOBILE LAYOUT FIX */
-
-@media (max-width: 768px){
-
-    /* força colunas a virarem blocos */
-    div[data-testid="column"]{
-        width:100% !important;
-        flex:1 1 100% !important;
-        display:block !important;
-    }
-
-    /* métricas ocupam largura total */
-    div[data-testid="metric-container"]{
-        width:100% !important;
-        margin-bottom:12px;
-    }
-
-    /* espaçamento melhor */
-    div.block-container{
-        padding-left:12px;
-        padding-right:12px;
-    }
-
-    /* gráficos largura total */
-    div[data-testid="stPlotlyChart"]{
-        width:100% !important;
-    }
-
-    /* dataframe responsivo */
-    div[data-testid="stDataFrame"]{
-        overflow-x:auto;
-    }
-
+/* Espaçamento geral */
+.block-container{
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
 }
 
+/* Cards do dashboard */
+.dash-section{
+    margin-bottom: 14px;
+}
+
+.dash-grid-1,
+.dash-grid-2,
+.dash-grid-3{
+    display: grid;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.dash-grid-1{
+    grid-template-columns: 1fr;
+}
+
+.dash-grid-2{
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.dash-grid-3{
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.metric-card{
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 14px;
+    padding: 14px 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    text-align: center;
+}
+
+.metric-label{
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin-bottom: 6px;
+    line-height: 1.2;
+}
+
+.metric-value{
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.15;
+}
+
+.metric-value.small{
+    font-size: 1.15rem;
+}
+
+.dashboard-subtitle{
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 12px 0 8px 0;
+    color: #111827;
+}
+
+/* Mobile */
+@media (max-width: 768px){
+    .dash-grid-2{
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dash-grid-3{
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .metric-card{
+        padding: 12px 8px;
+        border-radius: 12px;
+    }
+
+    .metric-label{
+        font-size: 0.74rem;
+    }
+
+    .metric-value{
+        font-size: 1.05rem;
+    }
+
+    .metric-value.small{
+        font-size: 0.95rem;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
-st.title("🏠 Apartamento")
+
+st.title("🏠 Apartamento 3.0")
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
@@ -91,6 +151,26 @@ def brl(v):
         return f"R$ {float(v):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
     except Exception:
         return "R$ 0,00"
+
+def card_html(label, value, small=False):
+    css_class = "metric-value small" if small else "metric-value"
+    return f"""
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="{css_class}">{value}</div>
+    </div>
+    """
+
+
+def render_cards_grid(cards_html, cols=1):
+    grid_class = {
+        1: "dash-grid-1",
+        2: "dash-grid-2",
+        3: "dash-grid-3",
+    }.get(cols, "dash-grid-1")
+
+    html = f'<div class="{grid_class}">' + "".join(cards_html) + "</div>"
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def now_iso():
@@ -387,31 +467,83 @@ with tab1:
             - parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_principal"].fillna(0)
         ).sum()
 
-        if eh_direcional:
-            k1, k2, k3 = st.columns(3)
-            k1.metric("Pagamento Total", brl(total_pago_geral))
-            k2.metric("Total Geral", brl(total_geral))
-            k3.metric("Total Restante", brl(total_restante))
-        else:
-            k1, k2, k3, k4 = st.columns(4)
-            k1.metric("Pagamento Total", brl(total_pago_geral))
-            k2.metric("Pagamento - Compradores", brl(total_pago_compradores))
-            k3.metric("Pagamento - Corretora", brl(total_pago_corretora))
-            k4.metric("Total Geral", brl(total_geral))
+        if eh_taxas:
+            # Pagamento total centralizado no topo
+            render_cards_grid([
+                card_html("Pagamento Total", brl(total_pago_geral))
+            ], cols=1)
 
-        k5, k6, k7, k8 = st.columns(4)
-        k5.metric("Progresso", f"{progresso_pct:.1f}%")
-        k6.metric("Quant. Parcelas Pagas", int(total_pago_qtd))
-        k7.metric("Quant. Parcelas Pendentes", int(total_pendente_qtd))
-        k8.metric("Quant. Parcelas Atrasadas", int(total_atrasado_qtd))
+            # Pagamento compradores e corretora lado a lado
+            render_cards_grid([
+                card_html("Pagamento Compradores", brl(total_pago_compradores), small=True),
+                card_html("Pagamento Corretora", brl(total_pago_corretora), small=True),
+            ], cols=2)
 
-        if eh_direcional:
-            k9 = st.columns(1)[0]
-            k9.metric("Juros Futuros Embutidos", brl(juros_futuros))
+            # Total geral e progresso lado a lado
+            render_cards_grid([
+                card_html("Total Geral", brl(total_geral), small=True),
+                card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+            ], cols=2)
+
+            # Quantidades na mesma linha
+            render_cards_grid([
+                card_html("Pagas", str(int(total_pago_qtd)), small=True),
+                card_html("Pendentes", str(int(total_pendente_qtd)), small=True),
+                card_html("Atrasadas", str(int(total_atrasado_qtd)), small=True),
+            ], cols=3)
+
+            # Restante e juros lado a lado
+            render_cards_grid([
+                card_html("Total Restante", brl(total_restante), small=True),
+                card_html("Juros Embutidos", brl(juros_futuros), small=True),
+            ], cols=2)
+
+        elif eh_direcional:
+            render_cards_grid([
+                card_html("Pagamento Total", brl(total_pago_geral)),
+            ], cols=1)
+
+            render_cards_grid([
+                card_html("Total Geral", brl(total_geral), small=True),
+                card_html("Total Restante", brl(total_restante), small=True),
+            ], cols=2)
+
+            render_cards_grid([
+                card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+                card_html("Pagas", str(int(total_pago_qtd)), small=True),
+                card_html("Pendentes", str(int(total_pendente_qtd)), small=True),
+            ], cols=3)
+
+            render_cards_grid([
+                card_html("Atrasadas", str(int(total_atrasado_qtd)), small=True),
+                card_html("Juros Embutidos", brl(juros_futuros), small=True),
+            ], cols=2)
+
         else:
-            k9, k10 = st.columns(2)
-            k9.metric("Total Restante", brl(total_restante))
-            k10.metric("Juros Futuros Embutidos", brl(juros_futuros))
+            render_cards_grid([
+                card_html("Pagamento Total", brl(total_pago_geral)),
+            ], cols=1)
+
+            render_cards_grid([
+                card_html("Pagamento Compradores", brl(total_pago_compradores), small=True),
+                card_html("Pagamento Corretora", brl(total_pago_corretora), small=True),
+            ], cols=2)
+
+            render_cards_grid([
+                card_html("Total Geral", brl(total_geral), small=True),
+                card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+            ], cols=2)
+
+            render_cards_grid([
+                card_html("Pagas", str(int(total_pago_qtd)), small=True),
+                card_html("Pendentes", str(int(total_pendente_qtd)), small=True),
+                card_html("Atrasadas", str(int(total_atrasado_qtd)), small=True),
+            ], cols=3)
+
+            render_cards_grid([
+                card_html("Total Restante", brl(total_restante), small=True),
+                card_html("Juros Embutidos", brl(juros_futuros), small=True),
+            ], cols=2)
 
         st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
@@ -430,26 +562,26 @@ with tab1:
             prox = proxima_parcela.iloc[0]
 
             if eh_todos:
-                p1, p2, p3, p4 = st.columns(4)
-                p1.metric("Contrato", prox["contrato"])
-                p2.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
-                p3.metric(
-                    "Vencimento",
-                    prox["data_vencimento"].strftime("%d/%m/%Y")
-                    if pd.notnull(prox["data_vencimento"])
-                    else "-",
-                )
-                p4.metric("Valor", brl(prox["valor_total"]))
+                render_cards_grid([
+                    card_html("Contrato", str(prox["contrato"]), small=True),
+                    card_html("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}', small=True),
+                    card_html(
+                        "Vencimento",
+                        prox["data_vencimento"].strftime("%d/%m/%Y") if pd.notnull(prox["data_vencimento"]) else "-",
+                        small=True,
+                    ),
+                    card_html("Valor", brl(prox["valor_total"]), small=True),
+                ], cols=2)
             else:
-                p1, p2, p3 = st.columns(3)
-                p1.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
-                p2.metric(
-                    "Vencimento",
-                    prox["data_vencimento"].strftime("%d/%m/%Y")
-                    if pd.notnull(prox["data_vencimento"])
-                    else "-",
-                )
-                p3.metric("Valor", brl(prox["valor_total"]))
+                render_cards_grid([
+                    card_html("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}', small=True),
+                    card_html(
+                        "Vencimento",
+                        prox["data_vencimento"].strftime("%d/%m/%Y") if pd.notnull(prox["data_vencimento"]) else "-",
+                        small=True,
+                    ),
+                    card_html("Valor", brl(prox["valor_total"]), small=True),
+                ], cols=3)
 
         c1, c2 = st.columns(2)
 
