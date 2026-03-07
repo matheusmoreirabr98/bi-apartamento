@@ -172,23 +172,40 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         evolucao_df = parcelas_contrato.copy()
 
+        if "contrato" in evolucao_df.columns:
+            if eh_taxas:
+                evolucao_df = evolucao_df[evolucao_df["contrato"] == CONTRATO_TAXAS].copy()
+            elif eh_direcional:
+                evolucao_df = evolucao_df[evolucao_df["contrato"] == CONTRATO_DIRECIONAL].copy()
+            elif eh_todos:
+                evolucao_df = evolucao_df.copy()
+
         if "data_pagamento" in evolucao_df.columns:
             evolucao_df = evolucao_df[
-                (evolucao_df["status"] == "pago") & (evolucao_df["data_pagamento"].notna())
+                (evolucao_df["status"] == "pago") &
+                (evolucao_df["data_pagamento"].notna())
             ].copy()
 
             if not evolucao_df.empty:
-                evolucao_df["mes_ref"] = pd.to_datetime(evolucao_df["data_pagamento"]).dt.to_period("M")
+                evolucao_df["data_pagamento"] = pd.to_datetime(
+                    evolucao_df["data_pagamento"], errors="coerce"
+                )
+
+                evolucao_df = evolucao_df[evolucao_df["data_pagamento"].notna()].copy()
+
+                evolucao_df["mes_ref"] = evolucao_df["data_pagamento"].dt.to_period("M")
                 evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
 
                 mensal_df = (
                     evolucao_df.groupby("mes_ordem", as_index=False)["valor_pago"]
                     .sum()
                     .rename(columns={"valor_pago": "Total Pago"})
+                    .sort_values("mes_ordem")
                 )
 
-                mensal_df = mensal_df.sort_values("mes_ordem")
-                mensal_df["Mes"] = pd.to_datetime(mensal_df["mes_ordem"]).dt.strftime("%m/%Y")
+                mensal_df["Mes"] = pd.to_datetime(
+                    mensal_df["mes_ordem"], format="%Y-%m", errors="coerce"
+                ).dt.strftime("%m/%Y")
 
                 fig_mensal = px.line(
                     mensal_df,
@@ -197,7 +214,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     markers=True,
                     labels={
                         "Mes": "Mês",
-                        "Total Pago": "Total Pago",
+                        "Total Pago": "Valor Pago",
                     },
                 )
 
