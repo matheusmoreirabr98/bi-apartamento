@@ -46,6 +46,18 @@ def now_iso():
     return datetime.utcnow().isoformat()
 
 
+def normalizar_categoria(valor):
+    if pd.isna(valor):
+        return valor
+
+    valor_str = str(valor).strip().lower()
+
+    if valor_str == "registro":
+        return "Taxas Cartoriais"
+
+    return valor
+
+
 def load_parcelas():
     try:
         res = supabase.table("parcelas").select("*").order("numero_parcela").execute()
@@ -74,6 +86,15 @@ def load_parcelas():
         ]:
             if col not in df.columns:
                 df[col] = None
+
+        # Ajuste visual da categoria
+        df["categoria"] = df["categoria"].apply(normalizar_categoria)
+
+        # Marca linha consolidada da corretora / taxas banco
+        df["eh_linha_resumo"] = (
+            df["categoria"].fillna("").astype(str).str.lower().eq("taxas banco")
+            | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
+        )
 
         return df
 
@@ -178,6 +199,9 @@ if contrato_selecionado == "Sem dados":
 
 parcelas_contrato = filtrar_contrato(parcelas, contrato_selecionado)
 
+# Parcelas "reais" para contagem: exclui linha consolidada da corretora
+parcelas_contagem = parcelas_contrato[~parcelas_contrato["eh_linha_resumo"]].copy()
+
 # =========================================================
 # TABS
 # =========================================================
@@ -218,9 +242,10 @@ with tab1:
 
         total_geral = parcelas_contrato["valor_total"].sum()
 
-        total_pago_qtd = (parcelas_contrato["status"] == "pago").sum()
-        total_pendente_qtd = (parcelas_contrato["status_exibicao"] == "pendente").sum()
-        total_atrasado_qtd = (parcelas_contrato["status_exibicao"] == "atrasado").sum()
+        # Contagens sem a linha-resumo da corretora
+        total_pago_qtd = (parcelas_contagem["status"] == "pago").sum()
+        total_pendente_qtd = (parcelas_contagem["status_exibicao"] == "pendente").sum()
+        total_atrasado_qtd = (parcelas_contagem["status_exibicao"] == "atrasado").sum()
 
         progresso_pct = (total_pago_geral / total_geral * 100) if total_geral else 0
 
@@ -250,7 +275,7 @@ with tab1:
         st.markdown("### Próxima parcela a pagar")
 
         proxima_parcela = (
-            parcelas_contrato[parcelas_contrato["status"] != "pago"]
+            parcelas_contagem[parcelas_contagem["status"] != "pago"]
             .sort_values(["data_vencimento", "numero_parcela"])
             .head(1)
             .copy()
@@ -261,22 +286,22 @@ with tab1:
         else:
             prox = proxima_parcela.iloc[0]
 
-            p1, p2, p3, p4 = st.columns(4)
+            p1, p2, p3 = st.columns(3)
             p1.metric("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}')
-            p2.metric("Descrição", prox["descricao_parcela"])
-            p3.metric(
+            p2.metric(
                 "Vencimento",
                 prox["data_vencimento"].strftime("%d/%m/%Y")
                 if pd.notnull(prox["data_vencimento"])
                 else "-",
             )
-            p4.metric("Valor", brl(prox["valor_total"]))
+            p3.metric("Valor", brl(prox["valor_total"]))
 
         c1, c2 = st.columns(2)
 
         with c1:
             st.markdown("### Situação das parcelas")
-            situacao_df = parcelas_contrato.copy()
+
+            situacao_df = parcelas_contagem.copy()
             situacao_df["situacao_grafico"] = situacao_df["status"].apply(
                 lambda x: "Pago" if x == "pago" else "Pendente"
             )
@@ -288,51 +313,56 @@ with tab1:
             )
 
             if not status_df.empty:
-                fig_status = px.bar(status_df, x="situacao_grafico", y="quantidade")
+                fig_status = px.bar(
+                    status_df,
+                    x="situacao_grafico",
+                    y="quantidade",
+                    color="situacao_grafico",
+                    color_discrete_map={
+                        "Pago": "green",
+                        "Pendente": "red",
+                    },
+                )
+                fig_status.update_layout(showlegend=False)
                 st.plotly_chart(fig_status, use_container_width=True)
 
         with c2:
             st.markdown("### Total pago por responsável")
-            resp_df = (
-                parcelas_contrato[parcelas_contrato["status"] == "pago"]
-                .groupby("responsavel_pagamento", as_index=False)["valor_pago"]
-                .sum()
-                .sort_values("valor_pago", ascending=False)
+
+            valor_pendente = parcelas_contrato.loc[
+                parcelas_contrato["status"] != "pago", "valor_total"
+            ].sum()
+
+            resp_df = pd.DataFrame(
+                {
+                    "grupo": ["Compradores", "Corretora", "Pendente"],
+                    "valor": [
+                        total_pago_compradores,
+                        total_pago_corretora,
+                        valor_pendente,
+                    ],
+                }
             )
+
+            resp_df = resp_df[resp_df["valor"] > 0].copy()
 
             if not resp_df.empty:
-                fig_resp = px.pie(resp_df, names="responsavel_pagamento", values="valor_pago")
+                fig_resp = px.pie(
+                    resp_df,
+                    names="grupo",
+                    values="valor",
+                    color="grupo",
+                    color_discrete_map={
+                        "Compradores": "#1f77b4",
+                        "Corretora": "#ff7f0e",
+                        "Pendente": "red",
+                    },
+                )
                 st.plotly_chart(fig_resp, use_container_width=True)
-
-        c3, c4 = st.columns(2)
-
-        with c3:
-            st.markdown("### Pago por responsável")
-            pago_resp = (
-                parcelas_contrato[parcelas_contrato["status"] == "pago"]
-                .groupby("responsavel_pagamento", as_index=False)["valor_pago"]
-                .sum()
-                .sort_values("valor_pago", ascending=False)
-            )
-            if not pago_resp.empty:
-                fig_pago_resp = px.bar(pago_resp, x="responsavel_pagamento", y="valor_pago")
-                st.plotly_chart(fig_pago_resp, use_container_width=True)
-
-        with c4:
-            st.markdown("### Saldo em aberto por categoria")
-            aberto_cat = (
-                parcelas_contrato[parcelas_contrato["status"] != "pago"]
-                .groupby("categoria", as_index=False)["valor_total"]
-                .sum()
-                .sort_values("valor_total", ascending=False)
-            )
-            if not aberto_cat.empty:
-                fig_aberto = px.bar(aberto_cat, x="categoria", y="valor_total")
-                st.plotly_chart(fig_aberto, use_container_width=True)
 
         st.markdown("### Próximas parcelas")
         proximas = (
-            parcelas_contrato[parcelas_contrato["status"] != "pago"]
+            parcelas_contagem[parcelas_contagem["status"] != "pago"]
             .sort_values(["data_vencimento", "numero_parcela"])
             .head(10)
             .copy()
@@ -434,8 +464,10 @@ with tab2:
         st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
         st.markdown("### Resumo por status")
+        resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
+
         resumo_status = (
-            parc_f.groupby("status_exibicao", as_index=False)
+            resumo_base.groupby("status_exibicao", as_index=False)
             .agg(
                 quantidade=("id", "count"),
                 total=("valor_total", "sum"),
@@ -642,14 +674,14 @@ with tab4:
             "responsavel_pagamento",
         ]
 
-        edit_df = parcelas_contrato[edit_cols].copy()
+        edit_df = parcelas_contrato[edit_cols + ["eh_linha_resumo"]].copy()
         edit_df["data_vencimento"] = pd.to_datetime(edit_df["data_vencimento"]).dt.date
         edit_df["valor_principal"] = edit_df["valor_principal"].round(2)
         edit_df["valor_total"] = edit_df["valor_total"].round(2)
 
         st.markdown("### Edite os campos abaixo e clique em salvar")
         edited = st.data_editor(
-            edit_df,
+            edit_df.drop(columns=["eh_linha_resumo"]),
             use_container_width=True,
             hide_index=True,
             disabled=["id"],
@@ -677,7 +709,7 @@ with tab4:
 
         if st.button("Salvar alterações das parcelas", type="primary"):
             try:
-                original = edit_df.set_index("id")
+                original = edit_df.drop(columns=["eh_linha_resumo"]).set_index("id")
                 novo = edited.set_index("id")
 
                 alteradas = 0
@@ -717,6 +749,13 @@ with tab4:
                         payload["data_vencimento"] = str(venc_new)
 
                     if payload:
+                        # garante padronização visual no banco também
+                        if "categoria" in payload:
+                            payload["categoria"] = (
+                                "registro" if str(payload["categoria"]).strip().lower() == "taxas cartoriais"
+                                else payload["categoria"]
+                            )
+
                         supabase.table("parcelas").update(payload).eq("id", int(parcela_id)).execute()
                         alteradas += 1
 
