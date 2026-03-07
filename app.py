@@ -87,10 +87,8 @@ def load_parcelas():
             if col not in df.columns:
                 df[col] = None
 
-        # Ajuste visual da categoria
         df["categoria"] = df["categoria"].apply(normalizar_categoria)
 
-        # Marca linha consolidada da corretora / taxas banco
         df["eh_linha_resumo"] = (
             df["categoria"].fillna("").astype(str).str.lower().eq("taxas banco")
             | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
@@ -198,8 +196,6 @@ if contrato_selecionado == "Sem dados":
     st.stop()
 
 parcelas_contrato = filtrar_contrato(parcelas, contrato_selecionado)
-
-# Parcelas "reais" para contagem: exclui linha consolidada da corretora
 parcelas_contagem = parcelas_contrato[~parcelas_contrato["eh_linha_resumo"]].copy()
 
 # =========================================================
@@ -242,7 +238,6 @@ with tab1:
 
         total_geral = parcelas_contrato["valor_total"].sum()
 
-        # Contagens sem a linha-resumo da corretora
         total_pago_qtd = (parcelas_contagem["status"] == "pago").sum()
         total_pendente_qtd = (parcelas_contagem["status_exibicao"] == "pendente").sum()
         total_atrasado_qtd = (parcelas_contagem["status_exibicao"] == "atrasado").sum()
@@ -255,24 +250,24 @@ with tab1:
         ).sum()
 
         k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Total pago geral", brl(total_pago_geral))
-        k2.metric("Total pago compradores", brl(total_pago_compradores))
-        k3.metric("Total pago corretora", brl(total_pago_corretora))
-        k4.metric("Total geral", brl(total_geral))
+        k1.metric("Pagamento Geral", brl(total_pago_geral))
+        k2.metric("Pagamento - Compradores", brl(total_pago_compradores))
+        k3.metric("Pagamento - Corretora", brl(total_pago_corretora))
+        k4.metric("Total Geral", brl(total_geral))
 
         k5, k6, k7, k8 = st.columns(4)
         k5.metric("Progresso", f"{progresso_pct:.1f}%")
-        k6.metric("Parcelas pagas", int(total_pago_qtd))
-        k7.metric("Pendentes", int(total_pendente_qtd))
-        k8.metric("Atrasadas", int(total_atrasado_qtd))
+        k6.metric("Quant. Parcelas Paga", int(total_pago_qtd))
+        k7.metric("Quant. ParcelasP endentes", int(total_pendente_qtd))
+        k8.metric("Quant. Parcelas Atrasadas", int(total_atrasado_qtd))
 
         k9, k10 = st.columns(2)
-        k9.metric("Total restante", brl(total_restante))
-        k10.metric("Juros futuros embutidos", brl(juros_futuros))
+        k9.metric("Total Restante", brl(total_restante))
+        k10.metric("Juros Futuros Embutidos", brl(juros_futuros))
 
         st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
-        st.markdown("### Próxima parcela a pagar")
+        st.markdown("### Próxima Parcela")
 
         proxima_parcela = (
             parcelas_contagem[parcelas_contagem["status"] != "pago"]
@@ -299,17 +294,17 @@ with tab1:
         c1, c2 = st.columns(2)
 
         with c1:
-            st.markdown("### Situação das parcelas")
+            st.markdown("### Situação das Parcelas")
 
             situacao_df = parcelas_contagem.copy()
-            situacao_df["situacao_grafico"] = situacao_df["status"].apply(
+            situacao_df = situacao_df["status"].apply(
                 lambda x: "Pago" if x == "pago" else "Pendente"
             )
 
             status_df = (
                 situacao_df.groupby("situacao_grafico", as_index=False)
                 .size()
-                .rename(columns={"size": "quantidade"})
+                .rename(columns={"size": "Quantidade"})
             )
 
             if not status_df.empty:
@@ -327,7 +322,7 @@ with tab1:
                 st.plotly_chart(fig_status, use_container_width=True)
 
         with c2:
-            st.markdown("### Total pago por responsável")
+            st.markdown("### Total Pago")
 
             valor_pendente = parcelas_contrato.loc[
                 parcelas_contrato["status"] != "pago", "valor_total"
@@ -359,39 +354,6 @@ with tab1:
                     },
                 )
                 st.plotly_chart(fig_resp, use_container_width=True)
-
-        st.markdown("### Próximas parcelas")
-        proximas = (
-            parcelas_contagem[parcelas_contagem["status"] != "pago"]
-            .sort_values(["data_vencimento", "numero_parcela"])
-            .head(10)
-            .copy()
-        )
-
-        if proximas.empty:
-            st.success("✅ Não há parcelas em aberto.")
-        else:
-            proximas_show = proximas[
-                [
-                    "categoria",
-                    "descricao_parcela",
-                    "numero_parcela",
-                    "total_parcelas",
-                    "data_vencimento",
-                    "valor_principal",
-                    "valor_total",
-                    "status_exibicao",
-                    "responsavel_pagamento",
-                ]
-            ].copy()
-
-            proximas_show["data_vencimento"] = pd.to_datetime(
-                proximas_show["data_vencimento"]
-            ).dt.date
-            proximas_show["valor_principal"] = proximas_show["valor_principal"].apply(brl)
-            proximas_show["valor_total"] = proximas_show["valor_total"].apply(brl)
-
-            st.dataframe(proximas_show, use_container_width=True, hide_index=True)
 
 # =========================================================
 # TAB 2 — PARCELAS
@@ -749,7 +711,6 @@ with tab4:
                         payload["data_vencimento"] = str(venc_new)
 
                     if payload:
-                        # garante padronização visual no banco também
                         if "categoria" in payload:
                             payload["categoria"] = (
                                 "registro" if str(payload["categoria"]).strip().lower() == "taxas cartoriais"
