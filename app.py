@@ -311,8 +311,6 @@ tab1, tab2, tab3, tab4 = st.tabs(
 # =========================================================
 
 with tab1:
-    st.subheader(f"Dashboard — {contrato_selecionado}")
-
     if parcelas_contrato.empty:
         st.info("Sem dados para exibir.")
     else:
