@@ -168,36 +168,50 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     c1, c2 = st.columns(2)
 
     with c1:
-        st.markdown("### Situação das Parcelas")
+        st.markdown("### Evolução por Mês")
 
-        situacao_df = parcelas_contagem.copy()
-        situacao_df["situacao_grafico"] = situacao_df["status"].apply(
-            lambda x: "Pago" if x == "pago" else "Pendente"
-        )
+        evolucao_df = parcelas_contrato.copy()
 
-        status_df = (
-            situacao_df.groupby("situacao_grafico", as_index=False)
-            .size()
-            .rename(columns={"size": "Quantidade"})
-        )
+        if "data_pagamento" in evolucao_df.columns:
+            evolucao_df = evolucao_df[
+                (evolucao_df["status"] == "pago") & (evolucao_df["data_pagamento"].notna())
+            ].copy()
 
-        if not status_df.empty:
-            fig_status = px.bar(
-                status_df,
-                x="situacao_grafico",
-                y="Quantidade",
-                color="situacao_grafico",
-                labels={
-                    "situacao_grafico": "Quant. de Parcelas",
-                    "Quantidade": "Quantidade",
-                },
-                color_discrete_map={
-                    "Pago": "green",
-                    "Pendente": "red",
-                },
-            )
-            fig_status.update_layout(showlegend=False)
-            st.plotly_chart(fig_status, use_container_width=True)
+            if not evolucao_df.empty:
+                evolucao_df["mes_ref"] = pd.to_datetime(evolucao_df["data_pagamento"]).dt.to_period("M")
+                evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
+
+                mensal_df = (
+                    evolucao_df.groupby("mes_ordem", as_index=False)["valor_pago"]
+                    .sum()
+                    .rename(columns={"valor_pago": "Total Pago"})
+                )
+
+                mensal_df = mensal_df.sort_values("mes_ordem")
+                mensal_df["Mes"] = pd.to_datetime(mensal_df["mes_ordem"]).dt.strftime("%m/%Y")
+
+                fig_mensal = px.line(
+                    mensal_df,
+                    x="Mes",
+                    y="Total Pago",
+                    markers=True,
+                    labels={
+                        "Mes": "Mês",
+                        "Total Pago": "Total Pago",
+                    },
+                )
+
+                fig_mensal.update_layout(
+                    showlegend=False,
+                    xaxis_title="Mês",
+                    yaxis_title="Valor Pago",
+                )
+
+                st.plotly_chart(fig_mensal, use_container_width=True)
+            else:
+                st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
+        else:
+            st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
 
     with c2:
         st.markdown("### Total Pago")
