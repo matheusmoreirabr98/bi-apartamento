@@ -294,7 +294,7 @@ with tab1:
         c1, c2 = st.columns(2)
 
         with c1:
-            st.markdown("### Situação das parcelas")
+            st.markdown("### Situação das Parcelas")
 
             situacao_df = parcelas_contagem.copy()
             situacao_df["situacao_grafico"] = situacao_df["status"].apply(
@@ -322,7 +322,7 @@ with tab1:
                 st.plotly_chart(fig_status, use_container_width=True)
 
         with c2:
-            st.markdown("### Total pago por responsável")
+            st.markdown("### Total Pago")
 
             valor_pendente = parcelas_contrato.loc[
                 parcelas_contrato["status"] != "pago", "valor_total"
