@@ -31,6 +31,13 @@ STATUS_ORDEM = {
     "pago": 3,
 }
 
+STATUS_MAP_FILTRO = {
+    "Todos": None,
+    "Pendente": "pendente",
+    "Atrasado": "atrasado",
+    "Pago": "pago",
+}
+
 # =========================================================
 # FUNÇÕES UTILITÁRIAS
 # =========================================================
@@ -89,6 +96,7 @@ def load_parcelas():
 
         df["categoria"] = df["categoria"].apply(normalizar_categoria)
 
+        # Marca a linha consolidada paga pela corretora / taxas banco
         df["eh_linha_resumo"] = (
             df["categoria"].fillna("").astype(str).str.lower().eq("taxas banco")
             | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
@@ -315,17 +323,16 @@ with tab1:
                     color="situacao_grafico",
                     labels={
                         "situacao_grafico": "Quant. de Parcelas",
-                        "Quantidade": "Quantidade"
+                        "Quantidade": "Quantidade",
                     },
                     color_discrete_map={
                         "Pago": "green",
                         "Pendente": "red",
                     },
                 )
-
                 fig_status.update_layout(showlegend=False)
-
                 st.plotly_chart(fig_status, use_container_width=True)
+
         with c2:
             st.markdown("### Total Pago")
 
@@ -393,8 +400,9 @@ with tab2:
         if categoria_filtro != "Todas":
             parc_f = parc_f[parc_f["categoria"] == categoria_filtro]
 
-        if status_filtro != "Todos":
-            parc_f = parc_f[parc_f["status_exibicao"] == status_filtro]
+        status_filtro_real = STATUS_MAP_FILTRO.get(status_filtro)
+        if status_filtro_real:
+            parc_f = parc_f[parc_f["status_exibicao"] == status_filtro_real]
 
         if resp_filtro != "Todos":
             parc_f = parc_f[parc_f["responsavel_pagamento"] == resp_filtro]
@@ -430,8 +438,15 @@ with tab2:
 
         st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
-        st.markdown("### Resumo Por Status")
-        resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
+        # ============================================
+        # RESUMO POR STATUS
+        # ============================================
+        # Se filtrar Corretora ou Taxas Banco,
+        # o resumo deve mostrar somente Taxas Banco.
+        if categoria_filtro == "Taxas Banco" or resp_filtro == "Corretora":
+            resumo_base = parc_f[parc_f["categoria"] == "Taxas Banco"].copy()
+        else:
+            resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
 
         if not resumo_base.empty:
             st.markdown("### Resumo Por Status")
@@ -448,33 +463,6 @@ with tab2:
             if not resumo_status.empty:
                 resumo_status["total"] = resumo_status["total"].apply(brl)
                 st.dataframe(resumo_status, use_container_width=True, hide_index=True)
-            # ============================================
-            # RESUMO POR STATUS
-            # ============================================
-
-            # Se o filtro for Corretora ou Taxas Banco,
-            # mostrar apenas o resumo referente às Taxas Banco
-            if categoria_filtro == "Taxas Banco" or resp_filtro == "Corretora":
-                resumo_base = parc_f[parc_f["categoria"] == "Taxas Banco"].copy()
-            else:
-                resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
-
-            if not resumo_base.empty:
-
-                st.markdown("### Resumo Por Status")
-
-                resumo_status = (
-                    resumo_base.groupby("status_exibicao", as_index=False)
-                    .agg(
-                        quantidade=("id", "count"),
-                        total=("valor_total", "sum"),
-                    )
-                    .sort_values("status_exibicao")
-                )
-
-                if not resumo_status.empty:
-                    resumo_status["total"] = resumo_status["total"].apply(brl)
-                    st.dataframe(resumo_status, use_container_width=True, hide_index=True)
 
 # =========================================================
 # TAB 3 — REGISTRAR / EDITAR PAGAMENTO
