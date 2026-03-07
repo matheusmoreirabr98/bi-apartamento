@@ -304,14 +304,14 @@ with tab1:
             status_df = (
                 situacao_df.groupby("situacao_grafico", as_index=False)
                 .size()
-                .rename(columns={"size": "quantidade"})
+                .rename(columns={"size": "Quantidade"})
             )
 
             if not status_df.empty:
                 fig_status = px.bar(
                     status_df,
                     x="situacao_grafico",
-                    y="quantidade",
+                    y="Quantidade",
                     color="situacao_grafico",
                     color_discrete_map={
                         "Pago": "green",
