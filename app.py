@@ -297,7 +297,7 @@ with tab1:
             st.markdown("### Situação das parcelas")
 
             situacao_df = parcelas_contagem.copy()
-            situacao_df["situacao_grafico"] = situacao_df["status"].apply(
+            situacao_df[" "] = situacao_df["status"].apply(
                 lambda x: "Pago" if x == "pago" else "Pendente"
             )
 
