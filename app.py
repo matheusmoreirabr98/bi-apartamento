@@ -19,7 +19,7 @@ from utils import (
 # CONFIG
 # =========================================================
 
-st.set_page_config(page_title="Apartamento 3.0", layout="centered")
+st.set_page_config(page_title="Apartamento", layout="centered")
 inject_styles()
 st.title("🏠 Apartamento")
 
