@@ -240,7 +240,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     mensal_df["mes_ordem"], format="%Y-%m", errors="coerce"
                 ).dt.strftime("%m/%Y")
 
-                mensal_df["Texto"] = mensal_df["Qtd Parcelas"].apply(lambda x: {int(x)} )
+                mensal_df["Texto"] = mensal_df["Qtd Parcelas"].apply(lambda x: f"{int(x)}")
 
                 fig_mensal = px.line(
                     mensal_df,
@@ -265,7 +265,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     yaxis_title="Valor Pago",
 )
                 fig_mensal.update_traces(textfont_size=12)
-
+                
                 st.plotly_chart(fig_mensal, use_container_width=True)
             else:
                 st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
