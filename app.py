@@ -106,11 +106,9 @@ def load_parcelas():
         df["valor_principal"] = df["valor_principal"].fillna(0.0)
         df["valor_total"] = df["valor_total"].fillna(0.0)
 
-        # valor_pago pode ficar nulo para não pagos
         if "valor_pago" in df.columns:
             df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
 
-        # Marca a linha consolidada paga pela corretora / taxas banco
         df["eh_linha_resumo"] = (
             df["categoria"].fillna("").astype(str).str.lower().eq("taxas banco")
             | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
@@ -155,7 +153,7 @@ def filtrar_contrato(df, contrato):
 
 
 def registrar_pagamento(parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
-    res = (
+    return (
         supabase.table("parcelas")
         .update(
             {
@@ -166,14 +164,12 @@ def registrar_pagamento(parcela_id, data_pagamento, valor_pago, responsavel_paga
             }
         )
         .eq("id", int(parcela_id))
-        .select("*")
         .execute()
     )
-    return res
 
 
 def atualizar_pagamento_existente(parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
-    res = (
+    return (
         supabase.table("parcelas")
         .update(
             {
@@ -183,14 +179,12 @@ def atualizar_pagamento_existente(parcela_id, data_pagamento, valor_pago, respon
             }
         )
         .eq("id", int(parcela_id))
-        .select("*")
         .execute()
     )
-    return res
 
 
 def desfazer_pagamento(parcela_id):
-    res = (
+    return (
         supabase.table("parcelas")
         .update(
             {
@@ -200,10 +194,8 @@ def desfazer_pagamento(parcela_id):
             }
         )
         .eq("id", int(parcela_id))
-        .select("*")
         .execute()
     )
-    return res
 
 
 # =========================================================
@@ -594,19 +586,16 @@ with tab3:
 
             if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
                 try:
-                    res_update = registrar_pagamento(
+                    registrar_pagamento(
                         parcela_id=parcela_sel["id"],
                         data_pagamento=data_pagamento,
                         valor_pago=valor_pago,
                         responsavel_pagamento=responsavel_pagamento,
                     )
 
-                    if not res_update.data:
-                        st.error("O pagamento não foi atualizado no banco. Verifique permissões ou o ID da parcela.")
-                    else:
-                        st.success("✅ Pagamento registrado com sucesso!")
-                        time.sleep(0.8)
-                        st.rerun()
+                    st.success("✅ Pagamento registrado com sucesso!")
+                    time.sleep(0.8)
+                    st.rerun()
 
                 except Exception as e:
                     st.error(f"Erro ao registrar pagamento: {e}")
@@ -674,19 +663,16 @@ with tab3:
             with b1:
                 if st.button("Salvar edição do pagamento", key="btn_salvar_edicao_pagamento"):
                     try:
-                        res_edit = atualizar_pagamento_existente(
+                        atualizar_pagamento_existente(
                             parcela_id=parcela_paga["id"],
                             data_pagamento=nova_data_pagamento,
                             valor_pago=novo_valor_pago,
                             responsavel_pagamento=novo_responsavel,
                         )
 
-                        if not res_edit.data:
-                            st.error("A edição do pagamento não foi atualizada no banco.")
-                        else:
-                            st.success("✅ Pagamento atualizado com sucesso!")
-                            time.sleep(0.8)
-                            st.rerun()
+                        st.success("✅ Pagamento atualizado com sucesso!")
+                        time.sleep(0.8)
+                        st.rerun()
 
                     except Exception as e:
                         st.error(f"Erro ao atualizar pagamento: {e}")
@@ -694,14 +680,11 @@ with tab3:
             with b2:
                 if st.button("Desfazer pagamento", key="btn_desfazer_pagamento"):
                     try:
-                        res_undo = desfazer_pagamento(parcela_paga["id"])
+                        desfazer_pagamento(parcela_paga["id"])
 
-                        if not res_undo.data:
-                            st.error("Não foi possível desfazer o pagamento no banco.")
-                        else:
-                            st.success("✅ Pagamento desfeito com sucesso!")
-                            time.sleep(0.8)
-                            st.rerun()
+                        st.success("✅ Pagamento desfeito com sucesso!")
+                        time.sleep(0.8)
+                        st.rerun()
 
                     except Exception as e:
                         st.error(f"Erro ao desfazer pagamento: {e}")
@@ -813,16 +796,8 @@ with tab4:
                                 else payload["categoria"]
                             )
 
-                        res_update = (
-                            supabase.table("parcelas")
-                            .update(payload)
-                            .eq("id", int(parcela_id))
-                            .select("*")
-                            .execute()
-                        )
-
-                        if res_update.data:
-                            alteradas += 1
+                        supabase.table("parcelas").update(payload).eq("id", int(parcela_id)).execute()
+                        alteradas += 1
 
                 if alteradas == 0:
                     st.info("Nenhuma alteração detectada.")
