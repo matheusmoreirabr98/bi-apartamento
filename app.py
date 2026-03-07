@@ -11,7 +11,47 @@ from supabase import create_client
 # =========================================================
 
 st.set_page_config(page_title="Apartamento 3.0", layout="wide")
-st.title("🏠 Apartamento 3.0")
+st.markdown("""
+<style>
+
+/* MOBILE LAYOUT FIX */
+
+@media (max-width: 768px){
+
+    /* força colunas a virarem blocos */
+    div[data-testid="column"]{
+        width:100% !important;
+        flex:1 1 100% !important;
+        display:block !important;
+    }
+
+    /* métricas ocupam largura total */
+    div[data-testid="metric-container"]{
+        width:100% !important;
+        margin-bottom:12px;
+    }
+
+    /* espaçamento melhor */
+    div.block-container{
+        padding-left:12px;
+        padding-right:12px;
+    }
+
+    /* gráficos largura total */
+    div[data-testid="stPlotlyChart"]{
+        width:100% !important;
+    }
+
+    /* dataframe responsivo */
+    div[data-testid="stDataFrame"]{
+        overflow-x:auto;
+    }
+
+}
+
+</style>
+""", unsafe_allow_html=True)
+st.title("🏠 Apartamento")
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
