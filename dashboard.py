@@ -199,30 +199,62 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     st.markdown("### Próxima Parcela")
 
-    proxima_parcela = (
-        contagem_base[contagem_base["status"] != "pago"]
-        .sort_values(["data_vencimento", "numero_parcela"])
-        .head(1)
-        .copy()
-    )
+    if eh_todos:
+        abertas_todas = contagem_base[contagem_base["status"] != "pago"].copy()
 
-    if proxima_parcela.empty:
-        st.success("✅ Não há parcelas em aberto.")
-    else:
-        prox = proxima_parcela.iloc[0]
+        prox_taxas = (
+            abertas_todas[abertas_todas["contrato"] == CONTRATO_TAXAS]
+            .sort_values(["data_vencimento", "numero_parcela"])
+            .head(1)
+            .copy()
+        )
 
-        if eh_todos:
-            render_cards_grid([
-                card_html("Contrato", str(prox["contrato"]), small=True),
-                card_html("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}', small=True),
-                card_html(
-                    "Vencimento",
-                    prox["data_vencimento"].strftime("%d/%m/%Y") if pd.notnull(prox["data_vencimento"]) else "-",
-                    small=True,
-                ),
-                card_html("Valor", brl(prox["valor_total"]), small=True),
-            ], cols=2)
+        prox_direcional = (
+            abertas_todas[abertas_todas["contrato"] == CONTRATO_DIRECIONAL]
+            .sort_values(["data_vencimento", "numero_parcela"])
+            .head(1)
+            .copy()
+        )
+
+        linhas_proximas = []
+
+        if not prox_taxas.empty:
+            row = prox_taxas.iloc[0]
+            linhas_proximas.append({
+                "Contrato": CONTRATO_TAXAS,
+                "Parcela": f'{int(row["numero_parcela"])}/{int(row["total_parcelas"])}',
+                "Vencimento": row["data_vencimento"].strftime("%d/%m/%Y") if pd.notnull(row["data_vencimento"]) else "-",
+                "Valor": brl(row["valor_total"]),
+            })
+
+        if not prox_direcional.empty:
+            row = prox_direcional.iloc[0]
+            linhas_proximas.append({
+                "Contrato": CONTRATO_DIRECIONAL,
+                "Parcela": f'{int(row["numero_parcela"])}/{int(row["total_parcelas"])}',
+                "Vencimento": row["data_vencimento"].strftime("%d/%m/%Y") if pd.notnull(row["data_vencimento"]) else "-",
+                "Valor": brl(row["valor_total"]),
+            })
+
+        if not linhas_proximas:
+            st.success("✅ Não há parcelas em aberto.")
         else:
+            proximas_df = pd.DataFrame(linhas_proximas)
+            st.dataframe(proximas_df, use_container_width=True, hide_index=True)
+
+    else:
+        proxima_parcela = (
+            contagem_base[contagem_base["status"] != "pago"]
+            .sort_values(["data_vencimento", "numero_parcela"])
+            .head(1)
+            .copy()
+        )
+
+        if proxima_parcela.empty:
+            st.success("✅ Não há parcelas em aberto.")
+        else:
+            prox = proxima_parcela.iloc[0]
+
             render_cards_grid([
                 card_html("Parcela", f'{int(prox["numero_parcela"])}/{int(prox["total_parcelas"])}', small=True),
                 card_html(
