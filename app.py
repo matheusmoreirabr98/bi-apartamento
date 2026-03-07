@@ -65,6 +65,12 @@ def normalizar_categoria(valor):
     return valor
 
 
+def normalizar_status_banco(valor):
+    if pd.isna(valor):
+        return None
+    return str(valor).strip().lower()
+
+
 def load_parcelas():
     try:
         res = supabase.table("parcelas").select("*").order("numero_parcela").execute()
@@ -81,7 +87,7 @@ def load_parcelas():
 
         for col in ["valor_principal", "valor_total", "valor_pago"]:
             if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
         for col in [
             "contrato",
@@ -94,7 +100,15 @@ def load_parcelas():
             if col not in df.columns:
                 df[col] = None
 
+        df["status"] = df["status"].apply(normalizar_status_banco)
         df["categoria"] = df["categoria"].apply(normalizar_categoria)
+
+        df["valor_principal"] = df["valor_principal"].fillna(0.0)
+        df["valor_total"] = df["valor_total"].fillna(0.0)
+
+        # valor_pago pode ficar nulo para não pagos
+        if "valor_pago" in df.columns:
+            df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
 
         # Marca a linha consolidada paga pela corretora / taxas banco
         df["eh_linha_resumo"] = (
@@ -138,6 +152,58 @@ def filtrar_contrato(df, contrato):
     if df.empty:
         return df
     return df[df["contrato"] == contrato].copy()
+
+
+def registrar_pagamento(parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+    res = (
+        supabase.table("parcelas")
+        .update(
+            {
+                "status": "pago",
+                "data_pagamento": str(data_pagamento),
+                "valor_pago": float(valor_pago),
+                "responsavel_pagamento": responsavel_pagamento,
+            }
+        )
+        .eq("id", int(parcela_id))
+        .select("*")
+        .execute()
+    )
+    return res
+
+
+def atualizar_pagamento_existente(parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+    res = (
+        supabase.table("parcelas")
+        .update(
+            {
+                "data_pagamento": str(data_pagamento),
+                "valor_pago": float(valor_pago),
+                "responsavel_pagamento": responsavel_pagamento,
+            }
+        )
+        .eq("id", int(parcela_id))
+        .select("*")
+        .execute()
+    )
+    return res
+
+
+def desfazer_pagamento(parcela_id):
+    res = (
+        supabase.table("parcelas")
+        .update(
+            {
+                "status": "pendente",
+                "data_pagamento": None,
+                "valor_pago": None,
+            }
+        )
+        .eq("id", int(parcela_id))
+        .select("*")
+        .execute()
+    )
+    return res
 
 
 # =========================================================
@@ -226,25 +292,25 @@ with tab1:
     else:
         total_pago_geral = parcelas_contrato.loc[
             parcelas_contrato["status"] == "pago", "valor_pago"
-        ].sum()
+        ].fillna(0).sum()
 
         total_pago_compradores = parcelas_contrato.loc[
             (parcelas_contrato["status"] == "pago")
             & (parcelas_contrato["responsavel_pagamento"] == "Compradores"),
             "valor_pago",
-        ].sum()
+        ].fillna(0).sum()
 
         total_pago_corretora = parcelas_contrato.loc[
             (parcelas_contrato["status"] == "pago")
             & (parcelas_contrato["responsavel_pagamento"] == "Corretora"),
             "valor_pago",
-        ].sum()
+        ].fillna(0).sum()
 
         total_restante = parcelas_contrato.loc[
             parcelas_contrato["status"] != "pago", "valor_total"
-        ].sum()
+        ].fillna(0).sum()
 
-        total_geral = parcelas_contrato["valor_total"].sum()
+        total_geral = parcelas_contrato["valor_total"].fillna(0).sum()
 
         total_pago_qtd = (parcelas_contagem["status"] == "pago").sum()
         total_pendente_qtd = (parcelas_contagem["status_exibicao"] == "pendente").sum()
@@ -253,8 +319,8 @@ with tab1:
         progresso_pct = (total_pago_geral / total_geral * 100) if total_geral else 0
 
         juros_futuros = (
-            parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_total"]
-            - parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_principal"]
+            parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_total"].fillna(0)
+            - parcelas_contrato.loc[parcelas_contrato["status"] != "pago", "valor_principal"].fillna(0)
         ).sum()
 
         k1, k2, k3, k4 = st.columns(4)
@@ -338,7 +404,7 @@ with tab1:
 
             valor_pendente = parcelas_contrato.loc[
                 parcelas_contrato["status"] != "pago", "valor_total"
-            ].sum()
+            ].fillna(0).sum()
 
             resp_df = pd.DataFrame(
                 {
@@ -434,15 +500,10 @@ with tab2:
         ).dt.date
         parc_show["valor_principal"] = parc_show["valor_principal"].apply(brl)
         parc_show["valor_total"] = parc_show["valor_total"].apply(brl)
-        parc_show["valor_pago"] = parc_show["valor_pago"].apply(brl)
+        parc_show["valor_pago"] = parc_show["valor_pago"].apply(lambda x: brl(x) if pd.notnull(x) else "-")
 
         st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
-        # ============================================
-        # RESUMO POR STATUS
-        # ============================================
-        # Se filtrar Corretora ou Taxas Banco,
-        # o resumo deve mostrar somente Taxas Banco.
         if categoria_filtro == "Taxas Banco" or resp_filtro == "Corretora":
             resumo_base = parc_f[parc_f["categoria"] == "Taxas Banco"].copy()
         else:
@@ -476,7 +537,9 @@ with tab3:
     elif parcelas_contrato.empty:
         st.info("Sem parcelas cadastradas.")
     else:
-        pendentes = parcelas_contrato[parcelas_contrato["status"] != "pago"].copy()
+        pendentes = parcelas_contrato[
+            (parcelas_contrato["status"] != "pago") & (~parcelas_contrato["eh_linha_resumo"])
+        ].copy()
 
         st.markdown("### Marcar parcela como paga")
 
@@ -497,7 +560,11 @@ with tab3:
                 + pendentes["valor_total"].apply(brl)
             )
 
-            parcela_label = st.selectbox("Selecione a parcela", pendentes["label"].tolist())
+            parcela_label = st.selectbox(
+                "Selecione a parcela",
+                pendentes["label"].tolist(),
+                key="tab3_selecao_pendente"
+            )
             parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
 
             c1, c2, c3 = st.columns(3)
@@ -525,27 +592,31 @@ with tab3:
                     key="novo_pagamento_resp",
                 )
 
-            if st.button("Registrar pagamento", type="primary"):
+            if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
                 try:
-                    supabase.table("parcelas").update(
-                        {
-                            "status": "pago",
-                            "data_pagamento": str(data_pagamento),
-                            "valor_pago": float(valor_pago),
-                            "responsavel_pagamento": responsavel_pagamento,
-                        }
-                    ).eq("id", int(parcela_sel["id"])).execute()
+                    res_update = registrar_pagamento(
+                        parcela_id=parcela_sel["id"],
+                        data_pagamento=data_pagamento,
+                        valor_pago=valor_pago,
+                        responsavel_pagamento=responsavel_pagamento,
+                    )
 
-                    st.success("✅ Pagamento registrado com sucesso!")
-                    time.sleep(0.8)
-                    st.rerun()
+                    if not res_update.data:
+                        st.error("O pagamento não foi atualizado no banco. Verifique permissões ou o ID da parcela.")
+                    else:
+                        st.success("✅ Pagamento registrado com sucesso!")
+                        time.sleep(0.8)
+                        st.rerun()
+
                 except Exception as e:
                     st.error(f"Erro ao registrar pagamento: {e}")
 
         st.markdown("---")
         st.markdown("### Editar parcela já paga")
 
-        pagas = parcelas_contrato[parcelas_contrato["status"] == "pago"].copy()
+        pagas = parcelas_contrato[
+            (parcelas_contrato["status"] == "pago") & (~parcelas_contrato["eh_linha_resumo"])
+        ].copy()
 
         if pagas.empty:
             st.info("Nenhuma parcela paga para editar.")
@@ -561,7 +632,7 @@ with tab3:
                 + " | pago em "
                 + pagas["data_pagamento"].dt.strftime("%d/%m/%Y")
                 + " | "
-                + pagas["valor_pago"].apply(brl)
+                + pagas["valor_pago"].fillna(0).apply(brl)
             )
 
             parcela_paga_label = st.selectbox(
@@ -585,7 +656,7 @@ with tab3:
                 novo_valor_pago = st.number_input(
                     "Novo valor pago",
                     min_value=0.0,
-                    value=float(parcela_paga["valor_pago"]),
+                    value=float(parcela_paga["valor_pago"]) if pd.notnull(parcela_paga["valor_pago"]) else 0.0,
                     step=0.01,
                     format="%.2f",
                     key="edit_valor_pago",
@@ -601,36 +672,37 @@ with tab3:
             b1, b2 = st.columns(2)
 
             with b1:
-                if st.button("Salvar edição do pagamento"):
+                if st.button("Salvar edição do pagamento", key="btn_salvar_edicao_pagamento"):
                     try:
-                        supabase.table("parcelas").update(
-                            {
-                                "data_pagamento": str(nova_data_pagamento),
-                                "valor_pago": float(novo_valor_pago),
-                                "responsavel_pagamento": novo_responsavel,
-                            }
-                        ).eq("id", int(parcela_paga["id"])).execute()
+                        res_edit = atualizar_pagamento_existente(
+                            parcela_id=parcela_paga["id"],
+                            data_pagamento=nova_data_pagamento,
+                            valor_pago=novo_valor_pago,
+                            responsavel_pagamento=novo_responsavel,
+                        )
 
-                        st.success("✅ Pagamento atualizado com sucesso!")
-                        time.sleep(0.8)
-                        st.rerun()
+                        if not res_edit.data:
+                            st.error("A edição do pagamento não foi atualizada no banco.")
+                        else:
+                            st.success("✅ Pagamento atualizado com sucesso!")
+                            time.sleep(0.8)
+                            st.rerun()
+
                     except Exception as e:
                         st.error(f"Erro ao atualizar pagamento: {e}")
 
             with b2:
-                if st.button("Desfazer pagamento"):
+                if st.button("Desfazer pagamento", key="btn_desfazer_pagamento"):
                     try:
-                        supabase.table("parcelas").update(
-                            {
-                                "status": "pendente",
-                                "data_pagamento": None,
-                                "valor_pago": None,
-                            }
-                        ).eq("id", int(parcela_paga["id"])).execute()
+                        res_undo = desfazer_pagamento(parcela_paga["id"])
 
-                        st.success("✅ Pagamento desfeito com sucesso!")
-                        time.sleep(0.8)
-                        st.rerun()
+                        if not res_undo.data:
+                            st.error("Não foi possível desfazer o pagamento no banco.")
+                        else:
+                            st.success("✅ Pagamento desfeito com sucesso!")
+                            time.sleep(0.8)
+                            st.rerun()
+
                     except Exception as e:
                         st.error(f"Erro ao desfazer pagamento: {e}")
 
@@ -741,8 +813,16 @@ with tab4:
                                 else payload["categoria"]
                             )
 
-                        supabase.table("parcelas").update(payload).eq("id", int(parcela_id)).execute()
-                        alteradas += 1
+                        res_update = (
+                            supabase.table("parcelas")
+                            .update(payload)
+                            .eq("id", int(parcela_id))
+                            .select("*")
+                            .execute()
+                        )
+
+                        if res_update.data:
+                            alteradas += 1
 
                 if alteradas == 0:
                     st.info("Nenhuma alteração detectada.")
