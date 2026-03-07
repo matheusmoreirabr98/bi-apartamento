@@ -353,7 +353,7 @@ with tab1:
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Compradores": "#5ce612cd",
+                        "Compradores": "#56c718c9",
                         "Corretora": "#61df74",
                         "Pendente": "red",
                     },
