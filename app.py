@@ -3,7 +3,7 @@ from supabase import create_client
 
 from database import load_parcelas
 from dashboard import render_dashboard
-from pagamentos_view import render_atualizar_parcelas_tab, render_pagamentos_tab
+from pagamentos_view import render_pagamentos_tab, render_atualizar_parcelas_tab
 from parcelas_view import render_parcelas_tab
 from utils import (
     CONTRATO_TAXAS,
