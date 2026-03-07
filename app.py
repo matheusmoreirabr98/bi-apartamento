@@ -250,24 +250,24 @@ with tab1:
         ).sum()
 
         k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Total pago geral", brl(total_pago_geral))
-        k2.metric("Total pago compradores", brl(total_pago_compradores))
-        k3.metric("Total pago corretora", brl(total_pago_corretora))
-        k4.metric("Total geral", brl(total_geral))
+        k1.metric("Pagamento Total", brl(total_pago_geral))
+        k2.metric("Pagamento - Compradores", brl(total_pago_compradores))
+        k3.metric("Pagamento - Corretora", brl(total_pago_corretora))
+        k4.metric("Total Geral", brl(total_geral))
 
         k5, k6, k7, k8 = st.columns(4)
         k5.metric("Progresso", f"{progresso_pct:.1f}%")
-        k6.metric("Parcelas pagas", int(total_pago_qtd))
-        k7.metric("Pendentes", int(total_pendente_qtd))
-        k8.metric("Atrasadas", int(total_atrasado_qtd))
+        k6.metric("Quant. Parcelas Pagas", int(total_pago_qtd))
+        k7.metric("Quant. Parcelas Pendentes", int(total_pendente_qtd))
+        k8.metric("Quant. Parcelas Atrasadas", int(total_atrasado_qtd))
 
         k9, k10 = st.columns(2)
-        k9.metric("Total restante", brl(total_restante))
-        k10.metric("Juros futuros embutidos", brl(juros_futuros))
+        k9.metric("Total Restante", brl(total_restante))
+        k10.metric("Juros Futuros Embutidos", brl(juros_futuros))
 
         st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
-        st.markdown("### Próxima parcela a pagar")
+        st.markdown("### Próxima Parcela")
 
         proxima_parcela = (
             parcelas_contagem[parcelas_contagem["status"] != "pago"]
