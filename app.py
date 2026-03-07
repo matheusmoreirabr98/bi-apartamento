@@ -6,6 +6,8 @@ import plotly.express as px
 import streamlit as st
 from supabase import create_client
 
+test = supabase.table("parcelas").select("*").execute()
+st.write("DEBUG parcelas:", test.data)
 
 # =========================================================
 # CONFIG
