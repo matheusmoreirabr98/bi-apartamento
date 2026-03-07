@@ -226,9 +226,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
 
                 mensal_df = (
-                    evolucao_df.groupby("mes_ordem", as_index=False)["valor_pago"]
-                    .sum()
-                    .rename(columns={"valor_pago": "Total Pago"})
+                    evolucao_df.groupby("mes_ordem", as_index=False)
+                    .agg(
+                        **{
+                            "Total Pago": ("valor_pago", "sum"),
+                            "Qtd Parcelas": ("valor_pago", "size"),
+                        }
+                    )
                     .sort_values("mes_ordem")
                 )
 
@@ -236,23 +240,32 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     mensal_df["mes_ordem"], format="%Y-%m", errors="coerce"
                 ).dt.strftime("%m/%Y")
 
+                mensal_df["Texto"] = mensal_df["Qtd Parcelas"].apply(lambda x: f"{int(x)} parcela(s)")
+
                 fig_mensal = px.line(
                     mensal_df,
                     x="Mes",
                     y="Total Pago",
                     markers=True,
+                    text="Texto",
                     labels={
                         "Mes": "Mês",
                         "Total Pago": "Valor Pago",
                     },
                 )
 
+                fig_mensal.update_traces(
+                    textposition="top center",
+                    hovertemplate="<b>%{x}</b><br>Valor Pago: R$ %{y:,.2f}<br>Parcelas Pagas: %{text}<extra></extra>",
+                )
+
                 fig_mensal.update_layout(
                     showlegend=False,
                     xaxis_title="Mês",
                     yaxis_title="Valor Pago",
-                )
-
+)
+                fig_mensal.update_traces(textfont_size=12)
+                
                 st.plotly_chart(fig_mensal, use_container_width=True)
             else:
                 st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
@@ -282,9 +295,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 values="valor",
                 color="grupo",
                 color_discrete_map={
-                    "Compradores": "#56c718c9",
-                    "Corretora": "#61df74",
-                    "Pendente": "red",
+                    "Compradores": "#bcfb9bc7",
+                    "Corretora": "#80c98b",
+                    "Pendente": "#db8181",
                 },
             )
             st.plotly_chart(fig_resp, use_container_width=True)
