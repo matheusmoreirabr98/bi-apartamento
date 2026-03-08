@@ -61,8 +61,10 @@ usuario_logado = st.session_state.user_name
 pode_editar = usuario_logado == USUARIO_PODE_EDITAR
 
 top_c1, top_c2 = st.columns([3, 1])
+
 with top_c1:
     st.caption(f"Usuário logado: **{usuario_logado}**")
+
 with top_c2:
     if st.button("Sair"):
         st.session_state.logged_in = False
@@ -80,13 +82,23 @@ if parcelas.empty:
     st.warning("Nenhuma parcela encontrada na tabela `parcelas`.")
 
 contratos_disponiveis = []
+
 if not parcelas.empty and "contrato" in parcelas.columns:
-    contratos_disponiveis = sorted(parcelas["contrato"].dropna().unique().tolist())
+    contratos_disponiveis = sorted(
+        parcelas["contrato"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .unique()
+        .tolist()
+    )
 
 opcoes_contrato = [CONTRATO_TODOS] + contratos_disponiveis if contratos_disponiveis else ["Sem dados"]
 
-contrato_padrao = CONTRATO_TAXAS if CONTRATO_TAXAS in contratos_disponiveis else (
-    contratos_disponiveis[0] if contratos_disponiveis else None
+contrato_padrao = (
+    CONTRATO_TAXAS
+    if CONTRATO_TAXAS in contratos_disponiveis
+    else (contratos_disponiveis[0] if contratos_disponiveis else None)
 )
 
 indice_padrao = 0
@@ -103,7 +115,11 @@ if contrato_selecionado == "Sem dados":
     st.stop()
 
 parcelas_contrato = filtrar_contrato(parcelas, contrato_selecionado)
-parcelas_contagem = parcelas_contrato[~parcelas_contrato["eh_linha_resumo"]].copy()
+
+if "eh_linha_resumo" in parcelas_contrato.columns:
+    parcelas_contagem = parcelas_contrato[~parcelas_contrato["eh_linha_resumo"]].copy()
+else:
+    parcelas_contagem = parcelas_contrato.copy()
 
 # =========================================================
 # TABS
