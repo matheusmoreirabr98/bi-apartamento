@@ -12,6 +12,11 @@ from utils import (
 # =========================================================
 # HELPERS
 # =========================================================
+def _is_evolucao_obra(valor_contrato) -> bool:
+    contrato = str(valor_contrato).strip().lower()
+    return contrato in ["evolução de obra", "evolucao de obra"]
+
+
 def _formatar_dataframe_pagamentos(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -59,20 +64,38 @@ def _update_parcela(supabase, parcela_id, payload: dict):
     return supabase.table("parcelas").update(payload).eq("id", parcela_id).execute()
 
 
+def _update_contrato_encerrado(supabase, contrato: str, encerrado: bool):
+    return (
+        supabase.table("parcelas")
+        .update({"contrato_encerrado": encerrado})
+        .eq("contrato", contrato)
+        .execute()
+    )
+
+
+def _texto_parcela(row):
+    num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
+
+    if _is_evolucao_obra(row.get("contrato")):
+        return f"{num}/{num}"
+
+    total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
+    return f"{num}/{total}"
+
+
 def _build_label_pendente(row, eh_todos=False):
     data_venc = pd.to_datetime(row.get("data_vencimento"), errors="coerce")
     data_venc_str = data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-"
 
     descricao = str(row.get("descricao_parcela", "Parcela"))
-    num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
-    total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
+    parcela_txt = _texto_parcela(row)
     valor = brl(row.get("valor_total", 0))
 
     if eh_todos:
         contrato = str(row.get("contrato", "")).strip()
-        return f"{contrato} | {descricao} | {num}/{total} | vence {data_venc_str} | total {valor}"
+        return f"{contrato} | {descricao} | {parcela_txt} | vence {data_venc_str} | total {valor}"
 
-    return f"{descricao} | {num}/{total} | vence {data_venc_str} | total {valor}"
+    return f"{descricao} | {parcela_txt} | vence {data_venc_str} | total {valor}"
 
 
 def _build_label_pago(row, eh_todos=False):
@@ -80,44 +103,97 @@ def _build_label_pago(row, eh_todos=False):
     data_pag_str = data_pag.strftime("%d/%m/%Y") if pd.notnull(data_pag) else "-"
 
     descricao = str(row.get("descricao_parcela", "Parcela"))
-    num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
-    total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
+    parcela_txt = _texto_parcela(row)
     valor = brl(row.get("valor_pago", 0))
 
     if eh_todos:
         contrato = str(row.get("contrato", "")).strip()
-        return f"{contrato} | {descricao} | {num}/{total} | pago em {data_pag_str} | {valor}"
+        return f"{contrato} | {descricao} | {parcela_txt} | pago em {data_pag_str} | {valor}"
 
-    return f"{descricao} | {num}/{total} | pago em {data_pag_str} | {valor}"
+    return f"{descricao} | {parcela_txt} | pago em {data_pag_str} | {valor}"
 
 
-def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+def registrar_pagamento(
+    supabase,
+    parcela_id,
+    data_pagamento,
+    valor_pago,
+    responsavel_pagamento,
+    contrato,
+    numero_parcela,
+    eh_evolucao_obra=False,
+    ultima_parcela=False,
+):
     payload = {
         "data_pagamento": _date_to_iso(data_pagamento),
         "valor_pago": float(valor_pago),
         "responsavel_pagamento": responsavel_pagamento,
         "status": "pago",
     }
-    return _update_parcela(supabase, parcela_id, payload)
+
+    if eh_evolucao_obra:
+        payload["total_parcelas"] = int(numero_parcela)
+        payload["contrato_encerrado"] = bool(ultima_parcela)
+
+    resposta = _update_parcela(supabase, parcela_id, payload)
+
+    if eh_evolucao_obra:
+        _update_contrato_encerrado(supabase, contrato, bool(ultima_parcela))
+
+    return resposta
 
 
-def atualizar_pagamento_existente(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+def atualizar_pagamento_existente(
+    supabase,
+    parcela_id,
+    data_pagamento,
+    valor_pago,
+    responsavel_pagamento,
+    contrato,
+    numero_parcela,
+    eh_evolucao_obra=False,
+    ultima_parcela=False,
+):
     payload = {
         "data_pagamento": _date_to_iso(data_pagamento),
         "valor_pago": float(valor_pago),
         "responsavel_pagamento": responsavel_pagamento,
         "status": "pago",
     }
-    return _update_parcela(supabase, parcela_id, payload)
+
+    if eh_evolucao_obra:
+        payload["total_parcelas"] = int(numero_parcela)
+        payload["contrato_encerrado"] = bool(ultima_parcela)
+
+    resposta = _update_parcela(supabase, parcela_id, payload)
+
+    if eh_evolucao_obra:
+        _update_contrato_encerrado(supabase, contrato, bool(ultima_parcela))
+
+    return resposta
 
 
-def desfazer_pagamento(supabase, parcela_id):
+def desfazer_pagamento(
+    supabase,
+    parcela_id,
+    contrato=None,
+    eh_evolucao_obra=False,
+):
     payload = {
         "data_pagamento": None,
         "valor_pago": None,
         "status": "pendente",
     }
-    return _update_parcela(supabase, parcela_id, payload)
+
+    if eh_evolucao_obra:
+        payload["contrato_encerrado"] = False
+
+    resposta = _update_parcela(supabase, parcela_id, payload)
+
+    if eh_evolucao_obra and contrato:
+        _update_contrato_encerrado(supabase, contrato, False)
+
+    return resposta
 
 
 # =========================================================
@@ -125,6 +201,7 @@ def desfazer_pagamento(supabase, parcela_id):
 # =========================================================
 def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
     eh_todos = contrato_selecionado == CONTRATO_TODOS
+    contrato_eh_evolucao = _is_evolucao_obra(contrato_selecionado)
 
     st.subheader(f"Registrar / Editar Pagamento — {contrato_selecionado}")
 
@@ -144,6 +221,31 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     if parcelas.empty:
         st.info("Sem parcelas disponíveis.")
         return
+
+    # =========================================================
+    # CONTROLE DE ENCERRAMENTO - EVOLUÇÃO DE OBRA
+    # =========================================================
+    if contrato_eh_evolucao and "contrato_encerrado" in parcelas.columns:
+        contrato_encerrado = parcelas["contrato_encerrado"].fillna(False).astype(bool).any()
+
+        c1, c2 = st.columns([2, 1])
+
+        with c1:
+            if contrato_encerrado:
+                st.success("✅ Evolução de Obra está marcada como concluída.")
+            else:
+                st.info("ℹ️ Evolução de Obra está em andamento.")
+
+        with c2:
+            if st.button("Retomar Evolução de Obra", key="btn_retomar_evolucao"):
+                try:
+                    _update_contrato_encerrado(supabase, "Evolução de Obra", False)
+                    st.success("✅ Evolução de Obra retomada com sucesso!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao retomar Evolução de Obra: {e}")
+
+        st.markdown("---")
 
     # =========================================================
     # REGISTRAR PAGAMENTO - PARCELAS PENDENTES
@@ -166,6 +268,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         )
 
         parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
+        parcela_eh_evolucao = _is_evolucao_obra(parcela_sel.get("contrato"))
 
         if parcela_sel["contrato"] == CONTRATO_DIRECIONAL:
             responsaveis_opcoes = ["Compradores"]
@@ -216,6 +319,14 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                     key="novo_pagamento_resp",
                 )
 
+        ultima_parcela = False
+        if parcela_eh_evolucao:
+            ultima_parcela = st.checkbox(
+                "Esta é a última parcela da Evolução de Obra?",
+                value=False,
+                key="checkbox_ultima_parcela_evolucao",
+            )
+
         if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento"):
             try:
                 dados_atualizados = registrar_pagamento(
@@ -224,6 +335,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                     data_pagamento=data_pagamento,
                     valor_pago=valor_pago,
                     responsavel_pagamento=responsavel_pagamento,
+                    contrato=str(parcela_sel.get("contrato", "")),
+                    numero_parcela=int(parcela_sel["numero_parcela"]) if pd.notnull(parcela_sel.get("numero_parcela")) else 0,
+                    eh_evolucao_obra=parcela_eh_evolucao,
+                    ultima_parcela=ultima_parcela,
                 )
 
                 if not dados_atualizados:
@@ -257,6 +372,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     )
 
     parcela_paga = pagas[pagas["label"] == parcela_paga_label].iloc[0]
+    parcela_paga_eh_evolucao = _is_evolucao_obra(parcela_paga.get("contrato"))
 
     if parcela_paga["contrato"] == CONTRATO_DIRECIONAL:
         responsaveis_opcoes_edit = ["Compradores"]
@@ -308,6 +424,15 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                 key="edit_responsavel",
             )
 
+    ultima_parcela_edit = False
+    if parcela_paga_eh_evolucao:
+        valor_inicial_ultima = bool(parcela_paga.get("contrato_encerrado", False))
+        ultima_parcela_edit = st.checkbox(
+            "Esta é a última parcela da Evolução de Obra?",
+            value=valor_inicial_ultima,
+            key="checkbox_ultima_parcela_edit_evolucao",
+        )
+
     b1, b2 = st.columns(2)
 
     with b1:
@@ -319,6 +444,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                     data_pagamento=nova_data_pagamento,
                     valor_pago=novo_valor_pago,
                     responsavel_pagamento=novo_responsavel,
+                    contrato=str(parcela_paga.get("contrato", "")),
+                    numero_parcela=int(parcela_paga["numero_parcela"]) if pd.notnull(parcela_paga.get("numero_parcela")) else 0,
+                    eh_evolucao_obra=parcela_paga_eh_evolucao,
+                    ultima_parcela=ultima_parcela_edit,
                 )
 
                 if not dados_atualizados:
@@ -336,6 +465,8 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                 dados_atualizados = desfazer_pagamento(
                     supabase=supabase,
                     parcela_id=parcela_paga["id"],
+                    contrato=str(parcela_paga.get("contrato", "")),
+                    eh_evolucao_obra=parcela_paga_eh_evolucao,
                 )
 
                 if not dados_atualizados:
@@ -405,6 +536,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
             "valor_pago",
             "status_exibicao",
             "responsavel_pagamento",
+            "contrato_encerrado",
         ]
         if col in parcelas.columns
     ]
@@ -423,8 +555,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         lambda row: (
             f"{str(row.get('contrato', '')).strip() + ' | ' if str(row.get('contrato', '')).strip() else ''}"
             f"{str(row.get('descricao_parcela', 'Parcela'))} | "
-            f"{int(row['numero_parcela']) if pd.notnull(row.get('numero_parcela')) else 0}/"
-            f"{int(row['total_parcelas']) if pd.notnull(row.get('total_parcelas')) else 0} | "
+            f"{_texto_parcela(row)} | "
             f"Venc.: "
             f"{pd.to_datetime(row['data_vencimento'], errors='coerce').strftime('%d/%m/%Y') if pd.notnull(row.get('data_vencimento')) else '-'} | "
             f"{brl(row.get('valor_total', 0))}"
@@ -439,6 +570,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
     )
 
     parcela_escolhida = parcelas[parcelas["label_parcela"] == parcela_label].iloc[0]
+    parcela_escolhida_eh_evolucao = _is_evolucao_obra(parcela_escolhida.get("contrato"))
 
     if not pode_editar:
         st.warning("Você não tem permissão para atualizar parcelas.")
@@ -512,6 +644,9 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 "valor_total": float(novo_valor_total),
                 "responsavel_pagamento": novo_responsavel,
             }
+
+            if parcela_escolhida_eh_evolucao and pd.notnull(parcela_escolhida.get("numero_parcela")):
+                payload["total_parcelas"] = int(parcela_escolhida["numero_parcela"])
 
             _update_parcela(supabase, parcela_id, payload)
 
