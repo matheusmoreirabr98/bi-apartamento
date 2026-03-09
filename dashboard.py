@@ -29,7 +29,6 @@ CORES_CONTRATO = {
     "Pendente Entrada": "#eadf8a",
 }
 
-
 MAPA_MESES = {
     1: "Jan",
     2: "Fev",
@@ -62,6 +61,17 @@ def _render_quatro_cards_em_linha(cards_html):
         st.markdown(cards_html[2], unsafe_allow_html=True)
     with c4:
         st.markdown(cards_html[3], unsafe_allow_html=True)
+
+
+def _configurar_eixo_y(fig, faixa_max, passo):
+    fig.update_layout(
+        yaxis=dict(
+            range=[0, faixa_max],
+            dtick=passo,
+            tickprefix="R$ ",
+            separatethousands=True,
+        )
+    )
 
 
 def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado):
@@ -448,11 +458,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         legend_title_text="",
                         hovermode="x unified",
                         xaxis=dict(tickangle=320),
-                        yaxis=dict(
-                            range=[0, 3000],
-                            dtick=500,
-                        ),
                     )
+                    _configurar_eixo_y(fig_mensal, 3000, 500)
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
 
@@ -517,11 +524,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         legend_title_text="",
                         hovermode="x unified",
                         xaxis=dict(tickangle=320),
-                        yaxis=dict(
-                            range=[0, 3000],
-                            dtick=500,
-                        ),
                     )
+                    _configurar_eixo_y(fig_mensal, 3000, 500)
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
 
@@ -624,11 +628,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             legend_title_text="",
                             hovermode="x unified",
                             xaxis=dict(tickangle=320),
-                            yaxis=dict(
-                                range=[0, 2000],
-                                dtick=500,
-                            ),
                         )
+                        _configurar_eixo_y(fig_mensal, 2000, 500)
 
                         st.plotly_chart(fig_mensal, use_container_width=True)
 

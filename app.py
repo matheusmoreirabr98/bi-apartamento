@@ -82,6 +82,7 @@ if parcelas.empty:
     st.warning("Nenhuma parcela encontrada na tabela `parcelas`.")
 
 contratos_disponiveis = []
+opcoes_contrato = ["Sem dados"]
 
 if not parcelas.empty and "contrato" in parcelas.columns:
     contratos_disponiveis = (
@@ -108,7 +109,6 @@ if not parcelas.empty and "contrato" in parcelas.columns:
         key=lambda x: ordem_contratos.index(x) if x in ordem_contratos else 999
     )
 
-    # criação das categorias visuais
     opcoes_contrato = [CONTRATO_TODOS]
 
     grupos = {
@@ -124,33 +124,32 @@ if not parcelas.empty and "contrato" in parcelas.columns:
             opcoes_contrato.append(f"— {grupo} —")
             opcoes_contrato.extend(itens)
 
-else:
-    opcoes_contrato = ["Sem dados"]
-
-opcoes_contrato = [CONTRATO_TODOS] + contratos_disponiveis if contratos_disponiveis else ["Sem dados"]
-
+# contrato padrão: Diferença
 contrato_padrao = (
-    CONTRATO_TAXAS
-    if CONTRATO_TAXAS in contratos_disponiveis
-    else (contratos_disponiveis[0] if contratos_disponiveis else None)
+    "Diferença"
+    if "Diferença" in opcoes_contrato
+    else (
+        CONTRATO_DIRECIONAL
+        if CONTRATO_DIRECIONAL in opcoes_contrato
+        else (CONTRATO_TAXAS if CONTRATO_TAXAS in opcoes_contrato else CONTRATO_TODOS)
+    )
 )
 
 indice_padrao = 0
-if contrato_padrao and contrato_padrao in opcoes_contrato:
+if contrato_padrao in opcoes_contrato:
     indice_padrao = opcoes_contrato.index(contrato_padrao)
 
 contrato_selecionado = st.selectbox(
     "Selecione o contrato",
     options=opcoes_contrato,
-    index=0,
+    index=indice_padrao if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else 0,
 )
 
-# impedir seleção dos separadores
-if contrato_selecionado.startswith("—"):
-    st.warning("Selecione um contrato válido.")
+if contrato_selecionado == "Sem dados":
     st.stop()
 
-if contrato_selecionado == "Sem dados":
+if str(contrato_selecionado).startswith("—"):
+    st.warning("Selecione um contrato válido.")
     st.stop()
 
 parcelas_contrato = filtrar_contrato(parcelas, contrato_selecionado)
