@@ -169,9 +169,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Pagas", str(int(total_pago_qtd)), small=True),
-            card_html("Pendentes", str(int(total_pendente_qtd)), small=True),
-            card_html("Atrasadas", str(int(total_atrasado_qtd)), small=True),
+            card_html("Quant. Parcelas Pagas", str(int(total_pago_qtd)), small=True),
+            card_html("Quant. Parcelas Pendentes", str(int(total_pendente_qtd)), small=True),
+            card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
         ], cols=3)
 
         render_cards_grid([
@@ -189,9 +189,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Pagas", str(int(total_pago_qtd)), small=True),
-            card_html("Pendentes", str(int(total_pendente_qtd)), small=True),
-            card_html("Atrasadas", str(int(total_atrasado_qtd)), small=True),
+            card_html("Quant. Parcelas Pagas", str(int(total_pago_qtd)), small=True),
+            card_html("Quant. Parcelas Pendentes", str(int(total_pendente_qtd)), small=True),
+            card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
         ], cols=3)
 
     else:
@@ -210,9 +210,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Pagas", str(int(total_pago_qtd)), small=True),
-            card_html("Pendentes", str(int(total_pendente_qtd)), small=True),
-            card_html("Atrasadas", str(int(total_atrasado_qtd)), small=True),
+            card_html("Quant. Parcelas Pagas", str(int(total_pago_qtd)), small=True),
+            card_html("Quant. Parcelas Pendentes", str(int(total_pendente_qtd)), small=True),
+            card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
         ], cols=3)
 
         render_cards_grid([
