@@ -103,7 +103,7 @@ def _mes_nome_atual_pt():
 
 
 def _referencia_mes_ano(valor_data):
-    data_ref = pd.to_datetime(valor_data, errors="coerce")
+    data_ref = pd.to_datetime(valor_data, errors="coerce", dayfirst=True)
     if pd.isnull(data_ref):
         return "-"
     return f"{MAPA_MESES[data_ref.month]}/{data_ref.year}"
@@ -164,6 +164,39 @@ def _normalizar_texto_serie(valor):
     return str(valor).strip().lower()
 
 
+def _to_datetime_br(coluna):
+    return pd.to_datetime(coluna, errors="coerce", dayfirst=True)
+
+
+def _to_numeric_brl(coluna):
+    if isinstance(coluna, pd.Series):
+        if pd.api.types.is_numeric_dtype(coluna):
+            return coluna.fillna(0)
+
+        return (
+            coluna.astype(str)
+            .str.replace("R$", "", regex=False)
+            .str.replace(" ", "", regex=False)
+            .str.replace(".", "", regex=False)
+            .str.replace(",", ".", regex=False)
+            .replace(["", "nan", "None"], pd.NA)
+            .pipe(pd.to_numeric, errors="coerce")
+            .fillna(0)
+        )
+
+    if pd.isna(coluna):
+        return 0.0
+
+    if isinstance(coluna, (int, float)):
+        return float(coluna)
+
+    texto = str(coluna).replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".")
+    try:
+        return float(texto)
+    except Exception:
+        return 0.0
+
+
 def _eh_parcela_direcional_paga(row):
     """
     Regra especial solicitada para Entrada Direcional:
@@ -207,13 +240,34 @@ def _aplicar_regra_direcional(df):
     return df
 
 
+def _filtrar_base_entrada_direcional(df):
+    if df.empty:
+        return df.copy()
+
+    base = df.copy()
+
+    if "serie" in base.columns:
+        serie_norm = base["serie"].apply(_normalizar_texto_serie)
+        mask = serie_norm.str.contains("conf.div", na=False) & (
+            serie_norm.str.contains("carnê", na=False) | serie_norm.str.contains("carne", na=False)
+        )
+        filtrado = base[mask].copy()
+        if not filtrado.empty:
+            return filtrado
+
+    return base.copy()
+
+
 def _calcular_desconto_entrada_direcional(df):
     """
-    Calcula desconto apenas para Entrada Direcional.
-    Regra:
-    - usa valor_principal - valor_pago
-    - só considera desconto positivo
-    - apenas parcelas consideradas pagas pela regra especial
+    Desconto da Entrada Direcional:
+    compara VALOR PRINCIPAL x VALOR PAGO apenas nas parcelas já pagas
+    pela regra especial.
+
+    Observação:
+    para parcelas antecipadas, o extrato nem sempre preserva o "valor futuro
+    caso pagasse no vencimento"; então o cálculo mais consistente com a base
+    disponível é pelo valor principal da própria parcela.
     """
     if df.empty:
         return 0.0
@@ -227,16 +281,10 @@ def _calcular_desconto_entrada_direcional(df):
     if base.empty:
         return 0.0
 
-    if "valor_principal" in base.columns:
-        principal = pd.to_numeric(base["valor_principal"], errors="coerce").fillna(0)
-    elif "valor_total" in base.columns:
-        principal = pd.to_numeric(base["valor_total"], errors="coerce").fillna(0)
-    else:
-        return 0.0
+    principal = _to_numeric_brl(base["valor_principal"]) if "valor_principal" in base.columns else pd.Series(0, index=base.index)
+    pago = _to_numeric_brl(base["valor_pago"]) if "valor_pago" in base.columns else pd.Series(0, index=base.index)
 
-    pago = pd.to_numeric(base["valor_pago"], errors="coerce").fillna(0)
     desconto = (principal - pago).clip(lower=0).sum()
-
     return float(desconto)
 
 
@@ -302,7 +350,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     if "serie" in parcelas_contagem.columns:
         parcelas_contagem["serie"] = parcelas_contagem["serie"].astype(str).str.strip()
 
-    if eh_taxas:
+    if eh_entrada_direcional:
+        parcelas_base = _filtrar_base_entrada_direcional(parcelas_contrato)
+        contagem_base = _filtrar_base_entrada_direcional(parcelas_contagem)
+    elif eh_taxas:
         parcelas_base = parcelas_contrato[
             parcelas_contrato["responsavel_pagamento"] == "Compradores"
         ].copy()
@@ -317,19 +368,38 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # CÁLCULOS
     # =========================================================
-    if eh_entrada_direcional or eh_direcional:
+    if eh_entrada_direcional:
         parcelas_base = _aplicar_regra_direcional(parcelas_base)
         contagem_base = _aplicar_regra_direcional(contagem_base)
 
-        total_pago_geral = parcelas_base.loc[
+        valor_pago_col = _to_numeric_brl(parcelas_base["valor_pago"])
+        valor_total_col = _to_numeric_brl(parcelas_base["valor_total"])
+
+        total_pago_geral = valor_pago_col[parcelas_base["pago_calc"]].sum()
+        total_restante = valor_total_col[parcelas_base["pendente_calc"]].sum()
+        total_geral = valor_total_col.sum()
+        progresso_base = total_pago_geral
+
+        total_pago_qtd = int(parcelas_base["pago_calc"].sum())
+        total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
+        total_atrasado_qtd = 0
+
+        total_pago_compradores = 0
+        total_pago_corretora = 0
+
+    elif eh_direcional:
+        parcelas_base = _aplicar_regra_direcional(parcelas_base)
+        contagem_base = _aplicar_regra_direcional(contagem_base)
+
+        total_pago_geral = _to_numeric_brl(parcelas_base.loc[
             parcelas_base["pago_calc"], "valor_pago"
-        ].fillna(0).sum()
+        ]).sum()
 
-        total_restante = parcelas_base.loc[
+        total_restante = _to_numeric_brl(parcelas_base.loc[
             parcelas_base["pendente_calc"], "valor_total"
-        ].fillna(0).sum()
+        ]).sum()
 
-        total_geral = parcelas_base["valor_total"].fillna(0).sum()
+        total_geral = _to_numeric_brl(parcelas_base["valor_total"]).sum()
         progresso_base = total_pago_geral
 
         total_pago_qtd = int(parcelas_base["pago_calc"].sum())
@@ -340,27 +410,27 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_pago_corretora = 0
 
     else:
-        total_pago_geral = parcelas_base.loc[
+        total_pago_geral = _to_numeric_brl(parcelas_base.loc[
             parcelas_base["status"] == "pago", "valor_pago"
-        ].fillna(0).sum()
+        ]).sum()
 
-        total_pago_compradores = parcelas_contrato.loc[
+        total_pago_compradores = _to_numeric_brl(parcelas_contrato.loc[
             (parcelas_contrato["status"] == "pago")
             & (parcelas_contrato["responsavel_pagamento"] == "Compradores"),
             "valor_pago",
-        ].fillna(0).sum()
+        ]).sum()
 
-        total_pago_corretora = parcelas_contrato.loc[
+        total_pago_corretora = _to_numeric_brl(parcelas_contrato.loc[
             (parcelas_contrato["status"] == "pago")
             & (parcelas_contrato["responsavel_pagamento"] == "Corretora"),
             "valor_pago",
-        ].fillna(0).sum()
+        ]).sum()
 
-        total_restante = parcelas_base.loc[
+        total_restante = _to_numeric_brl(parcelas_base.loc[
             parcelas_base["status"] != "pago", "valor_total"
-        ].fillna(0).sum()
+        ]).sum()
 
-        total_geral = parcelas_base["valor_total"].fillna(0).sum()
+        total_geral = _to_numeric_brl(parcelas_base["valor_total"]).sum()
         progresso_base = total_pago_geral
 
         total_pago_qtd = int((contagem_base["status"] == "pago").sum())
@@ -395,8 +465,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     elif eh_financiamento_caixa:
         total_desconto_obtido = (
-            parcelas_base.loc[parcelas_base["status"] == "pago", "valor_total"].fillna(0).sum()
-            - parcelas_base.loc[parcelas_base["status"] == "pago", "valor_pago"].fillna(0).sum()
+            _to_numeric_brl(parcelas_base.loc[parcelas_base["status"] == "pago", "valor_total"]).sum()
+            - _to_numeric_brl(parcelas_base.loc[parcelas_base["status"] == "pago", "valor_pago"]).sum()
         )
 
         render_cards_grid([
@@ -478,10 +548,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     elif eh_evolucao_obra:
         hoje = pd.Timestamp.today()
+        data_venc_ref = _to_datetime_br(contagem_base["data_vencimento"]) if "data_vencimento" in contagem_base.columns else pd.Series(dtype="datetime64[ns]")
+
         pendente_mes_vigente = contagem_base[
             (contagem_base["status"] != "pago")
-            & (pd.to_datetime(contagem_base["data_vencimento"], errors="coerce").dt.month == hoje.month)
-            & (pd.to_datetime(contagem_base["data_vencimento"], errors="coerce").dt.year == hoje.year)
+            & (data_venc_ref.dt.month == hoje.month)
+            & (data_venc_ref.dt.year == hoje.year)
         ].shape[0]
 
         render_cards_grid([
@@ -555,34 +627,32 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 if not prox_taxas.empty:
                     row = prox_taxas.iloc[0]
+                    data_venc = _to_datetime_br(pd.Series([row["data_vencimento"]])).iloc[0]
 
                     _render_quatro_cards_em_linha([
                         card_html("Contrato", CONTRATO_TAXAS, small=True),
                         card_html("Parcela", _texto_parcela(row), small=True),
                         card_html(
                             "Vencimento",
-                            row["data_vencimento"].strftime("%d/%m/%Y")
-                            if pd.notnull(row["data_vencimento"])
-                            else "-",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
-                        card_html("Valor", brl(row["valor_total"]), small=True),
+                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
                     ])
 
                 if not prox_direcional.empty:
                     row = prox_direcional.iloc[0]
+                    data_venc = _to_datetime_br(pd.Series([row["data_vencimento"]])).iloc[0]
 
                     _render_quatro_cards_em_linha([
                         card_html("Contrato", CONTRATO_DIRECIONAL, small=True),
                         card_html("Parcela", _texto_parcela(row), small=True),
                         card_html(
                             "Vencimento",
-                            row["data_vencimento"].strftime("%d/%m/%Y")
-                            if pd.notnull(row["data_vencimento"])
-                            else "-",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
-                        card_html("Valor", brl(row["valor_total"]), small=True),
+                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
                     ])
 
             else:
@@ -593,6 +663,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
 
                 prox = proxima_parcela.iloc[0]
+                data_venc = _to_datetime_br(pd.Series([prox["data_vencimento"]])).iloc[0]
 
                 if eh_evolucao_obra:
                     render_cards_grid([
@@ -600,9 +671,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
                         card_html(
                             "Vencimento",
-                            prox["data_vencimento"].strftime("%d/%m/%Y")
-                            if pd.notnull(prox["data_vencimento"])
-                            else "-",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
                     ], cols=3)
@@ -611,12 +680,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         card_html("Parcela", _texto_parcela(prox), small=True),
                         card_html(
                             "Vencimento",
-                            prox["data_vencimento"].strftime("%d/%m/%Y")
-                            if pd.notnull(prox["data_vencimento"])
-                            else "-",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
-                        card_html("Valor", brl(prox["valor_total"]), small=True),
+                        card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
                     ], cols=3)
 
     # =========================================================
@@ -629,10 +696,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     if "data_pagamento" not in evolucao_df.columns:
         st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
         return
-
-    evolucao_df["data_pagamento"] = pd.to_datetime(
-        evolucao_df["data_pagamento"], errors="coerce"
-    )
 
     if eh_todos:
         evolucao_df = evolucao_df[
@@ -649,9 +712,11 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 _eh_parcela_direcional_paga, axis=1
             )
 
+        evolucao_df["data_pagamento_ref"] = _to_datetime_br(evolucao_df["data_pagamento"])
+
         evolucao_df = evolucao_df[
             (evolucao_df["pago_calc"])
-            & (evolucao_df["data_pagamento"].notna())
+            & (evolucao_df["data_pagamento_ref"].notna())
         ].copy()
 
         if evolucao_df.empty:
@@ -662,14 +727,15 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 CONTRATO_DIRECIONAL: "Entrada",
             })
 
-            evolucao_df["mes_ref"] = evolucao_df["data_pagamento"].dt.to_period("M")
+            evolucao_df["mes_ref"] = evolucao_df["data_pagamento_ref"].dt.to_period("M")
             evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
+            evolucao_df["valor_pago_num"] = _to_numeric_brl(evolucao_df["valor_pago"])
 
             mensal_df = (
                 evolucao_df.groupby(["mes_ordem", "serie_grafico"], as_index=False)
                 .agg(
-                    total_pago=("valor_pago", "sum"),
-                    qtd_parcelas=("valor_pago", "size"),
+                    total_pago=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "size"),
                 )
                 .sort_values(["mes_ordem", "serie_grafico"])
             )
@@ -752,25 +818,28 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             st.plotly_chart(fig_mensal, use_container_width=True)
 
     elif eh_entrada_direcional:
-        evolucao_pago = _aplicar_regra_direcional(evolucao_df)
+        evolucao_pago = _filtrar_base_entrada_direcional(evolucao_df)
+        evolucao_pago = _aplicar_regra_direcional(evolucao_pago)
+        evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
+        evolucao_pago["valor_pago_num"] = _to_numeric_brl(evolucao_pago["valor_pago"])
 
         evolucao_pago = evolucao_pago[
             (evolucao_pago["pago_calc"])
-            & (evolucao_pago["data_pagamento"].notna())
+            & (evolucao_pago["data_pagamento_ref"].notna())
         ].copy()
 
         if evolucao_pago.empty:
             st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
-            # IMPORTANTE: usa mês do pagamento, não mês do vencimento
-            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            # usa o mês em que foi pago
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento_ref"].dt.to_period("M")
             evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
             mensal_df = (
                 evolucao_pago.groupby("mes_ordem", as_index=False)
                 .agg(
-                    valor_pago_mes=("valor_pago", "sum"),
-                    qtd_parcelas=("numero_parcela", "count"),
+                    valor_pago_mes=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "size"),
                 )
                 .sort_values("mes_ordem")
             )
@@ -831,23 +900,25 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     elif eh_direcional:
         evolucao_pago = _aplicar_regra_direcional(evolucao_df)
+        evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
+        evolucao_pago["valor_pago_num"] = _to_numeric_brl(evolucao_pago["valor_pago"])
 
         evolucao_pago = evolucao_pago[
             (evolucao_pago["pago_calc"])
-            & (evolucao_pago["data_pagamento"].notna())
+            & (evolucao_pago["data_pagamento_ref"].notna())
         ].copy()
 
         if evolucao_pago.empty:
             st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
-            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento_ref"].dt.to_period("M")
             evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
             mensal_df = (
                 evolucao_pago.groupby("mes_ordem", as_index=False)
                 .agg(
-                    valor_pago_mes=("valor_pago", "sum"),
-                    qtd_parcelas=("numero_parcela", "count"),
+                    valor_pago_mes=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "count"),
                 )
                 .sort_values("mes_ordem")
             )
@@ -907,22 +978,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             st.plotly_chart(fig_mensal, use_container_width=True)
 
     elif eh_evolucao_obra:
-        evolucao_pago = evolucao_df[
-            (evolucao_df["status"] == "pago")
-            & (evolucao_df["data_pagamento"].notna())
+        evolucao_pago = evolucao_df.copy()
+        evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
+        evolucao_pago["valor_pago_num"] = _to_numeric_brl(evolucao_pago["valor_pago"])
+
+        evolucao_pago = evolucao_pago[
+            (evolucao_pago["status"] == "pago")
+            & (evolucao_pago["data_pagamento_ref"].notna())
         ].copy()
 
         if evolucao_pago.empty:
             st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
-            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento_ref"].dt.to_period("M")
             evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
             mensal_df = (
                 evolucao_pago.groupby(["mes_ordem"], as_index=False)
                 .agg(
-                    total_pago=("valor_pago", "sum"),
-                    qtd_parcelas=("valor_pago", "size"),
+                    total_pago=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "size"),
                 )
                 .sort_values(["mes_ordem"])
             )
@@ -992,23 +1067,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 .str.title()
             )
 
+        evolucao_df["data_pagamento_ref"] = _to_datetime_br(evolucao_df["data_pagamento"])
+        evolucao_df["valor_pago_num"] = _to_numeric_brl(evolucao_df["valor_pago"])
+
         evolucao_pago = evolucao_df[
             (evolucao_df["status"] == "pago")
-            & (evolucao_df["data_pagamento"].notna())
+            & (evolucao_df["data_pagamento_ref"].notna())
             & (evolucao_df["responsavel_pagamento"].isin(["Compradores", "Corretora"]))
         ].copy()
 
         if evolucao_pago.empty:
             st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
-            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento_ref"].dt.to_period("M")
             evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
             mensal_df = (
                 evolucao_pago.groupby(["mes_ordem", "responsavel_pagamento"], as_index=False)
                 .agg(
-                    total_pago=("valor_pago", "sum"),
-                    qtd_parcelas=("valor_pago", "size"),
+                    total_pago=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "size"),
                 )
                 .sort_values(["mes_ordem", "responsavel_pagamento"])
             )
@@ -1112,29 +1190,29 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             base_pizza["pendente_calc"] = ~base_pizza["pago_calc"]
 
-            pago_registro = base_pizza.loc[
+            pago_registro = _to_numeric_brl(base_pizza.loc[
                 (base_pizza["contrato"] == CONTRATO_TAXAS)
                 & (base_pizza["pago_calc"]),
                 "valor_pago",
-            ].fillna(0).sum()
+            ]).sum()
 
-            pendente_registro = base_pizza.loc[
+            pendente_registro = _to_numeric_brl(base_pizza.loc[
                 (base_pizza["contrato"] == CONTRATO_TAXAS)
                 & (base_pizza["pendente_calc"]),
                 "valor_total",
-            ].fillna(0).sum()
+            ]).sum()
 
-            pago_entrada = base_pizza.loc[
+            pago_entrada = _to_numeric_brl(base_pizza.loc[
                 (base_pizza["contrato"] == CONTRATO_DIRECIONAL)
                 & (base_pizza["pago_calc"]),
                 "valor_pago",
-            ].fillna(0).sum()
+            ]).sum()
 
-            pendente_entrada = base_pizza.loc[
+            pendente_entrada = _to_numeric_brl(base_pizza.loc[
                 (base_pizza["contrato"] == CONTRATO_DIRECIONAL)
                 & (base_pizza["pendente_calc"]),
                 "valor_total",
-            ].fillna(0).sum()
+            ]).sum()
 
             grupos = []
 
