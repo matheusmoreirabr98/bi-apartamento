@@ -359,14 +359,29 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         .sort_values(["mes_ordem", "serie"])
                     )
 
-                    mensal_df["Mes"] = pd.to_datetime(
-                        mensal_df["mes_ordem"], format="%Y-%m", errors="coerce"
-                    ).dt.strftime("%B/%Y")
+                    mapa_meses = {
+                        1: "Jan",
+                        2: "Fev",
+                        3: "Mar",
+                        4: "Abr",
+                        5: "Mai",
+                        6: "Jun",
+                        7: "Jul",
+                        8: "Ago",
+                        9: "Set",
+                        10: "Out",
+                        11: "Nov",
+                        12: "Dez",
+                    }
 
-                    ordem_meses = (
-                        mensal_df[["mes_ordem", "Mes"]]
-                        .drop_duplicates()
-                        .sort_values("mes_ordem")
+                    datas_mes = pd.to_datetime(
+                        mensal_df["mes_ordem"], format="%Y-%m", errors="coerce"
+                    )
+
+                    mensal_df["Mes"] = (
+                        datas_mes.dt.month.map(mapa_meses)
+                        + "/"
+                        + datas_mes.dt.year.astype(str)
                     )
 
                     fig_mensal = go.Figure()
@@ -429,7 +444,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         yaxis_title="Valor Pago",
                         legend_title_text="",
                         hovermode="x unified",
-                        xaxis=dict(tickangle=120),
+                        xaxis=dict(tickangle=90),
                     )
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
