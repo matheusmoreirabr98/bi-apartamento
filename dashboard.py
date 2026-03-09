@@ -351,12 +351,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
 
                     mensal_df = (
-                        evolucao_df.groupby(["mes_ordem", "serie"], as_index=False)
+                        evolucao_df.groupby(["mes_ordem"], as_index=False)
                         .agg(
                             total_pago=("valor_pago", "sum"),
                             qtd_parcelas=("valor_pago", "size"),
                         )
-                        .sort_values(["mes_ordem", "serie"])
+                        .sort_values(["mes_ordem"])
                     )
 
                     mapa_meses = {
