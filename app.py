@@ -84,7 +84,7 @@ if parcelas.empty:
 contratos_disponiveis = []
 
 if not parcelas.empty and "contrato" in parcelas.columns:
-    contratos_disponiveis = sorted(
+    contratos_disponiveis = (
         parcelas["contrato"]
         .dropna()
         .astype(str)
@@ -92,6 +92,40 @@ if not parcelas.empty and "contrato" in parcelas.columns:
         .unique()
         .tolist()
     )
+
+    ordem_contratos = [
+        "Ato",
+        "Sinal Ato",
+        "Diferença",
+        "Evolução de Obra",
+        "Taxas Cartoriais",
+        "Entrada Direcional",
+        "Financiamento Caixa",
+    ]
+
+    contratos_ordenados = sorted(
+        contratos_disponiveis,
+        key=lambda x: ordem_contratos.index(x) if x in ordem_contratos else 999
+    )
+
+    # criação das categorias visuais
+    opcoes_contrato = [CONTRATO_TODOS]
+
+    grupos = {
+        "📄 Pagamentos Iniciais": ["Ato", "Sinal Ato"],
+        "🏗️ Obra": ["Diferença", "Evolução de Obra", "Entrada Direcional"],
+        "📑 Cartório": ["Taxas Cartoriais"],
+        "🏦 Financiamento": ["Financiamento Caixa"],
+    }
+
+    for grupo, contratos in grupos.items():
+        itens = [c for c in contratos if c in contratos_ordenados]
+        if itens:
+            opcoes_contrato.append(f"— {grupo} —")
+            opcoes_contrato.extend(itens)
+
+else:
+    opcoes_contrato = ["Sem dados"]
 
 opcoes_contrato = [CONTRATO_TODOS] + contratos_disponiveis if contratos_disponiveis else ["Sem dados"]
 
@@ -108,8 +142,13 @@ if contrato_padrao and contrato_padrao in opcoes_contrato:
 contrato_selecionado = st.selectbox(
     "Selecione o contrato",
     options=opcoes_contrato,
-    index=indice_padrao if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else 0,
+    index=0,
 )
+
+# impedir seleção dos separadores
+if contrato_selecionado.startswith("—"):
+    st.warning("Selecione um contrato válido.")
+    st.stop()
 
 if contrato_selecionado == "Sem dados":
     st.stop()
