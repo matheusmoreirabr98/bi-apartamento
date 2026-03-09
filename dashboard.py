@@ -625,8 +625,11 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             st.plotly_chart(fig_mensal, use_container_width=True)
 
+
     elif eh_direcional:
         evolucao_pago = _aplicar_regra_direcional(evolucao_df)
+
+        # só entra no gráfico o que efetivamente tem data de pagamento
         evolucao_pago = evolucao_pago[
             (evolucao_pago["pago_calc"])
             & (evolucao_pago["data_pagamento"].notna())
@@ -639,42 +642,72 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
             mensal_df = (
-                evolucao_pago.groupby(["mes_ordem"], as_index=False)
+                evolucao_pago.groupby("mes_ordem", as_index=False)
                 .agg(
-                    total_pago=("valor_pago", "sum"),
-                    qtd_parcelas=("valor_pago", "size"),
+                    valor_pago_mes=("valor_pago", "sum"),
+                    qtd_parcelas=("numero_parcela", "count"),
                 )
-                .sort_values(["mes_ordem"])
+                .sort_values("mes_ordem")
             )
 
             mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
 
-            textos = [
-                str(int(qtd)) if qtd > 0 else ""
-                for qtd in mensal_df["qtd_parcelas"]
-            ]
-
             hover_textos = [
                 (
                     f"<b>{mes}</b><br>"
-                    f"Faturas Pagas: {int(qtd)}<br>"
+                    f"Quantidade de Parcelas Pagas: {int(qtd)}<br>"
                     f"Valor Pago no Mês: {brl(valor)}"
                 )
                 for mes, valor, qtd in zip(
                     mensal_df["Mes"],
-                    mensal_df["total_pago"],
+                    mensal_df["valor_pago_mes"],
                     mensal_df["qtd_parcelas"],
                 )
             ]
 
+            textos = [str(int(qtd)) for qtd in mensal_df["qtd_parcelas"]]
+
             fig_mensal = go.Figure()
 
             fig_mensal.add_trace(
+                go.Bar(
+                    x=mensal_df["Mes"],
+                    y=mensal_df["valor_pago_mes"],
+                    name="Valor Pago",
+                    text=[brl(v) for v in mensal_df["valor_pago_mes"]],
+                    textposition="outside",
+                    marker={"color": CORES_RESPONSAVEL["Pago"]},
+                    customdata=hover_textos,
+                    hovertemplate="%{customdata}<extra></extra>",
+                )
+            )
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+
+            _configurar_eixo_y_valor(
+                fig_mensal,
+                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 1000,
+                500,
+            )
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
+
+            st.markdown("#### Quantidade de Parcelas Pagas por Mês")
+
+            fig_qtd = go.Figure()
+
+            fig_qtd.add_trace(
                 go.Scatter(
                     x=mensal_df["Mes"],
                     y=mensal_df["qtd_parcelas"],
                     mode="lines+markers+text",
-                    name="Pago",
+                    name="Parcelas Pagas",
                     text=textos,
                     textposition="top center",
                     textfont={"size": 12},
@@ -683,21 +716,21 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "color": CORES_RESPONSAVEL["Pago"],
                         "size": 9,
                     },
-                    hovertemplate="%{customdata}<extra></extra>",
                     customdata=hover_textos,
+                    hovertemplate="%{customdata}<extra></extra>",
                 )
             )
 
-            fig_mensal.update_layout(
+            fig_qtd.update_layout(
                 xaxis_title="Mês do Pagamento",
-                yaxis_title="Quantidade de Faturas Pagas",
+                yaxis_title="Quantidade de Parcelas Pagas",
                 legend_title_text="",
                 hovermode="x unified",
                 xaxis=dict(tickangle=320),
             )
-            _configurar_eixo_y_quantidade(fig_mensal, int(mensal_df["qtd_parcelas"].max()))
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            _configurar_eixo_y_quantidade(fig_qtd, int(mensal_df["qtd_parcelas"].max()))
+            st.plotly_chart(fig_qtd, use_container_width=True)
 
     elif eh_evolucao_obra:
         evolucao_pago = evolucao_df[
