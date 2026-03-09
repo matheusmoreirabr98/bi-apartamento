@@ -1,6 +1,5 @@
 from datetime import date
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -68,10 +67,10 @@ def _referencia_mes_ano(valor_data):
     return f"{MAPA_MESES[data_ref.month]}/{data_ref.year}"
 
 
-def _texto_parcela(row):
+def _texto_parcela(row, somente_numero=False):
     num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
 
-    if _is_evolucao_obra(row.get("contrato")):
+    if somente_numero:
         return f"{num}"
 
     total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
@@ -368,7 +367,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 if eh_evolucao_obra:
                     render_cards_grid([
                         card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
-                        card_html("Parcela", _texto_parcela(prox), small=True),
+                        card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
                         card_html(
                             "Vencimento",
                             prox["data_vencimento"].strftime("%d/%m/%Y")
@@ -391,478 +390,385 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     ], cols=3)
 
     # =========================================================
-    # GRÁFICOS
+    # GRÁFICO
     # =========================================================
-    c1, c2 = st.columns(2)
+    st.markdown("### Evolução por Mês")
 
-    with c1:
-        st.markdown("### Evolução por Mês")
+    evolucao_df = parcelas_contrato.copy()
 
-        evolucao_df = parcelas_contrato.copy()
+    if "data_pagamento" not in evolucao_df.columns:
+        st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
+        return
 
-        if "data_pagamento" not in evolucao_df.columns:
-            st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
+    evolucao_df["data_pagamento"] = pd.to_datetime(
+        evolucao_df["data_pagamento"], errors="coerce"
+    )
+
+    if eh_todos:
+        evolucao_df = evolucao_df[
+            evolucao_df["contrato"].isin([CONTRATO_TAXAS, CONTRATO_DIRECIONAL])
+        ].copy()
+
+        evolucao_df = evolucao_df[
+            (evolucao_df["status"] == "pago")
+            & (evolucao_df["data_pagamento"].notna())
+        ].copy()
+
+        if evolucao_df.empty:
+            st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
-            evolucao_df["data_pagamento"] = pd.to_datetime(
-                evolucao_df["data_pagamento"], errors="coerce"
+            evolucao_df["serie"] = evolucao_df["contrato"].map({
+                CONTRATO_TAXAS: "Registro",
+                CONTRATO_DIRECIONAL: "Entrada",
+            })
+
+            evolucao_df["mes_ref"] = evolucao_df["data_pagamento"].dt.to_period("M")
+            evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
+
+            mensal_df = (
+                evolucao_df.groupby(["mes_ordem", "serie"], as_index=False)
+                .agg(
+                    total_pago=("valor_pago", "sum"),
+                    qtd_parcelas=("valor_pago", "size"),
+                )
+                .sort_values(["mes_ordem", "serie"])
             )
 
-            if eh_todos:
-                evolucao_df = evolucao_df[
-                    evolucao_df["contrato"].isin([CONTRATO_TAXAS, CONTRATO_DIRECIONAL])
-                ].copy()
+            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
 
-                evolucao_df = evolucao_df[
-                    (evolucao_df["status"] == "pago")
-                    & (evolucao_df["data_pagamento"].notna())
-                ].copy()
+            ordem_meses = (
+                mensal_df[["mes_ordem", "Mes"]]
+                .drop_duplicates()
+                .sort_values("mes_ordem")
+            )
 
-                if evolucao_df.empty:
-                    st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
-                else:
-                    evolucao_df["serie"] = evolucao_df["contrato"].map({
-                        CONTRATO_TAXAS: "Registro",
-                        CONTRATO_DIRECIONAL: "Entrada",
-                    })
+            fig_mensal = go.Figure()
 
-                    evolucao_df["mes_ref"] = evolucao_df["data_pagamento"].dt.to_period("M")
-                    evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
+            for serie in ["Registro", "Entrada"]:
+                df_serie = mensal_df[mensal_df["serie"] == serie].copy()
 
-                    mensal_df = (
-                        evolucao_df.groupby(["mes_ordem", "serie"], as_index=False)
-                        .agg(
-                            total_pago=("valor_pago", "sum"),
-                            qtd_parcelas=("valor_pago", "size"),
-                        )
-                        .sort_values(["mes_ordem", "serie"])
-                    )
+                if df_serie.empty:
+                    continue
 
-                    mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
-
-                    ordem_meses = (
-                        mensal_df[["mes_ordem", "Mes"]]
-                        .drop_duplicates()
-                        .sort_values("mes_ordem")
-                    )
-
-                    fig_mensal = go.Figure()
-
-                    for serie in ["Registro", "Entrada"]:
-                        df_serie = mensal_df[mensal_df["serie"] == serie].copy()
-
-                        if df_serie.empty:
-                            continue
-
-                        df_serie = ordem_meses.merge(
-                            df_serie,
-                            on=["mes_ordem", "Mes"],
-                            how="left"
-                        )
-
-                        df_serie["total_pago"] = df_serie["total_pago"].fillna(0)
-                        df_serie["qtd_parcelas"] = df_serie["qtd_parcelas"].fillna(0)
-
-                        textos = [
-                            str(int(qtd)) if qtd > 0 else ""
-                            for qtd in df_serie["qtd_parcelas"]
-                        ]
-
-                        hover_textos = [
-                            (
-                                f"<b>{mes}</b><br>"
-                                f"Valor Pago: {brl(valor)}<br>"
-                                f"Parcelas Pagas: {int(qtd)}"
-                            )
-                            for mes, valor, qtd in zip(
-                                df_serie["Mes"],
-                                df_serie["total_pago"],
-                                df_serie["qtd_parcelas"],
-                            )
-                        ]
-
-                        fig_mensal.add_trace(
-                            go.Scatter(
-                                x=df_serie["Mes"],
-                                y=df_serie["total_pago"],
-                                mode="lines+markers+text",
-                                name=serie,
-                                text=textos,
-                                textposition="top center",
-                                textfont={"size": 12},
-                                line={"color": CORES_CONTRATO.get(serie, "#999999"), "width": 3},
-                                marker={
-                                    "color": CORES_CONTRATO.get(serie, "#999999"),
-                                    "size": 9,
-                                },
-                                hovertemplate="%{customdata}<extra></extra>",
-                                customdata=hover_textos,
-                            )
-                        )
-
-                    fig_mensal.update_layout(
-                        xaxis_title="Mês",
-                        yaxis_title="Valor Pago",
-                        legend_title_text="",
-                        hovermode="x unified",
-                        xaxis=dict(tickangle=320),
-                    )
-                    _configurar_eixo_y(fig_mensal, 3000, 500)
-
-                    st.plotly_chart(fig_mensal, use_container_width=True)
-
-            elif eh_direcional:
-                evolucao_pago = evolucao_df[
-                    (evolucao_df["status"] == "pago")
-                    & (evolucao_df["data_pagamento"].notna())
-                ].copy()
-
-                if evolucao_pago.empty:
-                    st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
-                else:
-                    evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
-                    evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
-
-                    mensal_df = (
-                        evolucao_pago.groupby(["mes_ordem"], as_index=False)
-                        .agg(
-                            total_pago=("valor_pago", "sum"),
-                            qtd_parcelas=("valor_pago", "size"),
-                        )
-                        .sort_values(["mes_ordem"])
-                    )
-
-                    mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
-
-                    textos = [
-                        str(int(qtd)) if qtd > 0 else ""
-                        for qtd in mensal_df["qtd_parcelas"]
-                    ]
-
-                    hover_textos = [
-                        (
-                            f"<b>{mes}</b><br>"
-                            f"Valor Pago: {brl(valor)}<br>"
-                            f"Parcelas Pagas: {int(qtd)}"
-                        )
-                        for mes, valor, qtd in zip(
-                            mensal_df["Mes"],
-                            mensal_df["total_pago"],
-                            mensal_df["qtd_parcelas"],
-                        )
-                    ]
-
-                    fig_mensal = go.Figure()
-
-                    fig_mensal.add_trace(
-                        go.Scatter(
-                            x=mensal_df["Mes"],
-                            y=mensal_df["total_pago"],
-                            mode="lines+markers+text",
-                            name="Pago",
-                            text=textos,
-                            textposition="top center",
-                            textfont={"size": 12},
-                            line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
-                            marker={
-                                "color": CORES_RESPONSAVEL["Pago"],
-                                "size": 9,
-                            },
-                            hovertemplate="%{customdata}<extra></extra>",
-                            customdata=hover_textos,
-                        )
-                    )
-
-                    fig_mensal.update_layout(
-                        xaxis_title="Mês",
-                        yaxis_title="Valor Pago",
-                        legend_title_text="",
-                        hovermode="x unified",
-                        xaxis=dict(tickangle=320),
-                    )
-                    _configurar_eixo_y(fig_mensal, 3000, 500)
-
-                    st.plotly_chart(fig_mensal, use_container_width=True)
-
-            elif eh_evolucao_obra:
-                evolucao_pago = evolucao_df[
-                    (evolucao_df["status"] == "pago")
-                    & (evolucao_df["data_pagamento"].notna())
-                ].copy()
-
-                if evolucao_pago.empty:
-                    st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
-                else:
-                    evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
-                    evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
-
-                    mensal_df = (
-                        evolucao_pago.groupby(["mes_ordem"], as_index=False)
-                        .agg(
-                            total_pago=("valor_pago", "sum"),
-                            qtd_parcelas=("valor_pago", "size"),
-                        )
-                        .sort_values(["mes_ordem"])
-                    )
-
-                    mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
-
-                    textos = [
-                        str(int(qtd)) if qtd > 0 else ""
-                        for qtd in mensal_df["qtd_parcelas"]
-                    ]
-
-                    hover_textos = [
-                        (
-                            f"<b>{mes}</b><br>"
-                            f"Valor Pago: {brl(valor)}<br>"
-                            f"Parcelas Pagas: {int(qtd)}"
-                        )
-                        for mes, valor, qtd in zip(
-                            mensal_df["Mes"],
-                            mensal_df["total_pago"],
-                            mensal_df["qtd_parcelas"],
-                        )
-                    ]
-
-                    fig_mensal = go.Figure()
-
-                    fig_mensal.add_trace(
-                        go.Scatter(
-                            x=mensal_df["Mes"],
-                            y=mensal_df["total_pago"],
-                            mode="lines+markers+text",
-                            name="Pago",
-                            text=textos,
-                            textposition="top center",
-                            textfont={"size": 12},
-                            line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
-                            marker={
-                                "color": CORES_RESPONSAVEL["Pago"],
-                                "size": 9,
-                            },
-                            hovertemplate="%{customdata}<extra></extra>",
-                            customdata=hover_textos,
-                        )
-                    )
-
-                    fig_mensal.update_layout(
-                        xaxis_title="Mês",
-                        yaxis_title="Valor Pago",
-                        legend_title_text="",
-                        hovermode="x unified",
-                        xaxis=dict(tickangle=320),
-                    )
-                    _configurar_eixo_y(fig_mensal, 3000, 500)
-
-                    st.plotly_chart(fig_mensal, use_container_width=True)
-
-            else:
-                if "responsavel_pagamento" in evolucao_df.columns:
-                    evolucao_df["responsavel_pagamento"] = (
-                        evolucao_df["responsavel_pagamento"]
-                        .astype(str)
-                        .str.strip()
-                        .str.title()
-                    )
-
-                evolucao_pago = evolucao_df[
-                    (evolucao_df["status"] == "pago")
-                    & (evolucao_df["data_pagamento"].notna())
-                    & (evolucao_df["responsavel_pagamento"].isin(["Compradores", "Corretora"]))
-                ].copy()
-
-                if evolucao_pago.empty:
-                    st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
-                else:
-                    evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
-                    evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
-
-                    mensal_df = (
-                        evolucao_pago.groupby(["mes_ordem", "responsavel_pagamento"], as_index=False)
-                        .agg(
-                            total_pago=("valor_pago", "sum"),
-                            qtd_parcelas=("valor_pago", "size"),
-                        )
-                        .sort_values(["mes_ordem", "responsavel_pagamento"])
-                    )
-
-                    mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
-
-                    ordem_meses = (
-                        mensal_df[["mes_ordem", "Mes"]]
-                        .drop_duplicates()
-                        .sort_values("mes_ordem")
-                    )
-
-                    fig_mensal = go.Figure()
-
-                    for responsavel in ["Compradores", "Corretora"]:
-                        df_resp = mensal_df[
-                            mensal_df["responsavel_pagamento"] == responsavel
-                        ].copy()
-
-                        if df_resp.empty:
-                            continue
-
-                        df_resp = ordem_meses.merge(
-                            df_resp,
-                            on=["mes_ordem", "Mes"],
-                            how="left"
-                        )
-
-                        df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
-                        df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
-
-                        textos = [
-                            str(int(qtd)) if qtd > 0 else ""
-                            for qtd in df_resp["qtd_parcelas"]
-                        ]
-
-                        if eh_taxas:
-                            hover_textos = [
-                                (
-                                    f"<b>{mes}</b><br>"
-                                    f"Responsável: {responsavel}<br>"
-                                    f"Valor Pago: {brl(valor)}<br>"
-                                    f"Parcelas Pagas: {int(qtd)}"
-                                )
-                                for mes, valor, qtd in zip(
-                                    df_resp["Mes"],
-                                    df_resp["total_pago"],
-                                    df_resp["qtd_parcelas"],
-                                )
-                            ]
-                        else:
-                            hover_textos = [
-                                (
-                                    f"<b>{mes}</b><br>"
-                                    f"Valor Pago: {brl(valor)}<br>"
-                                    f"Parcelas Pagas: {int(qtd)}"
-                                )
-                                for mes, valor, qtd in zip(
-                                    df_resp["Mes"],
-                                    df_resp["total_pago"],
-                                    df_resp["qtd_parcelas"],
-                                )
-                            ]
-
-                        fig_mensal.add_trace(
-                            go.Scatter(
-                                x=df_resp["Mes"],
-                                y=df_resp["total_pago"],
-                                mode="lines+markers+text",
-                                name=responsavel,
-                                text=textos,
-                                textposition="top center",
-                                textfont={"size": 12},
-                                line={"color": CORES_RESPONSAVEL.get(responsavel, "#999999"), "width": 3},
-                                marker={
-                                    "color": CORES_RESPONSAVEL.get(responsavel, "#999999"),
-                                    "size": 9,
-                                },
-                                hovertemplate="%{customdata}<extra></extra>",
-                                customdata=hover_textos,
-                            )
-                        )
-
-                    fig_mensal.update_layout(
-                        xaxis_title="Mês",
-                        yaxis_title="Valor Pago",
-                        legend_title_text="",
-                        hovermode="x unified",
-                        xaxis=dict(tickangle=320),
-                    )
-                    _configurar_eixo_y(fig_mensal, 2000, 500)
-
-                    st.plotly_chart(fig_mensal, use_container_width=True)
-
-    with c2:
-        st.markdown("### Distribuição dos Valores")
-
-        if eh_todos:
-            pago_registro = parcelas_contrato.loc[
-                (parcelas_contrato["contrato"] == CONTRATO_TAXAS)
-                & (parcelas_contrato["status"] == "pago"),
-                "valor_pago",
-            ].fillna(0).sum()
-
-            pendente_registro = parcelas_contrato.loc[
-                (parcelas_contrato["contrato"] == CONTRATO_TAXAS)
-                & (parcelas_contrato["status"] != "pago"),
-                "valor_total",
-            ].fillna(0).sum()
-
-            pago_entrada = parcelas_contrato.loc[
-                (parcelas_contrato["contrato"] == CONTRATO_DIRECIONAL)
-                & (parcelas_contrato["status"] == "pago"),
-                "valor_pago",
-            ].fillna(0).sum()
-
-            pendente_entrada = parcelas_contrato.loc[
-                (parcelas_contrato["contrato"] == CONTRATO_DIRECIONAL)
-                & (parcelas_contrato["status"] != "pago"),
-                "valor_total",
-            ].fillna(0).sum()
-
-            grupos = []
-
-            if pago_registro > 0:
-                grupos.append({"grupo": "Pago Registro", "valor": pago_registro})
-
-            if pendente_registro > 0:
-                grupos.append({"grupo": "Pendente Registro", "valor": pendente_registro})
-
-            if pago_entrada > 0:
-                grupos.append({"grupo": "Pago Entrada", "valor": pago_entrada})
-
-            if pendente_entrada > 0:
-                grupos.append({"grupo": "Pendente Entrada", "valor": pendente_entrada})
-
-            resp_df = pd.DataFrame(grupos)
-
-            if not resp_df.empty:
-                fig_resp = px.pie(
-                    resp_df,
-                    names="grupo",
-                    values="valor",
-                    color="grupo",
-                    color_discrete_map={
-                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
-                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
-                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
-                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
-                    },
+                df_serie = ordem_meses.merge(
+                    df_serie,
+                    on=["mes_ordem", "Mes"],
+                    how="left"
                 )
 
-                fig_resp.update_traces(
-                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
-                )
-                st.plotly_chart(fig_resp, use_container_width=True)
+                df_serie["total_pago"] = df_serie["total_pago"].fillna(0)
+                df_serie["qtd_parcelas"] = df_serie["qtd_parcelas"].fillna(0)
 
+                textos = [
+                    str(int(qtd)) if qtd > 0 else ""
+                    for qtd in df_serie["qtd_parcelas"]
+                ]
+
+                hover_textos = [
+                    (
+                        f"<b>{mes}</b><br>"
+                        f"Valor Pago: {brl(valor)}<br>"
+                        f"Parcelas Pagas: {int(qtd)}"
+                    )
+                    for mes, valor, qtd in zip(
+                        df_serie["Mes"],
+                        df_serie["total_pago"],
+                        df_serie["qtd_parcelas"],
+                    )
+                ]
+
+                fig_mensal.add_trace(
+                    go.Scatter(
+                        x=df_serie["Mes"],
+                        y=df_serie["total_pago"],
+                        mode="lines+markers+text",
+                        name=serie,
+                        text=textos,
+                        textposition="top center",
+                        textfont={"size": 12},
+                        line={"color": CORES_CONTRATO.get(serie, "#999999"), "width": 3},
+                        marker={
+                            "color": CORES_CONTRATO.get(serie, "#999999"),
+                            "size": 9,
+                        },
+                        hovertemplate="%{customdata}<extra></extra>",
+                        customdata=hover_textos,
+                    )
+                )
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+            _configurar_eixo_y(fig_mensal, 3000, 500)
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
+
+    elif eh_direcional:
+        evolucao_pago = evolucao_df[
+            (evolucao_df["status"] == "pago")
+            & (evolucao_df["data_pagamento"].notna())
+        ].copy()
+
+        if evolucao_pago.empty:
+            st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
-            grupos = []
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
-            if total_pago_geral > 0:
-                grupos.append({"grupo": "Pago", "valor": total_pago_geral})
+            mensal_df = (
+                evolucao_pago.groupby(["mes_ordem"], as_index=False)
+                .agg(
+                    total_pago=("valor_pago", "sum"),
+                    qtd_parcelas=("valor_pago", "size"),
+                )
+                .sort_values(["mes_ordem"])
+            )
 
-            if total_restante > 0:
-                grupos.append({"grupo": "Pendente", "valor": total_restante})
+            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
 
-            resp_df = pd.DataFrame(grupos)
+            textos = [
+                str(int(qtd)) if qtd > 0 else ""
+                for qtd in mensal_df["qtd_parcelas"]
+            ]
 
-            if not resp_df.empty:
-                fig_resp = px.pie(
-                    resp_df,
-                    names="grupo",
-                    values="valor",
-                    color="grupo",
-                    color_discrete_map={
-                        "Pago": CORES_RESPONSAVEL["Pago"],
-                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+            hover_textos = [
+                (
+                    f"<b>{mes}</b><br>"
+                    f"Valor Pago: {brl(valor)}<br>"
+                    f"Parcelas Pagas: {int(qtd)}"
+                )
+                for mes, valor, qtd in zip(
+                    mensal_df["Mes"],
+                    mensal_df["total_pago"],
+                    mensal_df["qtd_parcelas"],
+                )
+            ]
+
+            fig_mensal = go.Figure()
+
+            fig_mensal.add_trace(
+                go.Scatter(
+                    x=mensal_df["Mes"],
+                    y=mensal_df["total_pago"],
+                    mode="lines+markers+text",
+                    name="Pago",
+                    text=textos,
+                    textposition="top center",
+                    textfont={"size": 12},
+                    line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
+                    marker={
+                        "color": CORES_RESPONSAVEL["Pago"],
+                        "size": 9,
                     },
+                    hovertemplate="%{customdata}<extra></extra>",
+                    customdata=hover_textos,
+                )
+            )
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+            _configurar_eixo_y(fig_mensal, 3000, 500)
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
+
+    elif eh_evolucao_obra:
+        evolucao_pago = evolucao_df[
+            (evolucao_df["status"] == "pago")
+            & (evolucao_df["data_pagamento"].notna())
+        ].copy()
+
+        if evolucao_pago.empty:
+            st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
+        else:
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
+
+            mensal_df = (
+                evolucao_pago.groupby(["mes_ordem"], as_index=False)
+                .agg(
+                    total_pago=("valor_pago", "sum"),
+                    qtd_parcelas=("valor_pago", "size"),
+                )
+                .sort_values(["mes_ordem"])
+            )
+
+            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
+
+            textos = [
+                str(int(qtd)) if qtd > 0 else ""
+                for qtd in mensal_df["qtd_parcelas"]
+            ]
+
+            hover_textos = [
+                (
+                    f"<b>{mes}</b><br>"
+                    f"Valor Pago: {brl(valor)}<br>"
+                    f"Parcelas Pagas: {int(qtd)}"
+                )
+                for mes, valor, qtd in zip(
+                    mensal_df["Mes"],
+                    mensal_df["total_pago"],
+                    mensal_df["qtd_parcelas"],
+                )
+            ]
+
+            fig_mensal = go.Figure()
+
+            fig_mensal.add_trace(
+                go.Scatter(
+                    x=mensal_df["Mes"],
+                    y=mensal_df["total_pago"],
+                    mode="lines+markers+text",
+                    name="Pago",
+                    text=textos,
+                    textposition="top center",
+                    textfont={"size": 12},
+                    line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
+                    marker={
+                        "color": CORES_RESPONSAVEL["Pago"],
+                        "size": 9,
+                    },
+                    hovertemplate="%{customdata}<extra></extra>",
+                    customdata=hover_textos,
+                )
+            )
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+            _configurar_eixo_y(fig_mensal, 3000, 500)
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
+
+    else:
+        if "responsavel_pagamento" in evolucao_df.columns:
+            evolucao_df["responsavel_pagamento"] = (
+                evolucao_df["responsavel_pagamento"]
+                .astype(str)
+                .str.strip()
+                .str.title()
+            )
+
+        evolucao_pago = evolucao_df[
+            (evolucao_df["status"] == "pago")
+            & (evolucao_df["data_pagamento"].notna())
+            & (evolucao_df["responsavel_pagamento"].isin(["Compradores", "Corretora"]))
+        ].copy()
+
+        if evolucao_pago.empty:
+            st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
+        else:
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
+
+            mensal_df = (
+                evolucao_pago.groupby(["mes_ordem", "responsavel_pagamento"], as_index=False)
+                .agg(
+                    total_pago=("valor_pago", "sum"),
+                    qtd_parcelas=("valor_pago", "size"),
+                )
+                .sort_values(["mes_ordem", "responsavel_pagamento"])
+            )
+
+            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
+
+            ordem_meses = (
+                mensal_df[["mes_ordem", "Mes"]]
+                .drop_duplicates()
+                .sort_values("mes_ordem")
+            )
+
+            fig_mensal = go.Figure()
+
+            for responsavel in ["Compradores", "Corretora"]:
+                df_resp = mensal_df[
+                    mensal_df["responsavel_pagamento"] == responsavel
+                ].copy()
+
+                if df_resp.empty:
+                    continue
+
+                df_resp = ordem_meses.merge(
+                    df_resp,
+                    on=["mes_ordem", "Mes"],
+                    how="left"
                 )
 
-                fig_resp.update_traces(
-                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
+                df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
+                df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
+
+                textos = [
+                    str(int(qtd)) if qtd > 0 else ""
+                    for qtd in df_resp["qtd_parcelas"]
+                ]
+
+                if eh_taxas:
+                    hover_textos = [
+                        (
+                            f"<b>{mes}</b><br>"
+                            f"Responsável: {responsavel}<br>"
+                            f"Valor Pago: {brl(valor)}<br>"
+                            f"Parcelas Pagas: {int(qtd)}"
+                        )
+                        for mes, valor, qtd in zip(
+                            df_resp["Mes"],
+                            df_resp["total_pago"],
+                            df_resp["qtd_parcelas"],
+                        )
+                    ]
+                else:
+                    hover_textos = [
+                        (
+                            f"<b>{mes}</b><br>"
+                            f"Valor Pago: {brl(valor)}<br>"
+                            f"Parcelas Pagas: {int(qtd)}"
+                        )
+                        for mes, valor, qtd in zip(
+                            df_resp["Mes"],
+                            df_resp["total_pago"],
+                            df_resp["qtd_parcelas"],
+                        )
+                    ]
+
+                fig_mensal.add_trace(
+                    go.Scatter(
+                        x=df_resp["Mes"],
+                        y=df_resp["total_pago"],
+                        mode="lines+markers+text",
+                        name=responsavel,
+                        text=textos,
+                        textposition="top center",
+                        textfont={"size": 12},
+                        line={"color": CORES_RESPONSAVEL.get(responsavel, "#999999"), "width": 3},
+                        marker={
+                            "color": CORES_RESPONSAVEL.get(responsavel, "#999999"),
+                            "size": 9,
+                        },
+                        hovertemplate="%{customdata}<extra></extra>",
+                        customdata=hover_textos,
+                    )
                 )
-                st.plotly_chart(fig_resp, use_container_width=True)
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+            _configurar_eixo_y(fig_mensal, 2000, 500)
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
