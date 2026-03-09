@@ -51,14 +51,20 @@ def _is_evolucao_obra(valor_contrato) -> bool:
     return contrato in ["evolução de obra", "evolucao de obra"]
 
 
-def _is_direcional(valor_contrato) -> bool:
+def _is_entrada_direcional(valor_contrato) -> bool:
     contrato = str(valor_contrato).strip().lower()
     return (
         contrato == str(CONTRATO_DIRECIONAL).strip().lower()
-        or contrato == "diferença"
+        or contrato == "entrada direcional"
+    )
+
+
+def _is_direcional(valor_contrato) -> bool:
+    contrato = str(valor_contrato).strip().lower()
+    return (
+        contrato == "diferença"
         or contrato == "diferenca"
         or "diferen" in contrato
-        or "direcional" in contrato
     )
 
 
@@ -201,11 +207,45 @@ def _aplicar_regra_direcional(df):
     return df
 
 
+def _calcular_desconto_entrada_direcional(df):
+    """
+    Calcula desconto apenas para Entrada Direcional.
+    Regra:
+    - usa valor_principal - valor_pago
+    - só considera desconto positivo
+    - apenas parcelas consideradas pagas pela regra especial
+    """
+    if df.empty:
+        return 0.0
+
+    base = df.copy()
+
+    if "pago_calc" not in base.columns:
+        base = _aplicar_regra_direcional(base)
+
+    base = base[base["pago_calc"]].copy()
+    if base.empty:
+        return 0.0
+
+    if "valor_principal" in base.columns:
+        principal = pd.to_numeric(base["valor_principal"], errors="coerce").fillna(0)
+    elif "valor_total" in base.columns:
+        principal = pd.to_numeric(base["valor_total"], errors="coerce").fillna(0)
+    else:
+        return 0.0
+
+    pago = pd.to_numeric(base["valor_pago"], errors="coerce").fillna(0)
+    desconto = (principal - pago).clip(lower=0).sum()
+
+    return float(desconto)
+
+
 def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado):
     contrato_sel = str(contrato_selecionado).strip().lower()
     contrato_direcional = str(CONTRATO_DIRECIONAL).strip().lower()
     contrato_todos = str(CONTRATO_TODOS).strip().lower()
 
+    eh_entrada_direcional = _is_entrada_direcional(contrato_selecionado)
     eh_direcional = _is_direcional(contrato_selecionado)
     eh_sinal_ato = _is_sinal_ato(contrato_selecionado)
     eh_financiamento_caixa = _is_financiamento_caixa(contrato_selecionado)
@@ -277,7 +317,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # CÁLCULOS
     # =========================================================
-    if eh_direcional:
+    if eh_entrada_direcional or eh_direcional:
         parcelas_base = _aplicar_regra_direcional(parcelas_base)
         contagem_base = _aplicar_regra_direcional(contagem_base)
 
@@ -396,6 +436,29 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
+    elif eh_entrada_direcional:
+        total_desconto_obtido = _calcular_desconto_entrada_direcional(parcelas_base)
+
+        render_cards_grid([
+            card_html("Pagamento Total", brl(total_pago_geral)),
+        ], cols=1)
+
+        render_cards_grid([
+            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Total Previsto", brl(total_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+        ], cols=3)
+
+        render_cards_grid([
+            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
+        ], cols=1)
+
+        render_cards_grid([
+            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+        ], cols=3)
+
     elif eh_direcional:
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral)),
@@ -467,7 +530,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     if eh_evolucao_obra and contrato_encerrado:
         st.success("✅ Evolução de Obra concluída.")
     else:
-        if eh_direcional:
+        if eh_entrada_direcional or eh_direcional:
             abertas = contagem_base[contagem_base["pendente_calc"]].copy()
         else:
             abertas = contagem_base[contagem_base["status"] != "pago"].copy()
@@ -683,6 +746,84 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             _configurar_eixo_y_valor(
                 fig_mensal,
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
+                500,
+            )
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
+
+    elif eh_entrada_direcional:
+        evolucao_pago = _aplicar_regra_direcional(evolucao_df)
+
+        evolucao_pago = evolucao_pago[
+            (evolucao_pago["pago_calc"])
+            & (evolucao_pago["data_pagamento"].notna())
+        ].copy()
+
+        if evolucao_pago.empty:
+            st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
+        else:
+            # IMPORTANTE: usa mês do pagamento, não mês do vencimento
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+            evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
+
+            mensal_df = (
+                evolucao_pago.groupby("mes_ordem", as_index=False)
+                .agg(
+                    valor_pago_mes=("valor_pago", "sum"),
+                    qtd_parcelas=("numero_parcela", "count"),
+                )
+                .sort_values("mes_ordem")
+            )
+
+            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
+
+            hover_textos = [
+                (
+                    f"<b>{mes}</b><br>"
+                    f"Quantidade de Parcelas Pagas: {int(qtd)}<br>"
+                    f"Valor Pago no Mês: {brl(valor)}"
+                )
+                for mes, valor, qtd in zip(
+                    mensal_df["Mes"],
+                    mensal_df["valor_pago_mes"],
+                    mensal_df["qtd_parcelas"],
+                )
+            ]
+
+            textos = [str(int(qtd)) for qtd in mensal_df["qtd_parcelas"]]
+
+            fig_mensal = go.Figure()
+
+            fig_mensal.add_trace(
+                go.Scatter(
+                    x=mensal_df["Mes"],
+                    y=mensal_df["valor_pago_mes"],
+                    mode="lines+markers+text",
+                    name="Valor Pago",
+                    text=textos,
+                    textposition="top center",
+                    textfont={"size": 12},
+                    line={"color": CORES_CONTRATO["Entrada"], "width": 3},
+                    marker={
+                        "color": CORES_CONTRATO["Entrada"],
+                        "size": 9,
+                    },
+                    customdata=hover_textos,
+                    hovertemplate="%{customdata}<extra></extra>",
+                )
+            )
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+
+            _configurar_eixo_y_valor(
+                fig_mensal,
+                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 500,
                 500,
             )
 
