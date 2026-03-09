@@ -98,6 +98,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         or contrato_sel.startswith("ato")
     )
 
+    eh_evolucao_obra = (
+        contrato_sel == "evolução de obra"
+        or contrato_sel == "evolucao de obra"
+        or "evolução de obra" in contrato_sel
+        or "evolucao de obra" in contrato_sel
+    )
+
     eh_todos = (
         contrato_sel == contrato_todos
         or "todos" in contrato_sel
@@ -225,7 +232,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
         ], cols=3)
 
-    else:
+    elif eh_evolucao_obra:
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral)),
         ], cols=1)
@@ -240,6 +247,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Quant. Parcelas Pendentes", str(int(total_pendente_qtd)), small=True),
             card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
         ], cols=3)
+
+    else:
+        render_cards_grid([
+            card_html("Pagamento Total", brl(total_pago_geral)),
+        ], cols=1)
+
+        render_cards_grid([
+            card_html("Pagamento Compradores", brl(total_pago_compradores), small=True),
+            card_html("Pagamento Corretora", brl(total_pago_corretora), small=True),
+        ], cols=2)
+
+        render_cards_grid([
+            card_html("Total Geral", brl(total_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+        ], cols=2)
+
+        render_cards_grid([
+            card_html("Quant. Parcelas Pagas", str(int(total_pago_qtd)), small=True),
+            card_html("Quant. Parcelas Pendentes", str(int(total_pendente_qtd)), small=True),
+            card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
+        ], cols=3)
+
+        render_cards_grid([
+            card_html("Total Restante", brl(total_restante), small=True),
+        ], cols=1)
 
     st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
@@ -730,6 +762,34 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 st.plotly_chart(fig_resp, use_container_width=True)
 
         elif eh_taxas:
+            grupos = []
+
+            if total_pago_geral > 0:
+                grupos.append({"grupo": "Pago", "valor": total_pago_geral})
+
+            if total_restante > 0:
+                grupos.append({"grupo": "Pendente", "valor": total_restante})
+
+            resp_df = pd.DataFrame(grupos)
+
+            if not resp_df.empty:
+                fig_resp = px.pie(
+                    resp_df,
+                    names="grupo",
+                    values="valor",
+                    color="grupo",
+                    color_discrete_map={
+                        "Pago": CORES_RESPONSAVEL["Pago"],
+                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+                    },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
+                )
+                st.plotly_chart(fig_resp, use_container_width=True)
+
+        elif eh_evolucao_obra:
             grupos = []
 
             if total_pago_geral > 0:
