@@ -1,5 +1,6 @@
 from datetime import date
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -48,6 +49,17 @@ MAPA_MESES = {
 def _is_evolucao_obra(valor_contrato) -> bool:
     contrato = str(valor_contrato).strip().lower()
     return contrato in ["evolução de obra", "evolucao de obra"]
+
+
+def _is_direcional(valor_contrato) -> bool:
+    contrato = str(valor_contrato).strip().lower()
+    return (
+        contrato == str(CONTRATO_DIRECIONAL).strip().lower()
+        or contrato == "diferença"
+        or contrato == "diferenca"
+        or "diferen" in contrato
+        or "direcional" in contrato
+    )
 
 
 def _formatar_mes_pt(coluna_mes_ordem):
@@ -100,6 +112,59 @@ def _configurar_eixo_y(fig, faixa_max, passo):
             tickformat=",",
         )
     )
+
+
+def _normalizar_texto_serie(valor):
+    if pd.isnull(valor):
+        return ""
+    return str(valor).strip().lower()
+
+
+def _eh_parcela_direcional_paga(row):
+    """
+    Regra especial solicitada para Entrada Direcional:
+    - Conf.Div Carnê / 1 até 10 de 14 = paga
+    - Conf.Div Carnê / 42 de 43 = paga
+    - Conf.Div Carnê / 43 de 43 = paga
+    - Demais = pendentes
+    """
+    serie = _normalizar_texto_serie(row.get("serie"))
+    num = pd.to_numeric(row.get("numero_parcela"), errors="coerce")
+    total = pd.to_numeric(row.get("total_parcelas"), errors="coerce")
+
+    if pd.isna(num):
+        return False
+
+    num = int(num)
+    total = int(total) if pd.notnull(total) else None
+
+    if "conf.div" not in serie and "carnê" not in serie and "carne" not in serie:
+        return str(row.get("status", "")).strip().lower() == "pago"
+
+    if total == 14 and 1 <= num <= 10:
+        return True
+
+    if total == 43 and num in [42, 43]:
+        return True
+
+    return False
+
+
+def _aplicar_regra_direcional(df):
+    """
+    Cria colunas auxiliares para cálculo do contrato direcional
+    sem depender apenas do campo status vindo do banco.
+    """
+    if df.empty:
+        df = df.copy()
+        df["pago_calc"] = False
+        df["pendente_calc"] = False
+        return df
+
+    df = df.copy()
+    df["pago_calc"] = df.apply(_eh_parcela_direcional_paga, axis=1)
+    df["pendente_calc"] = ~df["pago_calc"]
+    return df
 
 
 def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado):
@@ -169,6 +234,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             .str.strip()
         )
 
+    if "serie" in parcelas_contrato.columns:
+        parcelas_contrato["serie"] = parcelas_contrato["serie"].astype(str).str.strip()
+
+    if "serie" in parcelas_contagem.columns:
+        parcelas_contagem["serie"] = parcelas_contagem["serie"].astype(str).str.strip()
+
     if eh_taxas:
         parcelas_base = parcelas_contrato[
             parcelas_contrato["responsavel_pagamento"] == "Compradores"
@@ -181,32 +252,58 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         parcelas_base = parcelas_contrato.copy()
         contagem_base = parcelas_contagem.copy()
 
-    total_pago_geral = parcelas_base.loc[
-        parcelas_base["status"] == "pago", "valor_pago"
-    ].fillna(0).sum()
+    # =========================================================
+    # CÁLCULOS
+    # =========================================================
+    if eh_direcional:
+        parcelas_base = _aplicar_regra_direcional(parcelas_base)
+        contagem_base = _aplicar_regra_direcional(contagem_base)
 
-    total_pago_compradores = parcelas_contrato.loc[
-        (parcelas_contrato["status"] == "pago")
-        & (parcelas_contrato["responsavel_pagamento"] == "Compradores"),
-        "valor_pago",
-    ].fillna(0).sum()
+        total_pago_geral = parcelas_base.loc[
+            parcelas_base["pago_calc"], "valor_pago"
+        ].fillna(0).sum()
 
-    total_pago_corretora = parcelas_contrato.loc[
-        (parcelas_contrato["status"] == "pago")
-        & (parcelas_contrato["responsavel_pagamento"] == "Corretora"),
-        "valor_pago",
-    ].fillna(0).sum()
+        total_restante = parcelas_base.loc[
+            parcelas_base["pendente_calc"], "valor_total"
+        ].fillna(0).sum()
 
-    total_restante = parcelas_base.loc[
-        parcelas_base["status"] != "pago", "valor_total"
-    ].fillna(0).sum()
+        total_geral = total_pago_geral + total_restante
+        progresso_base = total_pago_geral
 
-    total_geral = parcelas_base["valor_total"].fillna(0).sum()
-    progresso_base = total_pago_geral
+        total_pago_qtd = int(parcelas_base["pago_calc"].sum())
+        total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
+        total_atrasado_qtd = 0
 
-    total_pago_qtd = int((contagem_base["status"] == "pago").sum())
-    total_pendente_qtd = int((contagem_base["status_exibicao"] == "pendente").sum()) if "status_exibicao" in contagem_base.columns else 0
-    total_atrasado_qtd = int((contagem_base["status_exibicao"] == "atrasado").sum()) if "status_exibicao" in contagem_base.columns else 0
+        total_pago_compradores = 0
+        total_pago_corretora = 0
+
+    else:
+        total_pago_geral = parcelas_base.loc[
+            parcelas_base["status"] == "pago", "valor_pago"
+        ].fillna(0).sum()
+
+        total_pago_compradores = parcelas_contrato.loc[
+            (parcelas_contrato["status"] == "pago")
+            & (parcelas_contrato["responsavel_pagamento"] == "Compradores"),
+            "valor_pago",
+        ].fillna(0).sum()
+
+        total_pago_corretora = parcelas_contrato.loc[
+            (parcelas_contrato["status"] == "pago")
+            & (parcelas_contrato["responsavel_pagamento"] == "Corretora"),
+            "valor_pago",
+        ].fillna(0).sum()
+
+        total_restante = parcelas_base.loc[
+            parcelas_base["status"] != "pago", "valor_total"
+        ].fillna(0).sum()
+
+        total_geral = parcelas_base["valor_total"].fillna(0).sum()
+        progresso_base = total_pago_geral
+
+        total_pago_qtd = int((contagem_base["status"] == "pago").sum())
+        total_pendente_qtd = int((contagem_base["status_exibicao"] == "pendente").sum()) if "status_exibicao" in contagem_base.columns else 0
+        total_atrasado_qtd = int((contagem_base["status_exibicao"] == "atrasado").sum()) if "status_exibicao" in contagem_base.columns else 0
 
     progresso_pct = (progresso_base / total_geral * 100) if total_geral else 0
 
@@ -244,10 +341,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
+            card_html("Total Geral", brl(total_geral), small=True),
+        ], cols=1)
+
+        render_cards_grid([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
             card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
-        ], cols=3)
+        ], cols=2)
 
     elif eh_evolucao_obra:
         hoje = pd.Timestamp.today()
@@ -303,7 +403,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     if eh_evolucao_obra and contrato_encerrado:
         st.success("✅ Evolução de Obra concluída.")
     else:
-        abertas = contagem_base[contagem_base["status"] != "pago"].copy()
+        if eh_direcional:
+            abertas = contagem_base[contagem_base["pendente_calc"]].copy()
+        else:
+            abertas = contagem_base[contagem_base["status"] != "pago"].copy()
 
         if abertas.empty:
             st.success("✅ Não há parcelas em aberto.")
@@ -390,7 +493,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     ], cols=3)
 
     # =========================================================
-    # GRÁFICO
+    # EVOLUÇÃO POR MÊS
     # =========================================================
     st.markdown("### Evolução por Mês")
 
@@ -409,15 +512,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             evolucao_df["contrato"].isin([CONTRATO_TAXAS, CONTRATO_DIRECIONAL])
         ].copy()
 
+        if "serie" in evolucao_df.columns:
+            evolucao_df["serie"] = evolucao_df["serie"].astype(str).str.strip()
+
+        # aplica regra especial só no direcional
+        evolucao_df["pago_calc"] = evolucao_df["status"].astype(str).str.lower().eq("pago")
+        mask_direcional = evolucao_df["contrato"].astype(str).str.strip().str.lower() == contrato_direcional
+        if mask_direcional.any():
+            evolucao_df.loc[mask_direcional, "pago_calc"] = evolucao_df.loc[mask_direcional].apply(
+                _eh_parcela_direcional_paga, axis=1
+            )
+
         evolucao_df = evolucao_df[
-            (evolucao_df["status"] == "pago")
+            (evolucao_df["pago_calc"])
             & (evolucao_df["data_pagamento"].notna())
         ].copy()
 
         if evolucao_df.empty:
             st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
         else:
-            evolucao_df["serie"] = evolucao_df["contrato"].map({
+            evolucao_df["serie_grafico"] = evolucao_df["contrato"].map({
                 CONTRATO_TAXAS: "Registro",
                 CONTRATO_DIRECIONAL: "Entrada",
             })
@@ -426,12 +540,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
 
             mensal_df = (
-                evolucao_df.groupby(["mes_ordem", "serie"], as_index=False)
+                evolucao_df.groupby(["mes_ordem", "serie_grafico"], as_index=False)
                 .agg(
                     total_pago=("valor_pago", "sum"),
                     qtd_parcelas=("valor_pago", "size"),
                 )
-                .sort_values(["mes_ordem", "serie"])
+                .sort_values(["mes_ordem", "serie_grafico"])
             )
 
             mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
@@ -445,7 +559,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             fig_mensal = go.Figure()
 
             for serie in ["Registro", "Entrada"]:
-                df_serie = mensal_df[mensal_df["serie"] == serie].copy()
+                df_serie = mensal_df[mensal_df["serie_grafico"] == serie].copy()
 
                 if df_serie.empty:
                     continue
@@ -508,9 +622,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             st.plotly_chart(fig_mensal, use_container_width=True)
 
     elif eh_direcional:
-        evolucao_pago = evolucao_df[
-            (evolucao_df["status"] == "pago")
-            & (evolucao_df["data_pagamento"].notna())
+        evolucao_pago = _aplicar_regra_direcional(evolucao_df)
+        evolucao_pago = evolucao_pago[
+            (evolucao_pago["pago_calc"])
+            & (evolucao_pago["data_pagamento"].notna())
         ].copy()
 
         if evolucao_pago.empty:
@@ -772,3 +887,110 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             _configurar_eixo_y(fig_mensal, 2000, 500)
 
             st.plotly_chart(fig_mensal, use_container_width=True)
+
+    # =========================================================
+    # GRÁFICO DE PIZZA
+    # =========================================================
+    if not eh_evolucao_obra:
+        st.markdown("### Distribuição dos Valores")
+
+        if eh_todos:
+            base_pizza = parcelas_contrato.copy()
+            if "serie" in base_pizza.columns:
+                base_pizza["serie"] = base_pizza["serie"].astype(str).str.strip()
+
+            base_pizza["pago_calc"] = base_pizza["status"].astype(str).str.lower().eq("pago")
+            mask_direcional = base_pizza["contrato"].astype(str).str.strip().str.lower() == contrato_direcional
+            if mask_direcional.any():
+                base_pizza.loc[mask_direcional, "pago_calc"] = base_pizza.loc[mask_direcional].apply(
+                    _eh_parcela_direcional_paga, axis=1
+                )
+
+            base_pizza["pendente_calc"] = ~base_pizza["pago_calc"]
+
+            pago_registro = base_pizza.loc[
+                (base_pizza["contrato"] == CONTRATO_TAXAS)
+                & (base_pizza["pago_calc"]),
+                "valor_pago",
+            ].fillna(0).sum()
+
+            pendente_registro = base_pizza.loc[
+                (base_pizza["contrato"] == CONTRATO_TAXAS)
+                & (base_pizza["pendente_calc"]),
+                "valor_total",
+            ].fillna(0).sum()
+
+            pago_entrada = base_pizza.loc[
+                (base_pizza["contrato"] == CONTRATO_DIRECIONAL)
+                & (base_pizza["pago_calc"]),
+                "valor_pago",
+            ].fillna(0).sum()
+
+            pendente_entrada = base_pizza.loc[
+                (base_pizza["contrato"] == CONTRATO_DIRECIONAL)
+                & (base_pizza["pendente_calc"]),
+                "valor_total",
+            ].fillna(0).sum()
+
+            grupos = []
+
+            if pago_registro > 0:
+                grupos.append({"grupo": "Pago Registro", "valor": pago_registro})
+
+            if pendente_registro > 0:
+                grupos.append({"grupo": "Pendente Registro", "valor": pendente_registro})
+
+            if pago_entrada > 0:
+                grupos.append({"grupo": "Pago Entrada", "valor": pago_entrada})
+
+            if pendente_entrada > 0:
+                grupos.append({"grupo": "Pendente Entrada", "valor": pendente_entrada})
+
+            resp_df = pd.DataFrame(grupos)
+
+            if not resp_df.empty:
+                fig_resp = px.pie(
+                    resp_df,
+                    names="grupo",
+                    values="valor",
+                    color="grupo",
+                    color_discrete_map={
+                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
+                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
+                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
+                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
+                    },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
+                )
+                st.plotly_chart(fig_resp, use_container_width=True)
+
+        else:
+            grupos = []
+
+            if total_pago_geral > 0:
+                grupos.append({"grupo": "Pago", "valor": total_pago_geral})
+
+            if total_restante > 0:
+                grupos.append({"grupo": "Pendente", "valor": total_restante})
+
+            resp_df = pd.DataFrame(grupos)
+
+            if not resp_df.empty:
+                fig_resp = px.pie(
+                    resp_df,
+                    names="grupo",
+                    values="valor",
+                    color="grupo",
+                    color_discrete_map={
+                        "Pago": CORES_RESPONSAVEL["Pago"],
+                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+                    },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
+                )
+                st.plotly_chart(fig_resp, use_container_width=True)
