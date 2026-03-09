@@ -72,7 +72,7 @@ def _texto_parcela(row):
     num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
 
     if _is_evolucao_obra(row.get("contrato")):
-        return f"{num}/{num}"
+        return f"{num}"
 
     total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
     return f"{num}/{total}"
@@ -584,52 +584,27 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     st.plotly_chart(fig_mensal, use_container_width=True)
 
             elif eh_evolucao_obra:
-                base_datas = parcelas_contrato.copy()
-                base_datas["data_vencimento"] = pd.to_datetime(base_datas["data_vencimento"], errors="coerce")
+                evolucao_pago = evolucao_df[
+                    (evolucao_df["status"] == "pago")
+                    & (evolucao_df["data_pagamento"].notna())
+                ].copy()
 
-                datas_validas = base_datas["data_vencimento"].dropna()
-
-                if datas_validas.empty:
-                    st.info("Ainda não há meses suficientes para mostrar a evolução mensal.")
+                if evolucao_pago.empty:
+                    st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
                 else:
-                    inicio = datas_validas.min().to_period("M")
-                    fim = datas_validas.max().to_period("M")
+                    evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
+                    evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
-                    todos_meses = pd.period_range(start=inicio, end=fim, freq="M")
-                    todos_meses_df = pd.DataFrame({"mes_ref": todos_meses})
-                    todos_meses_df["mes_ordem"] = todos_meses_df["mes_ref"].astype(str)
-                    todos_meses_df["Mes"] = _formatar_mes_pt(todos_meses_df["mes_ordem"])
-
-                    evolucao_pago = evolucao_df[
-                        (evolucao_df["status"] == "pago")
-                        & (evolucao_df["data_pagamento"].notna())
-                    ].copy()
-
-                    if evolucao_pago.empty:
-                        todos_meses_df["total_pago"] = 0.0
-                        todos_meses_df["qtd_parcelas"] = 0
-                        mensal_df = todos_meses_df.copy()
-                    else:
-                        evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento"].dt.to_period("M")
-                        evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
-
-                        mensal_pago = (
-                            evolucao_pago.groupby(["mes_ordem"], as_index=False)
-                            .agg(
-                                total_pago=("valor_pago", "sum"),
-                                qtd_parcelas=("valor_pago", "size"),
-                            )
-                            .sort_values(["mes_ordem"])
+                    mensal_df = (
+                        evolucao_pago.groupby(["mes_ordem"], as_index=False)
+                        .agg(
+                            total_pago=("valor_pago", "sum"),
+                            qtd_parcelas=("valor_pago", "size"),
                         )
+                        .sort_values(["mes_ordem"])
+                    )
 
-                        mensal_df = todos_meses_df.merge(
-                            mensal_pago,
-                            on="mes_ordem",
-                            how="left"
-                        )
-
-                        mensal_df["total_pago"] = mensal_df["total_pago"].fillna(0)
-                        mensal_df["qtd_parcelas"] = mensal_df["qtd_parcelas"].fillna(0)
+                    mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
 
                     textos = [
                         str(int(qtd)) if qtd > 0 else ""
