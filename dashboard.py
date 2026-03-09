@@ -159,8 +159,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     ].fillna(0).sum()
 
     if eh_taxas:
-        total_geral = parcelas_contrato["valor_total"].fillna(0).sum()
-        progresso_base = total_pago_compradores + total_pago_corretora
+        total_geral = parcelas_base["valor_total"].fillna(0).sum()
+        progresso_base = total_pago_geral
     else:
         total_geral = parcelas_base["valor_total"].fillna(0).sum()
         progresso_base = total_pago_geral
@@ -180,12 +180,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Pagamento Compradores", brl(total_pago_compradores), small=True),
-            card_html("Pagamento Corretora", brl(total_pago_corretora), small=True),
-        ], cols=2)
-
-        render_cards_grid([
-            card_html("Total Geral", brl(total_geral), small=True),
+            card_html("Valor Pendente", brl(total_restante), small=True),
             card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=2)
 
@@ -194,10 +189,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Quant. Parcelas Pendentes", str(int(total_pendente_qtd)), small=True),
             card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
         ], cols=3)
-
-        render_cards_grid([
-            card_html("Total Restante", brl(total_restante), small=True),
-        ], cols=1)
 
     elif eh_direcional:
         render_cards_grid([
@@ -681,6 +672,30 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 st.plotly_chart(fig_resp, use_container_width=True)
 
         elif eh_direcional:
+            grupos = []
+
+            if total_pago_geral > 0:
+                grupos.append({"grupo": "Pago", "valor": total_pago_geral})
+
+            if total_restante > 0:
+                grupos.append({"grupo": "Pendente", "valor": total_restante})
+
+            resp_df = pd.DataFrame(grupos)
+
+            if not resp_df.empty:
+                fig_resp = px.pie(
+                    resp_df,
+                    names="grupo",
+                    values="valor",
+                    color="grupo",
+                    color_discrete_map={
+                        "Pago": CORES_RESPONSAVEL["Pago"],
+                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+                    },
+                )
+                st.plotly_chart(fig_resp, use_container_width=True)
+
+        elif eh_taxas:
             grupos = []
 
             if total_pago_geral > 0:
