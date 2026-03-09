@@ -17,6 +17,7 @@ CORES_RESPONSAVEL = {
     "Compradores": "#56c718",
     "Corretora": "#d4c300",
     "Pendente": "#db8181",
+    "Pago": "#56c718",
 }
 
 CORES_CONTRATO = {
@@ -179,20 +180,15 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Total Geral", brl(total_geral), small=True),
-            card_html("Total Restante", brl(total_restante), small=True),
+            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=2)
 
         render_cards_grid([
-            card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
             card_html("Pagas", str(int(total_pago_qtd)), small=True),
             card_html("Pendentes", str(int(total_pendente_qtd)), small=True),
-        ], cols=3)
-
-        render_cards_grid([
             card_html("Atrasadas", str(int(total_atrasado_qtd)), small=True),
-            card_html("Juros Embutidos", brl(juros_futuros), small=True),
-        ], cols=2)
+        ], cols=3)
 
     else:
         render_cards_grid([
@@ -430,6 +426,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         yaxis_title="Valor Pago",
                         legend_title_text="",
                         hovermode="x unified",
+                        xaxis=dict(tickangle=90),
                     )
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
@@ -539,6 +536,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             yaxis_title="Valor Pago",
                             legend_title_text="",
                             hovermode="x unified",
+                            xaxis=dict(tickangle=90),
                         )
 
                         st.plotly_chart(fig_mensal, use_container_width=True)
@@ -598,6 +596,30 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
                         "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
                         "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
+                    },
+                )
+                st.plotly_chart(fig_resp, use_container_width=True)
+
+        elif eh_direcional:
+            grupos = []
+
+            if total_pago_geral > 0:
+                grupos.append({"grupo": "Pago", "valor": total_pago_geral})
+
+            if total_restante > 0:
+                grupos.append({"grupo": "Pendente", "valor": total_restante})
+
+            resp_df = pd.DataFrame(grupos)
+
+            if not resp_df.empty:
+                fig_resp = px.pie(
+                    resp_df,
+                    names="grupo",
+                    values="valor",
+                    color="grupo",
+                    color_discrete_map={
+                        "Pago": CORES_RESPONSAVEL["Pago"],
+                        "Pendente": CORES_RESPONSAVEL["Pendente"],
                     },
                 )
                 st.plotly_chart(fig_resp, use_container_width=True)
