@@ -170,12 +170,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         parcelas_base["status"] != "pago", "valor_total"
     ].fillna(0).sum()
 
-    if eh_taxas:
-        total_geral = parcelas_base["valor_total"].fillna(0).sum()
-        progresso_base = total_pago_geral
-    else:
-        total_geral = parcelas_base["valor_total"].fillna(0).sum()
-        progresso_base = total_pago_geral
+    total_geral = parcelas_base["valor_total"].fillna(0).sum()
+    progresso_base = total_pago_geral
 
     total_pago_qtd = (contagem_base["status"] == "pago").sum()
     total_pendente_qtd = (contagem_base["status_exibicao"] == "pendente").sum()
@@ -452,7 +448,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         legend_title_text="",
                         hovermode="x unified",
                         xaxis=dict(tickangle=320),
-                        yaxis=dict(range=[0, 3000]),
+                        yaxis=dict(
+                            range=[0, 3000],
+                            dtick=500,
+                        ),
                     )
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
@@ -518,7 +517,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         legend_title_text="",
                         hovermode="x unified",
                         xaxis=dict(tickangle=320),
-                        yaxis=dict(range=[0, 2000]),
+                        yaxis=dict(
+                            range=[0, 3000],
+                            dtick=500,
+                        ),
                     )
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
@@ -622,7 +624,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             legend_title_text="",
                             hovermode="x unified",
                             xaxis=dict(tickangle=320),
-                            yaxis=dict(range=[0, 2000]),
+                            yaxis=dict(
+                                range=[0, 2000],
+                                dtick=500,
+                            ),
                         )
 
                         st.plotly_chart(fig_mensal, use_container_width=True)
