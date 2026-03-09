@@ -77,8 +77,20 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         or "diferen" in contrato_sel
         or "direcional" in contrato_sel
     )
-    eh_taxas = contrato_sel == contrato_taxas
-    eh_todos = contrato_sel == contrato_todos
+
+    eh_taxas = (
+        contrato_sel == contrato_taxas
+        or contrato_sel == "sinal"
+        or contrato_sel == "ato"
+        or contrato_sel == "sinal ato"
+        or "sinal" in contrato_sel
+        or contrato_sel.startswith("ato")
+    )
+
+    eh_todos = (
+        contrato_sel == contrato_todos
+        or "todos" in contrato_sel
+    )
 
     if parcelas_contrato.empty:
         st.info("Sem dados para exibir.")
