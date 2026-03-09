@@ -361,7 +361,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                     mensal_df["Mes"] = pd.to_datetime(
                         mensal_df["mes_ordem"], format="%Y-%m", errors="coerce"
-                    ).dt.strftime("%m/%Y")
+                    ).dt.strftime("%B/%Y")
 
                     ordem_meses = (
                         mensal_df[["mes_ordem", "Mes"]]
@@ -429,7 +429,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         yaxis_title="Valor Pago",
                         legend_title_text="",
                         hovermode="x unified",
-                        xaxis=dict(tickangle=90),
+                        xaxis=dict(tickangle=120),
                     )
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
