@@ -70,7 +70,7 @@ def _configurar_eixo_y(fig, faixa_max, passo):
             dtick=passo,
             tickprefix="R$ ",
             separatethousands=True,
-            tickformat=","
+            tickformat=",",
         )
     )
 
@@ -231,12 +231,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Pagamento Compradores", brl(total_pago_compradores), small=True),
-            card_html("Pagamento Corretora", brl(total_pago_corretora), small=True),
-        ], cols=2)
-
-        render_cards_grid([
-            card_html("Total Geral", brl(total_geral), small=True),
+            card_html("Total Pendente", brl(total_restante), small=True),
             card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=2)
 
@@ -245,10 +240,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Quant. Parcelas Pendentes", str(int(total_pendente_qtd)), small=True),
             card_html("Quant. Parcelas Atrasadas", str(int(total_atrasado_qtd)), small=True),
         ], cols=3)
-
-        render_cards_grid([
-            card_html("Total Restante", brl(total_restante), small=True),
-        ], cols=1)
 
     st.progress(min(max(progresso_pct / 100, 0), 1.0))
 
@@ -420,33 +411,18 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             for qtd in df_serie["qtd_parcelas"]
                         ]
 
-                        if eh_taxas:
-                            hover_textos = [
-                                (
-                                    f"<b>{mes}</b><br>"
-                                    f"Responsável: {responsavel}<br>"
-                                    f"Valor Pago: {brl(valor)}<br>"
-                                    f"Parcelas Pagas: {int(qtd)}"
-                                )
-                                for mes, valor, qtd in zip(
-                                    df_resp["Mes"],
-                                    df_resp["total_pago"],
-                                    df_resp["qtd_parcelas"],
-                                )
-                            ]
-                        else:
-                            hover_textos = [
-                                (
-                                    f"<b>{mes}</b><br>"
-                                    f"Valor Pago: {brl(valor)}<br>"
-                                    f"Parcelas Pagas: {int(qtd)}"
-                                )
-                                for mes, valor, qtd in zip(
-                                    df_resp["Mes"],
-                                    df_resp["total_pago"],
-                                    df_resp["qtd_parcelas"],
-                                )
-                            ]
+                        hover_textos = [
+                            (
+                                f"<b>{mes}</b><br>"
+                                f"Valor Pago: {brl(valor)}<br>"
+                                f"Parcelas Pagas: {int(qtd)}"
+                            )
+                            for mes, valor, qtd in zip(
+                                df_serie["Mes"],
+                                df_serie["total_pago"],
+                                df_serie["qtd_parcelas"],
+                            )
+                        ]
 
                         fig_mensal.add_trace(
                             go.Scatter(
@@ -604,19 +580,33 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                                 for qtd in df_resp["qtd_parcelas"]
                             ]
 
-                            hover_textos = [
-                                (
-                                    f"<b>{mes}</b><br>"
-                                    f"Responsável: {responsavel}<br>"
-                                    f"Valor Pago: {brl(valor)}<br>"
-                                    f"Parcelas Pagas: {int(qtd)}"
-                                )
-                                for mes, valor, qtd in zip(
-                                    df_resp["Mes"],
-                                    df_resp["total_pago"],
-                                    df_resp["qtd_parcelas"],
-                                )
-                            ]
+                            if eh_taxas:
+                                hover_textos = [
+                                    (
+                                        f"<b>{mes}</b><br>"
+                                        f"Responsável: {responsavel}<br>"
+                                        f"Valor Pago: {brl(valor)}<br>"
+                                        f"Parcelas Pagas: {int(qtd)}"
+                                    )
+                                    for mes, valor, qtd in zip(
+                                        df_resp["Mes"],
+                                        df_resp["total_pago"],
+                                        df_resp["qtd_parcelas"],
+                                    )
+                                ]
+                            else:
+                                hover_textos = [
+                                    (
+                                        f"<b>{mes}</b><br>"
+                                        f"Valor Pago: {brl(valor)}<br>"
+                                        f"Parcelas Pagas: {int(qtd)}"
+                                    )
+                                    for mes, valor, qtd in zip(
+                                        df_resp["Mes"],
+                                        df_resp["total_pago"],
+                                        df_resp["qtd_parcelas"],
+                                    )
+                                ]
 
                             fig_mensal.add_trace(
                                 go.Scatter(
@@ -693,7 +683,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             resp_df = pd.DataFrame(grupos)
 
             if not resp_df.empty:
-
                 fig_resp = px.pie(
                     resp_df,
                     names="grupo",
@@ -730,10 +719,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
-                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
-                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
-                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
+                        "Pago": CORES_RESPONSAVEL["Pago"],
+                        "Pendente": CORES_RESPONSAVEL["Pendente"],
                     },
                 )
 
@@ -760,10 +747,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
-                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
-                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
-                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
+                        "Pago": CORES_RESPONSAVEL["Pago"],
+                        "Pendente": CORES_RESPONSAVEL["Pendente"],
                     },
                 )
 
@@ -775,11 +760,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         else:
             grupos = []
 
-            if total_pago_compradores > 0:
-                grupos.append({"grupo": "Compradores", "valor": total_pago_compradores})
-
-            if total_pago_corretora > 0:
-                grupos.append({"grupo": "Corretora", "valor": total_pago_corretora})
+            if total_pago_geral > 0:
+                grupos.append({"grupo": "Pago", "valor": total_pago_geral})
 
             if total_restante > 0:
                 grupos.append({"grupo": "Pendente", "valor": total_restante})
@@ -793,10 +775,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
-                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
-                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
-                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
+                        "Pago": CORES_RESPONSAVEL["Pago"],
+                        "Pendente": CORES_RESPONSAVEL["Pendente"],
                     },
                 )
 
