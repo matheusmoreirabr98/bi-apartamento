@@ -94,44 +94,73 @@ if not parcelas.empty and "contrato" in parcelas.columns:
         .tolist()
     )
 
-    ordem_contratos = [
-        "Ato",
-        "Sinal Ato",
-        "Diferença",
-        "Evolução de Obra",
-        "Taxas Cartoriais",
-        "Entrada Direcional",
-        "Financiamento Caixa",
-    ]
-
-    contratos_ordenados = sorted(
-        contratos_disponiveis,
-        key=lambda x: ordem_contratos.index(x) if x in ordem_contratos else 999
-    )
-
-    opcoes_contrato = [CONTRATO_TODOS]
-
-    grupos = {
-        "📄 Pagamentos Iniciais": ["Ato", "Sinal Ato"],
-        "🏗️ Obra": ["Diferença", "Evolução de Obra", "Entrada Direcional"],
-        "📑 Cartório": ["Taxas Cartoriais"],
-        "🏦 Financiamento": ["Financiamento Caixa"],
+    aliases_contratos = {
+        "Ato": ["Ato"],
+        "Sinal": ["Sinal"],
+        "Sinal Ato": ["Sinal Ato"],
+        "Diferença": ["Diferença", "Diferenca"],
+        "Evolução de Obra": ["Evolução de Obra", "Evolucao de Obra"],
+        "Taxas Cartoriais": ["Taxas Cartoriais"],
+        "Entrada Direcional": ["Entrada Direcional"],
+        "Financiamento Caixa": ["Financiamento Caixa"],
     }
 
-    for grupo, contratos in grupos.items():
-        itens = [c for c in contratos if c in contratos_ordenados]
-        if itens:
-            opcoes_contrato.append(f"— {grupo} —")
-            opcoes_contrato.extend(itens)
+    grupos = [
+        ("📄 Pagamentos Iniciais", ["Ato", "Sinal", "Sinal Ato"]),
+        ("🏗️ Obra", ["Diferença", "Evolução de Obra", "Entrada Direcional"]),
+        ("📑 Cartório", ["Taxas Cartoriais"]),
+        ("🏦 Financiamento", ["Financiamento Caixa"]),
+    ]
+
+    opcoes_contrato = [CONTRATO_TODOS]
+    contratos_ja_adicionados = set()
+
+    for _, contratos_grupo in grupos:
+        itens_do_grupo = []
+
+        for nome_exibicao in contratos_grupo:
+            possiveis_nomes = aliases_contratos.get(nome_exibicao, [nome_exibicao])
+
+            contrato_encontrado = next(
+                (
+                    contrato_real
+                    for contrato_real in contratos_disponiveis
+                    if contrato_real in possiveis_nomes and contrato_real not in contratos_ja_adicionados
+                ),
+                None,
+            )
+
+            if contrato_encontrado:
+                itens_do_grupo.append(contrato_encontrado)
+                contratos_ja_adicionados.add(contrato_encontrado)
+
+        if itens_do_grupo:
+            opcoes_contrato.extend(itens_do_grupo)
+
+    contratos_restantes = [
+        contrato
+        for contrato in contratos_disponiveis
+        if contrato not in contratos_ja_adicionados
+    ]
+
+    opcoes_contrato.extend(contratos_restantes)
 
 # contrato padrão: Diferença
 contrato_padrao = (
     "Diferença"
     if "Diferença" in opcoes_contrato
     else (
-        CONTRATO_DIRECIONAL
-        if CONTRATO_DIRECIONAL in opcoes_contrato
-        else (CONTRATO_TAXAS if CONTRATO_TAXAS in opcoes_contrato else CONTRATO_TODOS)
+        "Diferenca"
+        if "Diferenca" in opcoes_contrato
+        else (
+            CONTRATO_DIRECIONAL
+            if CONTRATO_DIRECIONAL in opcoes_contrato
+            else (
+                CONTRATO_TAXAS
+                if CONTRATO_TAXAS in opcoes_contrato
+                else (opcoes_contrato[0] if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else "Sem dados")
+            )
+        )
     )
 )
 
@@ -146,10 +175,6 @@ contrato_selecionado = st.selectbox(
 )
 
 if contrato_selecionado == "Sem dados":
-    st.stop()
-
-if str(contrato_selecionado).startswith("—"):
-    st.warning("Selecione um contrato válido.")
     st.stop()
 
 parcelas_contrato = filtrar_contrato(parcelas, contrato_selecionado)
