@@ -70,6 +70,7 @@ def _configurar_eixo_y(fig, faixa_max, passo):
             dtick=passo,
             tickprefix="R$ ",
             separatethousands=True,
+            tickformat=","
         )
     )
 
@@ -419,19 +420,33 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             for qtd in df_serie["qtd_parcelas"]
                         ]
 
-                        hover_textos = [
-                            (
-                                f"<b>{mes}</b><br>"
-                                f"Tipo: {serie}<br>"
-                                f"Valor Pago: {brl(valor)}<br>"
-                                f"Parcelas Pagas: {int(qtd)}"
-                            )
-                            for mes, valor, qtd in zip(
-                                df_serie["Mes"],
-                                df_serie["total_pago"],
-                                df_serie["qtd_parcelas"],
-                            )
-                        ]
+                        if eh_taxas:
+                            hover_textos = [
+                                (
+                                    f"<b>{mes}</b><br>"
+                                    f"Responsável: {responsavel}<br>"
+                                    f"Valor Pago: {brl(valor)}<br>"
+                                    f"Parcelas Pagas: {int(qtd)}"
+                                )
+                                for mes, valor, qtd in zip(
+                                    df_resp["Mes"],
+                                    df_resp["total_pago"],
+                                    df_resp["qtd_parcelas"],
+                                )
+                            ]
+                        else:
+                            hover_textos = [
+                                (
+                                    f"<b>{mes}</b><br>"
+                                    f"Valor Pago: {brl(valor)}<br>"
+                                    f"Parcelas Pagas: {int(qtd)}"
+                                )
+                                for mes, valor, qtd in zip(
+                                    df_resp["Mes"],
+                                    df_resp["total_pago"],
+                                    df_resp["qtd_parcelas"],
+                                )
+                            ]
 
                         fig_mensal.add_trace(
                             go.Scatter(
@@ -678,6 +693,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             resp_df = pd.DataFrame(grupos)
 
             if not resp_df.empty:
+
                 fig_resp = px.pie(
                     resp_df,
                     names="grupo",
@@ -689,6 +705,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
                         "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
                     },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
                 )
                 st.plotly_chart(fig_resp, use_container_width=True)
 
@@ -710,9 +730,15 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Pago": CORES_RESPONSAVEL["Pago"],
-                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
+                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
+                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
+                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
                     },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
                 )
                 st.plotly_chart(fig_resp, use_container_width=True)
 
@@ -734,9 +760,15 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Pago": CORES_RESPONSAVEL["Pago"],
-                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
+                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
+                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
+                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
                     },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
                 )
                 st.plotly_chart(fig_resp, use_container_width=True)
 
@@ -761,9 +793,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Compradores": CORES_RESPONSAVEL["Compradores"],
-                        "Corretora": CORES_RESPONSAVEL["Corretora"],
-                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
+                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
+                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
+                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
                     },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{value:,.0f}<extra></extra>"
                 )
                 st.plotly_chart(fig_resp, use_container_width=True)
