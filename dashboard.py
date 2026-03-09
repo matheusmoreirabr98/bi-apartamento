@@ -62,6 +62,30 @@ def _is_direcional(valor_contrato) -> bool:
     )
 
 
+def _is_sinal_ato(valor_contrato) -> bool:
+    contrato = str(valor_contrato).strip().lower()
+    return (
+        contrato in ["sinal ato", "ato", "sinal"]
+        or "sinal" in contrato
+        or contrato.startswith("ato")
+    )
+
+
+def _is_financiamento_caixa(valor_contrato) -> bool:
+    contrato = str(valor_contrato).strip().lower()
+    return "financiamento caixa" in contrato
+
+
+def _is_taxas_cartorio(valor_contrato) -> bool:
+    contrato = str(valor_contrato).strip().lower()
+    contrato_taxas = str(CONTRATO_TAXAS).strip().lower()
+    return (
+        contrato == contrato_taxas
+        and not _is_sinal_ato(valor_contrato)
+        and not _is_financiamento_caixa(valor_contrato)
+    )
+
+
 def _formatar_mes_pt(coluna_mes_ordem):
     datas_mes = pd.to_datetime(coluna_mes_ordem, format="%Y-%m", errors="coerce")
     return datas_mes.dt.month.map(MAPA_MESES) + "/" + datas_mes.dt.year.astype(str)
@@ -180,26 +204,14 @@ def _aplicar_regra_direcional(df):
 def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado):
     contrato_sel = str(contrato_selecionado).strip().lower()
     contrato_direcional = str(CONTRATO_DIRECIONAL).strip().lower()
-    contrato_taxas = str(CONTRATO_TAXAS).strip().lower()
     contrato_todos = str(CONTRATO_TODOS).strip().lower()
 
-    eh_direcional = (
-        contrato_sel == contrato_direcional
-        or contrato_sel == "diferença"
-        or contrato_sel == "diferenca"
-        or "diferen" in contrato_sel
-        or "direcional" in contrato_sel
-    )
+    eh_direcional = _is_direcional(contrato_selecionado)
+    eh_sinal_ato = _is_sinal_ato(contrato_selecionado)
+    eh_financiamento_caixa = _is_financiamento_caixa(contrato_selecionado)
+    eh_taxas_cartorio = _is_taxas_cartorio(contrato_selecionado)
 
-    eh_taxas = (
-        contrato_sel == contrato_taxas
-        or contrato_sel == "sinal"
-        or contrato_sel == "ato"
-        or contrato_sel == "sinal ato"
-        or "sinal" in contrato_sel
-        or contrato_sel.startswith("ato")
-    )
-
+    eh_taxas = eh_sinal_ato or eh_financiamento_caixa or eh_taxas_cartorio
     eh_evolucao_obra = _is_evolucao_obra(contrato_selecionado)
 
     eh_todos = (
@@ -324,7 +336,24 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # CARDS
     # =========================================================
-    if eh_taxas:
+    if eh_sinal_ato:
+        render_cards_grid([
+            card_html("Pagamento Total", brl(total_pago_geral))
+        ], cols=1)
+
+        render_cards_grid([
+            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Total Geral", brl(total_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+        ], cols=3)
+
+        render_cards_grid([
+            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+        ], cols=3)
+
+    elif eh_financiamento_caixa:
         total_desconto_obtido = (
             parcelas_base.loc[parcelas_base["status"] == "pago", "valor_total"].fillna(0).sum()
             - parcelas_base.loc[parcelas_base["status"] == "pago", "valor_pago"].fillna(0).sum()
@@ -350,12 +379,24 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=1)
 
-    elif eh_direcional:
-        total_desconto_obtido = (
-            parcelas_base.loc[parcelas_base["pago_calc"], "valor_total"].fillna(0).sum()
-            - parcelas_base.loc[parcelas_base["pago_calc"], "valor_pago"].fillna(0).sum()
-        )
+    elif eh_taxas_cartorio:
+        render_cards_grid([
+            card_html("Pagamento Total", brl(total_pago_geral))
+        ], cols=1)
 
+        render_cards_grid([
+            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Total Geral", brl(total_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+        ], cols=3)
+
+        render_cards_grid([
+            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+        ], cols=3)
+
+    elif eh_direcional:
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral)),
         ], cols=1)
@@ -371,10 +412,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
             card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
-
-        render_cards_grid([
-            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
-        ], cols=1)
 
     elif eh_evolucao_obra:
         hoje = pd.Timestamp.today()
