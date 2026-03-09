@@ -452,6 +452,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         legend_title_text="",
                         hovermode="x unified",
                         xaxis=dict(tickangle=320),
+                        yaxis=dict(range=[0, 2000]),
                     )
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
@@ -517,6 +518,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         legend_title_text="",
                         hovermode="x unified",
                         xaxis=dict(tickangle=320),
+                        yaxis=dict(range=[0, 2000]),
                     )
 
                     st.plotly_chart(fig_mensal, use_container_width=True)
@@ -620,6 +622,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             legend_title_text="",
                             hovermode="x unified",
                             xaxis=dict(tickangle=320),
+                            yaxis=dict(range=[0, 2000]),
                         )
 
                         st.plotly_chart(fig_mensal, use_container_width=True)
