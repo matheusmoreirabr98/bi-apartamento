@@ -30,6 +30,13 @@ CORES_CONTRATO = {
     "Pendente Entrada": "#eadf8a",
 }
 
+CORES_TAXAS_CARTORIO_PIZZA = {
+    "Valor Pago - Compradores": "#56c718",
+    "Valor Pendente - Compradores": "#db8181",
+    "Valor Pago - Corretora": "#d4c300",
+    "Valor Pendente - Corretora": "#eadf8a",
+}
+
 MAPA_MESES = {
     1: "Jan",
     2: "Fev",
@@ -386,6 +393,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         total_pago_compradores = 0
         total_pago_corretora = 0
+        total_restante_compradores = 0
+        total_restante_corretora = 0
 
     elif eh_direcional:
         parcelas_base = _aplicar_regra_direcional(parcelas_base)
@@ -408,6 +417,47 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         total_pago_compradores = 0
         total_pago_corretora = 0
+        total_restante_compradores = 0
+        total_restante_corretora = 0
+
+    elif eh_taxas_cartorio:
+        base_taxas_todas = parcelas_contrato[
+            parcelas_contrato["responsavel_pagamento"].isin(["Compradores", "Corretora"])
+        ].copy()
+
+        total_pago_compradores = _to_numeric_brl(base_taxas_todas.loc[
+            (base_taxas_todas["status"] == "pago")
+            & (base_taxas_todas["responsavel_pagamento"] == "Compradores"),
+            "valor_pago",
+        ]).sum()
+
+        total_pago_corretora = _to_numeric_brl(base_taxas_todas.loc[
+            (base_taxas_todas["status"] == "pago")
+            & (base_taxas_todas["responsavel_pagamento"] == "Corretora"),
+            "valor_pago",
+        ]).sum()
+
+        total_restante_compradores = _to_numeric_brl(base_taxas_todas.loc[
+            (base_taxas_todas["status"] != "pago")
+            & (base_taxas_todas["responsavel_pagamento"] == "Compradores"),
+            "valor_total",
+        ]).sum()
+
+        total_restante_corretora = _to_numeric_brl(base_taxas_todas.loc[
+            (base_taxas_todas["status"] != "pago")
+            & (base_taxas_todas["responsavel_pagamento"] == "Corretora"),
+            "valor_total",
+        ]).sum()
+
+        total_pago_geral = total_pago_compradores + total_pago_corretora
+        total_restante = total_restante_compradores + total_restante_corretora
+        total_geral = _to_numeric_brl(base_taxas_todas["valor_total"]).sum()
+        progresso_base = total_pago_geral
+
+        # Mantém a contagem do contrato principal (40 parcelas dos compradores)
+        total_pago_qtd = int((contagem_base["status"] == "pago").sum())
+        total_pendente_qtd = int((contagem_base["status_exibicao"] == "pendente").sum()) if "status_exibicao" in contagem_base.columns else 0
+        total_atrasado_qtd = int((contagem_base["status_exibicao"] == "atrasado").sum()) if "status_exibicao" in contagem_base.columns else 0
 
     else:
         total_pago_geral = _to_numeric_brl(parcelas_base.loc[
@@ -436,6 +486,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_pago_qtd = int((contagem_base["status"] == "pago").sum())
         total_pendente_qtd = int((contagem_base["status_exibicao"] == "pendente").sum()) if "status_exibicao" in contagem_base.columns else 0
         total_atrasado_qtd = int((contagem_base["status_exibicao"] == "atrasado").sum()) if "status_exibicao" in contagem_base.columns else 0
+
+        total_restante_compradores = 0
+        total_restante_corretora = 0
 
     progresso_pct = (progresso_base / total_geral * 100) if total_geral else 0
 
@@ -496,9 +549,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Valor Pendente Previsto", brl(total_restante), small=True),
-            card_html("Total Geral", brl(total_geral), small=True),
+            card_html("Total Previsto", brl(total_geral), small=True),
             card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=3)
+
+        render_cards_grid([
+            card_html("Valor Pago - Compradores", brl(total_pago_compradores), small=True),
+            card_html("Valor Pago - Corretora", brl(total_pago_corretora), small=True),
+        ], cols=2)
 
         render_cards_grid([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
@@ -977,6 +1035,120 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             st.plotly_chart(fig_mensal, use_container_width=True)
 
+    elif eh_taxas_cartorio:
+        evolucao_taxas = evolucao_df.copy()
+
+        if "responsavel_pagamento" in evolucao_taxas.columns:
+            evolucao_taxas["responsavel_pagamento"] = (
+                evolucao_taxas["responsavel_pagamento"]
+                .astype(str)
+                .str.strip()
+                .str.title()
+            )
+
+        evolucao_taxas["data_pagamento_ref"] = _to_datetime_br(evolucao_taxas["data_pagamento"])
+        evolucao_taxas["valor_pago_num"] = _to_numeric_brl(evolucao_taxas["valor_pago"])
+
+        evolucao_pago = evolucao_taxas[
+            (evolucao_taxas["status"] == "pago")
+            & (evolucao_taxas["data_pagamento_ref"].notna())
+            & (evolucao_taxas["responsavel_pagamento"].isin(["Compradores", "Corretora"]))
+        ].copy()
+
+        if evolucao_pago.empty:
+            st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
+        else:
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento_ref"].dt.to_period("M")
+            evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
+
+            mensal_df = (
+                evolucao_pago.groupby(["mes_ordem", "responsavel_pagamento"], as_index=False)
+                .agg(
+                    total_pago=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "size"),
+                )
+                .sort_values(["mes_ordem", "responsavel_pagamento"])
+            )
+
+            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
+
+            ordem_meses = (
+                mensal_df[["mes_ordem", "Mes"]]
+                .drop_duplicates()
+                .sort_values("mes_ordem")
+            )
+
+            fig_mensal = go.Figure()
+
+            for responsavel in ["Compradores", "Corretora"]:
+                df_resp = mensal_df[
+                    mensal_df["responsavel_pagamento"] == responsavel
+                ].copy()
+
+                if df_resp.empty:
+                    continue
+
+                df_resp = ordem_meses.merge(
+                    df_resp,
+                    on=["mes_ordem", "Mes"],
+                    how="left"
+                )
+
+                df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
+                df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
+
+                textos = [
+                    str(int(qtd)) if qtd > 0 else ""
+                    for qtd in df_resp["qtd_parcelas"]
+                ]
+
+                hover_textos = [
+                    (
+                        f"<b>{mes}</b><br>"
+                        f"Faturas Pagas: {int(qtd)}<br>"
+                        f"Valor Pago no Mês: {brl(valor)}"
+                    )
+                    for mes, valor, qtd in zip(
+                        df_resp["Mes"],
+                        df_resp["total_pago"],
+                        df_resp["qtd_parcelas"],
+                    )
+                ]
+
+                fig_mensal.add_trace(
+                    go.Scatter(
+                        x=df_resp["Mes"],
+                        y=df_resp["total_pago"],
+                        mode="lines+markers+text",
+                        name=responsavel,
+                        text=textos,
+                        textposition="top center",
+                        textfont={"size": 12},
+                        line={"color": CORES_RESPONSAVEL.get(responsavel, "#999999"), "width": 3},
+                        marker={
+                            "color": CORES_RESPONSAVEL.get(responsavel, "#999999"),
+                            "size": 9,
+                        },
+                        hovertemplate="%{customdata}<extra></extra>",
+                        customdata=hover_textos,
+                    )
+                )
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+            _configurar_eixo_y_valor(
+                fig_mensal,
+                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
+                500,
+            )
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
+
     elif eh_evolucao_obra:
         evolucao_pago = evolucao_df.copy()
         evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
@@ -1242,6 +1414,72 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
                         "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
                     },
+                )
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
+                    customdata=[[brl(v)] for v in resp_df["valor"]]
+                )
+                st.plotly_chart(fig_resp, use_container_width=True)
+
+        elif eh_taxas_cartorio:
+            base_pizza = parcelas_contrato.copy()
+
+            if "responsavel_pagamento" in base_pizza.columns:
+                base_pizza["responsavel_pagamento"] = (
+                    base_pizza["responsavel_pagamento"]
+                    .astype(str)
+                    .str.strip()
+                    .str.title()
+                )
+
+            grupos = []
+
+            valor_pendente_compradores = _to_numeric_brl(base_pizza.loc[
+                (base_pizza["responsavel_pagamento"] == "Compradores")
+                & (base_pizza["status"] != "pago"),
+                "valor_total",
+            ]).sum()
+
+            valor_pago_compradores = _to_numeric_brl(base_pizza.loc[
+                (base_pizza["responsavel_pagamento"] == "Compradores")
+                & (base_pizza["status"] == "pago"),
+                "valor_pago",
+            ]).sum()
+
+            valor_pendente_corretora = _to_numeric_brl(base_pizza.loc[
+                (base_pizza["responsavel_pagamento"] == "Corretora")
+                & (base_pizza["status"] != "pago"),
+                "valor_total",
+            ]).sum()
+
+            valor_pago_corretora = _to_numeric_brl(base_pizza.loc[
+                (base_pizza["responsavel_pagamento"] == "Corretora")
+                & (base_pizza["status"] == "pago"),
+                "valor_pago",
+            ]).sum()
+
+            if valor_pendente_compradores > 0:
+                grupos.append({"grupo": "Valor Pendente - Compradores", "valor": valor_pendente_compradores})
+
+            if valor_pago_compradores > 0:
+                grupos.append({"grupo": "Valor Pago - Compradores", "valor": valor_pago_compradores})
+
+            if valor_pendente_corretora > 0:
+                grupos.append({"grupo": "Valor Pendente - Corretora", "valor": valor_pendente_corretora})
+
+            if valor_pago_corretora > 0:
+                grupos.append({"grupo": "Valor Pago - Corretora", "valor": valor_pago_corretora})
+
+            resp_df = pd.DataFrame(grupos)
+
+            if not resp_df.empty:
+                fig_resp = px.pie(
+                    resp_df,
+                    names="grupo",
+                    values="valor",
+                    color="grupo",
+                    color_discrete_map=CORES_TAXAS_CARTORIO_PIZZA,
                 )
 
                 fig_resp.update_traces(
