@@ -433,6 +433,102 @@ def _calcular_desconto_taxas_cartorio(df):
     return float(desconto)
 
 
+# =========================================================
+# REGRAS ESPECIAIS - FINANCIAMENTO CAIXA
+# =========================================================
+def _aplicar_regra_financiamento_caixa(df):
+    """
+    O financiamento só passa a existir no dashboard a partir do mês do
+    primeiro pagamento realizado.
+
+    Antes do primeiro pagamento:
+    - não há parcelas pendentes nem atrasadas contabilizadas
+    - não há próxima parcela a exibir
+
+    Depois do primeiro pagamento:
+    - o mês desse pagamento vira a referência do cronograma
+    - as 420 parcelas passam a ser contadas mensalmente a partir dali
+    """
+    if df.empty:
+        df = df.copy()
+        df["pago_calc"] = False
+        df["pendente_calc"] = False
+        df["atrasado_calc"] = False
+        df["aberta_calc"] = False
+        df["regime_iniciado"] = False
+        df["data_vencimento_calc"] = pd.NaT
+        return df
+
+    base = df.copy()
+
+    status_norm = (
+        base["status"].astype(str).str.strip().str.lower()
+        if "status" in base.columns
+        else pd.Series("", index=base.index)
+    )
+
+    base["data_pagamento_ref"] = _to_datetime_br(base["data_pagamento"]) if "data_pagamento" in base.columns else pd.NaT
+    base["data_vencimento_ref"] = _to_datetime_br(base["data_vencimento"]) if "data_vencimento" in base.columns else pd.NaT
+    base["numero_parcela_num"] = pd.to_numeric(base.get("numero_parcela"), errors="coerce")
+
+    base["pago_calc"] = status_norm.eq("pago") | base["data_pagamento_ref"].notna()
+
+    pagas_validas = base[
+        base["pago_calc"]
+        & base["data_pagamento_ref"].notna()
+        & base["numero_parcela_num"].notna()
+    ].copy()
+
+    if pagas_validas.empty:
+        base["regime_iniciado"] = False
+        base["data_vencimento_calc"] = pd.NaT
+        base["aberta_calc"] = False
+        base["pendente_calc"] = False
+        base["atrasado_calc"] = False
+        return base
+
+    primeira_paga = (
+        pagas_validas
+        .sort_values(["data_pagamento_ref", "numero_parcela_num"])
+        .iloc[0]
+    )
+
+    numero_base = int(primeira_paga["numero_parcela_num"])
+    data_base_pagamento = primeira_paga["data_pagamento_ref"]
+    data_base_mes = pd.Timestamp(year=data_base_pagamento.year, month=data_base_pagamento.month, day=1)
+
+    dia_venc = 1
+    if pd.notnull(primeira_paga.get("data_vencimento_ref")):
+        dia_venc = int(primeira_paga["data_vencimento_ref"].day)
+    elif base["data_vencimento_ref"].notna().any():
+        dia_venc = int(base.loc[base["data_vencimento_ref"].notna(), "data_vencimento_ref"].iloc[0].day)
+
+    dia_venc = max(1, min(int(dia_venc), 28))
+
+    def _calc_data_venc(row):
+        num = pd.to_numeric(row.get("numero_parcela"), errors="coerce")
+        if pd.isna(num):
+            return pd.NaT
+        offset = int(num) - numero_base
+        data_calc = data_base_mes + pd.DateOffset(months=offset)
+        return data_calc.replace(day=dia_venc)
+
+    base["data_vencimento_calc"] = base.apply(_calc_data_venc, axis=1)
+    base["regime_iniciado"] = True
+
+    hoje = pd.Timestamp.today().normalize()
+
+    base["aberta_calc"] = ~base["pago_calc"]
+    base["atrasado_calc"] = (
+        base["aberta_calc"]
+        & base["data_vencimento_calc"].notna()
+        & (base["data_vencimento_calc"] < hoje)
+    )
+    base["pendente_calc"] = base["aberta_calc"] & ~base["atrasado_calc"]
+
+    return base
+
+
 def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado):
     contrato_sel = str(contrato_selecionado).strip().lower()
     contrato_direcional = str(CONTRATO_DIRECIONAL).strip().lower()
@@ -498,6 +594,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     if eh_entrada_direcional:
         parcelas_base = _filtrar_base_entrada_direcional(parcelas_contrato)
         contagem_base = _filtrar_base_entrada_direcional(parcelas_contagem)
+    elif eh_financiamento_caixa:
+        parcelas_base = parcelas_contrato.copy()
+        contagem_base = parcelas_contagem.copy()
     elif eh_taxas_cartorio:
         # para a visão principal de Taxas Cartoriais, a contagem e a próxima parcela
         # seguem o contrato Taxas C (40 parcelas dos compradores)
@@ -561,6 +660,35 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_pago_compradores = 0
         total_pago_corretora = 0
         total_restante_compradores = 0
+        total_restante_corretora = 0
+
+    elif eh_financiamento_caixa:
+        parcelas_base = _aplicar_regra_financiamento_caixa(parcelas_base)
+        contagem_base = _aplicar_regra_financiamento_caixa(contagem_base)
+
+        valor_pago_col = _to_numeric_brl(parcelas_base["valor_pago"]) if "valor_pago" in parcelas_base.columns else pd.Series(0, index=parcelas_base.index)
+        valor_total_col = _to_numeric_brl(parcelas_base["valor_total"]) if "valor_total" in parcelas_base.columns else pd.Series(0, index=parcelas_base.index)
+
+        regime_iniciado = bool(parcelas_base["regime_iniciado"].any()) if "regime_iniciado" in parcelas_base.columns else False
+
+        total_pago_geral = valor_pago_col[parcelas_base["pago_calc"]].sum()
+        total_geral = valor_total_col.sum()
+        progresso_base = total_pago_geral
+
+        if regime_iniciado:
+            total_restante = valor_total_col[parcelas_base["aberta_calc"]].sum()
+            total_pago_qtd = int(parcelas_base["pago_calc"].sum())
+            total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
+            total_atrasado_qtd = int(parcelas_base["atrasado_calc"].sum())
+        else:
+            total_restante = 0.0
+            total_pago_qtd = 0
+            total_pendente_qtd = 0
+            total_atrasado_qtd = 0
+
+        total_pago_compradores = total_pago_geral
+        total_pago_corretora = 0
+        total_restante_compradores = total_restante
         total_restante_corretora = 0
 
     elif eh_taxas_cartorio:
@@ -659,8 +787,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     elif eh_financiamento_caixa:
         total_desconto_obtido = (
-            _to_numeric_brl(parcelas_base.loc[parcelas_base["status"] == "pago", "valor_total"]).sum()
-            - _to_numeric_brl(parcelas_base.loc[parcelas_base["status"] == "pago", "valor_pago"]).sum()
+            _to_numeric_brl(parcelas_base.loc[parcelas_base["pago_calc"], "valor_total"]).sum()
+            - _to_numeric_brl(parcelas_base.loc[parcelas_base["pago_calc"], "valor_pago"]).sum()
         )
 
         render_cards_grid([
@@ -807,13 +935,20 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     if eh_evolucao_obra and contrato_encerrado:
         st.success("✅ Evolução de Obra concluída.")
     else:
-        if eh_entrada_direcional or eh_direcional or eh_taxas_cartorio:
+        if eh_financiamento_caixa:
+            if "regime_iniciado" in contagem_base.columns and not bool(contagem_base["regime_iniciado"].any()):
+                st.info("Aguardando o início do Financiamento Caixa. A contagem das 420 parcelas começará no mês do primeiro pagamento.")
+                abertas = pd.DataFrame()
+            else:
+                abertas = contagem_base[contagem_base["aberta_calc"]].copy()
+        elif eh_entrada_direcional or eh_direcional or eh_taxas_cartorio:
             abertas = contagem_base[contagem_base["pendente_calc"]].copy()
         else:
             abertas = contagem_base[contagem_base["status"] != "pago"].copy()
 
         if abertas.empty:
-            st.success("✅ Não há parcelas em aberto.")
+            if not eh_financiamento_caixa:
+                st.success("✅ Não há parcelas em aberto.")
         else:
             if eh_todos:
                 prox_taxas = (
@@ -861,14 +996,25 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     ])
 
             else:
-                proxima_parcela = (
-                    abertas.sort_values(["data_vencimento", "numero_parcela"])
-                    .head(1)
-                    .copy()
-                )
+                if eh_financiamento_caixa and "data_vencimento_calc" in abertas.columns:
+                    proxima_parcela = (
+                        abertas.sort_values(["data_vencimento_calc", "numero_parcela"])
+                        .head(1)
+                        .copy()
+                    )
+                else:
+                    proxima_parcela = (
+                        abertas.sort_values(["data_vencimento", "numero_parcela"])
+                        .head(1)
+                        .copy()
+                    )
 
                 prox = proxima_parcela.iloc[0]
-                data_venc = _to_datetime_br(pd.Series([prox["data_vencimento"]])).iloc[0]
+
+                if eh_financiamento_caixa and "data_vencimento_calc" in prox:
+                    data_venc = pd.to_datetime(prox["data_vencimento_calc"], errors="coerce")
+                else:
+                    data_venc = _to_datetime_br(pd.Series([prox["data_vencimento"]])).iloc[0]
 
                 if eh_evolucao_obra:
                     render_cards_grid([
@@ -1181,6 +1327,85 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             st.plotly_chart(fig_mensal, use_container_width=True)
 
+    elif eh_financiamento_caixa:
+        evolucao_fc = _aplicar_regra_financiamento_caixa(evolucao_df)
+        evolucao_fc["data_pagamento_ref"] = _to_datetime_br(evolucao_fc["data_pagamento"])
+        evolucao_fc["valor_pago_num"] = _to_numeric_brl(evolucao_fc["valor_pago"])
+
+        evolucao_pago = evolucao_fc[
+            (evolucao_fc["pago_calc"])
+            & (evolucao_fc["data_pagamento_ref"].notna())
+        ].copy()
+
+        if evolucao_pago.empty:
+            st.info("O Financiamento Caixa ainda não foi iniciado. A evolução mensal aparecerá a partir do primeiro pagamento.")
+        else:
+            evolucao_pago["mes_ref"] = evolucao_pago["data_pagamento_ref"].dt.to_period("M")
+            evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
+
+            mensal_df = (
+                evolucao_pago.groupby("mes_ordem", as_index=False)
+                .agg(
+                    valor_pago_mes=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "size"),
+                )
+                .sort_values("mes_ordem")
+            )
+
+            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
+
+            hover_textos = [
+                (
+                    f"<b>{mes}</b><br>"
+                    f"Quantidade de Parcelas Pagas: {int(qtd)}<br>"
+                    f"Valor Pago no Mês: {brl(valor)}"
+                )
+                for mes, valor, qtd in zip(
+                    mensal_df["Mes"],
+                    mensal_df["valor_pago_mes"],
+                    mensal_df["qtd_parcelas"],
+                )
+            ]
+
+            textos = [str(int(qtd)) for qtd in mensal_df["qtd_parcelas"]]
+
+            fig_mensal = go.Figure()
+
+            fig_mensal.add_trace(
+                go.Scatter(
+                    x=mensal_df["Mes"],
+                    y=mensal_df["valor_pago_mes"],
+                    mode="lines+markers+text",
+                    name="Valor Pago",
+                    text=textos,
+                    textposition="top center",
+                    textfont={"size": 12},
+                    line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
+                    marker={
+                        "color": CORES_RESPONSAVEL["Pago"],
+                        "size": 9,
+                    },
+                    customdata=hover_textos,
+                    hovertemplate="%{customdata}<extra></extra>",
+                )
+            )
+
+            fig_mensal.update_layout(
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                hovermode="x unified",
+                xaxis=dict(tickangle=320),
+            )
+
+            _configurar_eixo_y_valor(
+                fig_mensal,
+                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 500,
+                500,
+            )
+
+            st.plotly_chart(fig_mensal, use_container_width=True)
+
     elif eh_taxas_cartorio:
         evolucao_taxas = _filtrar_base_taxas_cartorio(evolucao_df, somente_compradores=False)
         evolucao_taxas = _aplicar_regra_taxas_cartorio(evolucao_taxas)
@@ -1228,7 +1453,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     continue
 
                 if responsavel == "Compradores":
-                    # compradores continua com todos os meses no eixo
                     df_resp = ordem_meses.merge(
                         df_resp,
                         on=["mes_ordem", "Mes"],
@@ -1237,7 +1461,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
                     df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
                 else:
-                    # corretora aparece apenas até o último mês em que houve pagamento
                     ultimo_mes_corretora = df_resp["mes_ordem"].max()
 
                     ordem_meses_corretora = ordem_meses[
