@@ -1,3 +1,4 @@
+# dashboard_todos.py
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -9,7 +10,6 @@ from dashboard import (
     _is_direcional,
     _is_financiamento_caixa,
     _is_taxas_cartorio,
-    _is_evolucao_obra,
     _to_numeric_brl,
     _to_datetime_br,
     _aplicar_regra_direcional,
@@ -87,6 +87,16 @@ def _render_quatro_cards_linha(card1, card2, card3, card4):
         st.markdown(card3, unsafe_allow_html=True)
     with c4:
         st.markdown(card4, unsafe_allow_html=True)
+
+
+def _render_tres_cards_linha(card1, card2, card3):
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown(card1, unsafe_allow_html=True)
+    with c2:
+        st.markdown(card2, unsafe_allow_html=True)
+    with c3:
+        st.markdown(card3, unsafe_allow_html=True)
 
 
 def _normalizar_contrato(df):
@@ -172,8 +182,6 @@ def _aplicar_regras_por_contrato(df):
 
         elif _is_taxas_cartorio(nome):
             parte = _aplicar_regra_taxas_cartorio(parte)
-
-            # garante que o valor total previsto considere todas as parcelas
             if "valor_total" in parte.columns:
                 parte["valor_total_calc"] = _to_numeric_brl(parte["valor_total"])
 
@@ -248,9 +256,6 @@ def _resumo_por_contrato(df):
         valor_pago = float(grupo["valor_pago_usado"].sum())
         valor_pendente = float(grupo["valor_pendente_usado"].sum())
 
-        # AJUSTE:
-        # Para Taxas Cartoriais no dashboard TODOS, o total previsto precisa
-        # considerar o que já foi pago + o que ainda falta, incluindo a parte da corretora.
         if _is_taxas_cartorio(nome):
             valor_total = float(valor_pago + valor_pendente)
         else:
@@ -372,19 +377,21 @@ def _proximas_parcelas(df):
     for _, row in proximas.iterrows():
         n = pd.to_numeric(row.get("numero_parcela_calc"), errors="coerce")
         t = pd.to_numeric(row.get("total_parcelas_calc"), errors="coerce")
+        contrato_nome = str(row.get("contrato", "")).strip()
 
         if pd.notnull(n) and pd.notnull(t) and t > 0:
-            parcela_txt.append(f"{int(n)}/{int(t)}")
+            texto_base = f"{int(n)}/{int(t)}"
         elif pd.notnull(n):
-            parcela_txt.append(str(int(n)))
+            texto_base = str(int(n))
         else:
-            parcela_txt.append("-")
+            texto_base = "-"
+
+        parcela_txt.append(f"Parcela - {contrato_nome}: {texto_base}")
 
     return pd.DataFrame({
-        "Contrato": proximas["contrato"],
         "Parcela": parcela_txt,
-        "Vencimento": venc.dt.strftime("%d/%m/%Y").fillna("-"),
         "Valor": proximas["valor_total_calc"].apply(brl),
+        "Vencimento": venc.dt.strftime("%d/%m/%Y").fillna("-"),
     })
 
 
@@ -436,14 +443,14 @@ def render_dashboard_todos(parcelas):
     # CARDS GERAIS
     # =========================================================
     render_cards_grid([
-        card_html("Pagamento Total", brl(pagamento_total))
-    ], cols=1)
+        card_html("Pagamento Total", brl(pagamento_total)),
+        card_html("Progresso", f"{conclusao_total:.2f}%"),
+    ], cols=2)
 
     render_cards_grid([
         card_html("Valor Pendente Previsto", brl(valor_total_pendente), small=True),
         card_html("Total Previsto", brl(valor_total_geral), small=True),
-        card_html("Progresso", f"{conclusao_total:.2f}%", small=True),
-    ], cols=3)
+    ], cols=2)
 
     render_cards_grid([
         card_html("Quant. Parcelas Pagas", str(parcelas_pagas_total), small=True),
@@ -459,15 +466,17 @@ def render_dashboard_todos(parcelas):
     st.markdown("### Resumo por Contrato")
 
     for _, row in resumo.iterrows():
+        pend_atr = int(row["parcelas_pendentes"]) + int(row["parcelas_atrasadas"])
+
         _render_quatro_cards_linha(
-            card_html(row["contrato"], brl(row["valor_total"]), small=True),
-            card_html("Valor Pago", brl(row["valor_pago"]), small=True),
+            card_html(row["contrato"], row["contrato"], small=True),
+            card_html("Valor Pendente", brl(row["valor_pendente"]), small=True),
             card_html(
-                "Parcelas",
-                f'{int(row["parcelas_pagas"])}/{int(row["total_parcelas"])}',
+                "Parcelas Pagas / Pend. + Atr.",
+                f'{int(row["parcelas_pagas"])}/{pend_atr}',
                 small=True,
             ),
-            card_html("Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
+            card_html("Porcentagem", f'{row["percentual_qtd"]:.2f}%', small=True),
         )
 
     # =========================================================
@@ -481,11 +490,10 @@ def render_dashboard_todos(parcelas):
         st.success("✅ Não há parcelas em aberto.")
     else:
         for _, row in proximas.iterrows():
-            _render_quatro_cards_linha(
-                card_html("Contrato", row["Contrato"], small=True),
+            _render_tres_cards_linha(
                 card_html("Parcela", row["Parcela"], small=True),
-                card_html("Vencimento", row["Vencimento"], small=True),
                 card_html("Valor", row["Valor"], small=True),
+                card_html("Vencimento", row["Vencimento"], small=True),
             )
 
     # =========================================================
@@ -577,9 +585,6 @@ def render_dashboard_todos(parcelas):
 
             st.plotly_chart(fig_mensal, use_container_width=True)
 
-            # =========================================================
-            # NOVO GRÁFICO - VALOR PAGO POR MÊS
-            # =========================================================
             st.markdown("### Valor Pago por Mês")
 
             valor_mes_df = (

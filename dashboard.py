@@ -1,3 +1,4 @@
+# dashboard.py
 from datetime import date
 import pandas as pd
 import plotly.express as px
@@ -109,6 +110,27 @@ def _mes_nome_atual_pt():
     return MAPA_MESES.get(hoje.month, "")
 
 
+def _nome_mes_por_data(valor_data):
+    data_ref = pd.to_datetime(valor_data, errors="coerce", dayfirst=True)
+    if pd.isnull(data_ref):
+        return "-"
+    nomes = {
+        1: "Janeiro",
+        2: "Fevereiro",
+        3: "Março",
+        4: "Abril",
+        5: "Maio",
+        6: "Junho",
+        7: "Julho",
+        8: "Agosto",
+        9: "Setembro",
+        10: "Outubro",
+        11: "Novembro",
+        12: "Dezembro",
+    }
+    return nomes.get(data_ref.month, "-")
+
+
 def _referencia_mes_ano(valor_data):
     data_ref = pd.to_datetime(valor_data, errors="coerce", dayfirst=True)
     if pd.isnull(data_ref):
@@ -205,15 +227,6 @@ def _to_numeric_brl(coluna):
 
 
 def _calcular_total_parcelas_base(df):
-    """
-    Calcula o total real de parcelas do contrato.
-
-    Regras:
-    - se existir coluna total_parcelas + serie, soma o maior total_parcelas de cada série
-    - se existir só total_parcelas, usa o maior total_parcelas
-    - se não existir, tenta usar numero_parcela
-    - se nada disso existir, usa a quantidade de linhas
-    """
     if df.empty:
         return 0
 
@@ -227,7 +240,6 @@ def _calcular_total_parcelas_base(df):
             if "serie" in validos.columns:
                 validos["serie_calc"] = validos["serie"].fillna("").astype(str).str.strip()
 
-                # quando houver mais de uma série, soma o máximo de cada uma
                 if validos["serie_calc"].replace("", pd.NA).notna().any():
                     validos["serie_calc"] = validos["serie_calc"].replace("", "__sem_serie__")
                     total = validos.groupby("serie_calc")["total_parcelas_num"].max().sum()
@@ -270,13 +282,6 @@ def _calcular_progresso_percentual_qtd(qtd_pagas, total_parcelas):
 
 
 def _eh_parcela_direcional_paga(row):
-    """
-    Regra especial solicitada para Entrada Direcional:
-    - Conf.Div Carnê / 1 até 10 de 14 = paga
-    - Conf.Div Carnê / 42 de 43 = paga
-    - Conf.Div Carnê / 43 de 43 = paga
-    - Demais = pendentes
-    """
     serie = _normalizar_texto_serie(row.get("serie"))
     num = pd.to_numeric(row.get("numero_parcela"), errors="coerce")
     total = pd.to_numeric(row.get("total_parcelas"), errors="coerce")
@@ -331,11 +336,6 @@ def _filtrar_base_entrada_direcional(df):
 
 
 def _calcular_desconto_entrada_direcional(df):
-    """
-    Desconto da Entrada Direcional:
-    compara VALOR PRINCIPAL x VALOR PAGO apenas nas parcelas já pagas
-    pela regra especial.
-    """
     if df.empty:
         return 0.0
 
@@ -355,9 +355,6 @@ def _calcular_desconto_entrada_direcional(df):
     return float(desconto)
 
 
-# =========================================================
-# REGRAS ESPECIAIS - TAXAS CARTORIAIS
-# =========================================================
 def _eh_taxas_banco(row) -> bool:
     serie = _normalizar_texto_serie(row.get("serie"))
     descricao = _normalizar_texto_serie(row.get("descricao_parcela"))
@@ -392,13 +389,6 @@ def _responsavel_taxas_cartorio(row) -> str:
 
 
 def _eh_parcela_taxas_cartorio_paga(row) -> bool:
-    """
-    Regra especial para Taxas Cartoriais:
-    - Taxas Banco / 1 até 8 de 8 = pagas (Corretora)
-    - Taxas C / 1 até 16 de 40 = pagas (Compradores)
-    - Taxas C / 39 e 40 de 40 = pagas (Compradores)
-    - Demais = pendentes
-    """
     num = pd.to_numeric(row.get("numero_parcela"), errors="coerce")
     total = pd.to_numeric(row.get("total_parcelas"), errors="coerce")
 
@@ -474,11 +464,6 @@ def _filtrar_base_taxas_cartorio(df, somente_compradores=False):
 
 
 def _calcular_desconto_taxas_cartorio(df):
-    """
-    Mesma premissa da Entrada Direcional:
-    compara VALOR PRINCIPAL x VALOR PAGO apenas nas parcelas consideradas pagas
-    pela regra especial das Taxas Cartoriais.
-    """
     if df.empty:
         return 0.0
 
@@ -498,17 +483,7 @@ def _calcular_desconto_taxas_cartorio(df):
     return float(desconto)
 
 
-# =========================================================
-# REGRAS ESPECIAIS - FINANCIAMENTO CAIXA
-# =========================================================
 def _aplicar_regra_financiamento_caixa(df):
-    """
-    O Financiamento Caixa só começa a contar a partir do primeiro pagamento.
-    Antes disso:
-    - não há parcelas pendentes
-    - não há parcelas atrasadas
-    - não há próxima parcela
-    """
     if df.empty:
         df = df.copy()
         df["pago_calc"] = False
@@ -823,14 +798,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     if eh_sinal_ato:
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral))
-        ], cols=1)
+            card_html("Pagamento Total", brl(total_pago_geral)),
+            card_html("Progresso", f"{progresso_pct:.2f}%"),
+        ], cols=2)
 
         render_cards_grid([
             card_html("Valor Pendente", brl(total_restante), small=True),
             card_html("Total Geral", brl(total_geral), small=True),
-            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
-        ], cols=3)
+        ], cols=2)
 
         render_cards_grid([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
@@ -845,13 +820,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         )
 
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral))
-        ], cols=1)
+            card_html("Pagamento Total", brl(total_pago_geral)),
+            card_html("Progresso", f"{progresso_pct:.2f}%"),
+        ], cols=2)
 
         render_cards_grid([
             card_html("Valor Pendente Previsto", brl(total_restante), small=True),
-            card_html("Total Geral", brl(total_geral), small=True),
-            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
+            card_html("Total Previsto", brl(total_geral), small=True),
+            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
 
         render_cards_grid([
@@ -860,31 +836,24 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
-        render_cards_grid([
-            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
-        ], cols=1)
-
     elif eh_taxas_cartorio:
         total_desconto_obtido = _calcular_desconto_taxas_cartorio(base_taxas_todas)
 
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral))
-        ], cols=1)
+            card_html("Pagamento Total", brl(total_pago_geral)),
+            card_html("Progresso", f"{progresso_pct:.2f}%"),
+        ], cols=2)
 
         render_cards_grid([
             card_html("Valor Pendente Previsto", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
-            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
+            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
 
         render_cards_grid([
             card_html("Valor Pago - Compradores", brl(total_pago_compradores), small=True),
             card_html("Valor Pago - Corretora", brl(total_pago_corretora), small=True),
         ], cols=2)
-
-        render_cards_grid([
-            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
-        ], cols=1)
 
         render_cards_grid([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
@@ -897,17 +866,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral)),
-        ], cols=1)
+            card_html("Progresso", f"{progresso_pct:.2f}%"),
+        ], cols=2)
 
         render_cards_grid([
             card_html("Valor Pendente Previsto", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
-            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
-        ], cols=3)
-
-        render_cards_grid([
             card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
-        ], cols=1)
+        ], cols=3)
 
         render_cards_grid([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
@@ -942,20 +908,24 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             & (data_venc_ref.dt.year == hoje.year)
         ].shape[0]
 
-        percentual_pago = 0.0
-        if total_parcelas_calc > 0:
-            percentual_pago = (total_pago_qtd / total_parcelas_calc) * 100
+        proxima_parcela_pendente_mes = "-"
+        abertas_evolucao = contagem_base[contagem_base["status"] != "pago"].copy()
+        if not abertas_evolucao.empty:
+            abertas_evolucao["data_venc_ref"] = _to_datetime_br(abertas_evolucao["data_vencimento"])
+            abertas_evolucao = abertas_evolucao.sort_values(["data_venc_ref", "numero_parcela"], na_position="last")
+            if not abertas_evolucao.empty:
+                proxima_parcela_pendente_mes = _nome_mes_por_data(abertas_evolucao.iloc[0].get("data_vencimento"))
 
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral)),
-        ], cols=1)
+            card_html("Progresso", f"{progresso_pct:.2f}%"),
+        ], cols=2)
 
-        _render_quatro_cards_em_linha([
+        render_cards_grid([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html(f'Quant. Parcelas Pendentes - {_mes_nome_atual_pt()}', str(int(pendente_mes_vigente)), small=True),
+            card_html("Parcela Pendente", proxima_parcela_pendente_mes, small=True),
             card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
-            card_html("Porcentagem", f"{percentual_pago:.2f}%", small=True),
-        ])
+        ], cols=3)
 
     else:
         render_cards_grid([
@@ -1030,12 +1000,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     _render_quatro_cards_em_linha([
                         card_html("Contrato", CONTRATO_TAXAS, small=True),
                         card_html("Parcela", _texto_parcela(row), small=True),
+                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
                         card_html(
                             "Vencimento",
                             data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
-                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
                     ])
 
                 if not prox_direcional.empty:
@@ -1045,12 +1015,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     _render_quatro_cards_em_linha([
                         card_html("Contrato", CONTRATO_DIRECIONAL, small=True),
                         card_html("Parcela", _texto_parcela(row), small=True),
+                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
                         card_html(
                             "Vencimento",
                             data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
-                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
                     ])
 
             else:
@@ -1087,12 +1057,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 else:
                     render_cards_grid([
                         card_html("Parcela", _texto_parcela(prox), small=True),
+                        card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
                         card_html(
                             "Vencimento",
                             data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
-                        card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
                     ], cols=3)
 
     # =========================================================
