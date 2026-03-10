@@ -208,7 +208,13 @@ tab1, tab2, tab3, tab4 = st.tabs(
 )
 
 with tab1:
-    if contrato_selecionado == CONTRATO_TODOS:
+    contrato_normalizado = str(contrato_selecionado).strip().lower()
+    contrato_todos_normalizado = str(CONTRATO_TODOS).strip().lower()
+
+    if (
+        contrato_normalizado == contrato_todos_normalizado
+        or "todos" in contrato_normalizado
+    ):
         render_dashboard_todos(parcelas)
     else:
         render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
