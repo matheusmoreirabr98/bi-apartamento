@@ -300,9 +300,21 @@ def _proximas_parcelas(df):
         else:
             base["numero_parcela_calc"] = pd.NA
 
+    if "total_parcelas_calc" not in base.columns:
+        if "total_parcelas" in base.columns:
+            base["total_parcelas_calc"] = pd.to_numeric(base["total_parcelas"], errors="coerce")
+        else:
+            base["total_parcelas_calc"] = pd.NA
+
+    # garante que o financiamento caixa apareça mesmo antes de iniciar
+    mask_abertas = (
+        (base["pendente_calc"])
+        | (base["atrasado_calc"])
+        | (base["contrato"] == "Financiamento Caixa")
+    )
+
     abertas = base[
-        base["contrato"].isin(ORDEM_PROXIMAS) &
-        ((base["pendente_calc"]) | (base["atrasado_calc"]) | (base.get("aberta_calc", False)))
+        base["contrato"].isin(ORDEM_PROXIMAS) & mask_abertas
     ].copy()
 
     if abertas.empty:
@@ -315,9 +327,38 @@ def _proximas_parcelas(df):
         na_position="last",
     )
 
-    proximas = abertas.groupby("contrato", as_index=False).first()
-    proximas["ordem_proxima"] = proximas["contrato"].map(_ordem_proxima)
-    proximas = proximas.sort_values(["ordem_proxima", "contrato"]).reset_index(drop=True)
+    proximas_linhas = []
+
+    for contrato in ORDEM_PROXIMAS:
+        grupo = abertas[abertas["contrato"] == contrato].copy()
+        if grupo.empty:
+            continue
+
+        # regra especial para financiamento caixa:
+        # se não começou, ainda assim mostra o contrato com a primeira parcela futura
+        if contrato == "Financiamento Caixa":
+            regime_iniciado = bool(grupo["regime_iniciado"].any()) if "regime_iniciado" in grupo.columns else False
+
+            if regime_iniciado:
+                linha = grupo.iloc[0]
+            else:
+                grupo = grupo.sort_values(["numero_parcela_calc"], na_position="last")
+                linha = grupo.iloc[0]
+
+                # tenta usar data_vencimento original; se não houver, mantém "-"
+                if pd.isna(linha.get("data_vencimento_calc")) and "data_vencimento" in grupo.columns:
+                    venc_original = _to_datetime_br(pd.Series([linha.get("data_vencimento")])).iloc[0]
+                    linha = linha.copy()
+                    linha["data_vencimento_calc"] = venc_original
+        else:
+            linha = grupo.iloc[0]
+
+        proximas_linhas.append(linha)
+
+    if not proximas_linhas:
+        return pd.DataFrame()
+
+    proximas = pd.DataFrame(proximas_linhas).copy()
 
     if "data_vencimento_calc" in proximas.columns:
         venc = pd.to_datetime(proximas["data_vencimento_calc"], errors="coerce")
@@ -398,8 +439,8 @@ def render_dashboard_todos(parcelas):
     ], cols=1)
 
     render_cards_grid([
-        card_html("Valor Pendente", brl(valor_total_pendente), small=True),
-        card_html("Valor Total Geral", brl(valor_total_geral), small=True),
+        card_html("Valor Pendente Previsto", brl(valor_total_pendente), small=True),
+        card_html("Total Previsto", brl(valor_total_geral), small=True),
         card_html("Progresso", f"{conclusao_total:.2f}%", small=True),
     ], cols=3)
 
