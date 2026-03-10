@@ -1227,14 +1227,30 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 if df_resp.empty:
                     continue
 
-                df_resp = ordem_meses.merge(
-                    df_resp,
-                    on=["mes_ordem", "Mes"],
-                    how="left"
-                )
+                if responsavel == "Compradores":
+                    # compradores continua com todos os meses no eixo
+                    df_resp = ordem_meses.merge(
+                        df_resp,
+                        on=["mes_ordem", "Mes"],
+                        how="left"
+                    )
+                    df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
+                    df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
+                else:
+                    # corretora aparece apenas até o último mês em que houve pagamento
+                    ultimo_mes_corretora = df_resp["mes_ordem"].max()
 
-                df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
-                df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
+                    ordem_meses_corretora = ordem_meses[
+                        ordem_meses["mes_ordem"] <= ultimo_mes_corretora
+                    ].copy()
+
+                    df_resp = ordem_meses_corretora.merge(
+                        df_resp,
+                        on=["mes_ordem", "Mes"],
+                        how="left"
+                    )
+                    df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
+                    df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
 
                 textos = [
                     str(int(qtd)) if qtd > 0 else ""
