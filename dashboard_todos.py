@@ -247,10 +247,20 @@ def _resumo_por_contrato(df):
         valor_pendente = float(grupo["valor_pendente_usado"].sum())
 
         parcelas_pagas = int(grupo["pago_calc"].sum())
-        parcelas_pendentes = int(grupo["pendente_calc"].sum())
         parcelas_atrasadas = int(grupo["atrasado_calc"].sum()) if "atrasado_calc" in grupo.columns else 0
 
         total_parcelas = _calcular_total_parcelas_df(grupo)
+
+        if _is_financiamento_caixa(nome):
+            regime_iniciado = bool(grupo["regime_iniciado"].any()) if "regime_iniciado" in grupo.columns else False
+
+            if regime_iniciado:
+                parcelas_pendentes = int(grupo["pendente_calc"].sum())
+            else:
+                parcelas_pendentes = max(total_parcelas - parcelas_pagas, 0)
+        else:
+            parcelas_pendentes = int(grupo["pendente_calc"].sum())
+
         percentual = (parcelas_pagas / total_parcelas * 100) if total_parcelas > 0 else 0.0
 
         linhas.append({
