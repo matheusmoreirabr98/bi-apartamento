@@ -950,12 +950,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Pagamento Total", brl(total_pago_geral)),
         ], cols=1)
 
-        render_cards_grid([
+        _render_quatro_cards_em_linha([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
             card_html(f'Quant. Parcelas Pendentes - {_mes_nome_atual_pt()}', str(int(pendente_mes_vigente)), small=True),
             card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
             card_html("Porcentagem", f"{percentual_pago:.2f}%", small=True),
-        ], cols=4)
+        ])
 
     else:
         render_cards_grid([
