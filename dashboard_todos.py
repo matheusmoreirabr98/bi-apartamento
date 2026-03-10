@@ -287,12 +287,17 @@ def _proximas_parcelas(df):
 
     base = df.copy()
 
+    base["data_vencimento_original"] = (
+        _to_datetime_br(base["data_vencimento"])
+        if "data_vencimento" in base.columns
+        else pd.NaT
+    )
+
     if "data_vencimento_calc" in base.columns:
         base["vencimento_ordem"] = pd.to_datetime(base["data_vencimento_calc"], errors="coerce")
-    elif "data_vencimento" in base.columns:
-        base["vencimento_ordem"] = _to_datetime_br(base["data_vencimento"])
+        base["vencimento_ordem"] = base["vencimento_ordem"].fillna(base["data_vencimento_original"])
     else:
-        base["vencimento_ordem"] = pd.NaT
+        base["vencimento_ordem"] = base["data_vencimento_original"]
 
     if "numero_parcela_calc" not in base.columns:
         if "numero_parcela" in base.columns:
@@ -306,7 +311,6 @@ def _proximas_parcelas(df):
         else:
             base["total_parcelas_calc"] = pd.NA
 
-    # garante que o financiamento caixa apareça mesmo antes de iniciar
     mask_abertas = (
         (base["pendente_calc"])
         | (base["atrasado_calc"])
@@ -334,8 +338,6 @@ def _proximas_parcelas(df):
         if grupo.empty:
             continue
 
-        # regra especial para financiamento caixa:
-        # se não começou, ainda assim mostra o contrato com a primeira parcela futura
         if contrato == "Financiamento Caixa":
             regime_iniciado = bool(grupo["regime_iniciado"].any()) if "regime_iniciado" in grupo.columns else False
 
@@ -344,12 +346,6 @@ def _proximas_parcelas(df):
             else:
                 grupo = grupo.sort_values(["numero_parcela_calc"], na_position="last")
                 linha = grupo.iloc[0]
-
-                # tenta usar data_vencimento original; se não houver, mantém "-"
-                if pd.isna(linha.get("data_vencimento_calc")) and "data_vencimento" in grupo.columns:
-                    venc_original = _to_datetime_br(pd.Series([linha.get("data_vencimento")])).iloc[0]
-                    linha = linha.copy()
-                    linha["data_vencimento_calc"] = venc_original
         else:
             linha = grupo.iloc[0]
 
@@ -360,12 +356,7 @@ def _proximas_parcelas(df):
 
     proximas = pd.DataFrame(proximas_linhas).copy()
 
-    if "data_vencimento_calc" in proximas.columns:
-        venc = pd.to_datetime(proximas["data_vencimento_calc"], errors="coerce")
-    elif "data_vencimento" in proximas.columns:
-        venc = _to_datetime_br(proximas["data_vencimento"])
-    else:
-        venc = pd.Series([pd.NaT] * len(proximas))
+    venc = pd.to_datetime(proximas["vencimento_ordem"], errors="coerce")
 
     parcela_txt = []
     for _, row in proximas.iterrows():
