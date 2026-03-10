@@ -245,9 +245,16 @@ def _resumo_por_contrato(df):
         nome = _contrato_label(contrato)
         grupo = grupo.copy()
 
-        valor_total = float(grupo["valor_total_calc"].sum())
         valor_pago = float(grupo["valor_pago_usado"].sum())
         valor_pendente = float(grupo["valor_pendente_usado"].sum())
+
+        # AJUSTE:
+        # Para Taxas Cartoriais no dashboard TODOS, o total previsto precisa
+        # considerar o que já foi pago + o que ainda falta, incluindo a parte da corretora.
+        if _is_taxas_cartorio(nome):
+            valor_total = float(valor_pago + valor_pendente)
+        else:
+            valor_total = float(grupo["valor_total_calc"].sum())
 
         parcelas_pagas = int(grupo["pago_calc"].sum())
         parcelas_atrasadas = int(grupo["atrasado_calc"].sum()) if "atrasado_calc" in grupo.columns else 0
@@ -407,8 +414,6 @@ def render_dashboard_todos(parcelas):
     if base_regras.empty:
         st.info("Sem dados para exibir.")
         return
-
-    resumo = _resumo_por_contrato(base_regras)
 
     resumo = _resumo_por_contrato(base_regras)
 
