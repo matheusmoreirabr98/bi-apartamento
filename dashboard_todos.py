@@ -173,6 +173,10 @@ def _aplicar_regras_por_contrato(df):
         elif _is_taxas_cartorio(nome):
             parte = _aplicar_regra_taxas_cartorio(parte)
 
+            # garante que o valor total previsto considere todas as parcelas
+            if "valor_total" in parte.columns:
+                parte["valor_total_calc"] = _to_numeric_brl(parte["valor_total"])
+
         elif _is_financiamento_caixa(nome):
             parte = _aplicar_regra_financiamento_caixa(parte)
 
