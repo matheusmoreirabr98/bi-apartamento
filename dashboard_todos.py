@@ -412,7 +412,7 @@ def render_dashboard_todos(parcelas):
             card_html("Valor Pago", brl(row["valor_pago"]), small=True),
             card_html(
                 "Parcelas",
-                f'{int(row["parcelas_pagas"])}/{int(row["parcelas_pendentes"])}',
+                f'{int(row["parcelas_pagas"])}/{int(row["total_parcelas"])}',
                 small=True,
             ),
             card_html("Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
