@@ -412,8 +412,8 @@ def render_dashboard_todos(parcelas):
         return
 
     pagamento_total = float(resumo["valor_pago"].sum())
-    valor_total_pendente = float(resumo["valor_pendente"].sum())
     valor_total_geral = float(resumo["valor_total"].sum())
+    valor_total_pendente = max(valor_total_geral - pagamento_total, 0.0)
 
     parcelas_pagas_total = int(resumo["parcelas_pagas"].sum())
     parcelas_pendentes_total = int(resumo["parcelas_pendentes"].sum())
