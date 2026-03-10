@@ -438,16 +438,11 @@ def _calcular_desconto_taxas_cartorio(df):
 # =========================================================
 def _aplicar_regra_financiamento_caixa(df):
     """
-    O financiamento só passa a existir no dashboard a partir do mês do
-    primeiro pagamento realizado.
-
-    Antes do primeiro pagamento:
-    - não há parcelas pendentes nem atrasadas contabilizadas
-    - não há próxima parcela a exibir
-
-    Depois do primeiro pagamento:
-    - o mês desse pagamento vira a referência do cronograma
-    - as 420 parcelas passam a ser contadas mensalmente a partir dali
+    O Financiamento Caixa só começa a contar a partir do primeiro pagamento.
+    Antes disso:
+    - não há parcelas pendentes
+    - não há parcelas atrasadas
+    - não há próxima parcela
     """
     if df.empty:
         df = df.copy()
@@ -497,13 +492,11 @@ def _aplicar_regra_financiamento_caixa(df):
     data_base_pagamento = primeira_paga["data_pagamento_ref"]
     data_base_mes = pd.Timestamp(year=data_base_pagamento.year, month=data_base_pagamento.month, day=1)
 
-    dia_venc = 1
+    dia_venc = 10
     if pd.notnull(primeira_paga.get("data_vencimento_ref")):
-        dia_venc = int(primeira_paga["data_vencimento_ref"].day)
+        dia_venc = max(1, min(int(primeira_paga["data_vencimento_ref"].day), 28))
     elif base["data_vencimento_ref"].notna().any():
-        dia_venc = int(base.loc[base["data_vencimento_ref"].notna(), "data_vencimento_ref"].iloc[0].day)
-
-    dia_venc = max(1, min(int(dia_venc), 28))
+        dia_venc = max(1, min(int(base.loc[base["data_vencimento_ref"].notna(), "data_vencimento_ref"].iloc[0].day), 28))
 
     def _calc_data_venc(row):
         num = pd.to_numeric(row.get("numero_parcela"), errors="coerce")
@@ -598,8 +591,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         parcelas_base = parcelas_contrato.copy()
         contagem_base = parcelas_contagem.copy()
     elif eh_taxas_cartorio:
-        # para a visão principal de Taxas Cartoriais, a contagem e a próxima parcela
-        # seguem o contrato Taxas C (40 parcelas dos compradores)
         parcelas_base = _filtrar_base_taxas_cartorio(parcelas_contrato, somente_compradores=True)
         contagem_base = _filtrar_base_taxas_cartorio(parcelas_contagem, somente_compradores=True)
     elif eh_taxas:
@@ -718,12 +709,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         total_pago_geral = total_pago_compradores + total_pago_corretora
         total_restante = total_restante_compradores + total_restante_corretora
-
-        # mesma premissa da Entrada Direcional: total previsto = soma do valor_total da base toda
         total_geral = valor_total_col.sum()
         progresso_base = total_pago_geral
 
-        # contagem do contrato principal Taxas C (40 parcelas)
         total_pago_qtd = int(contagem_base["pago_calc"].sum())
         total_pendente_qtd = int(contagem_base["pendente_calc"].sum())
         total_atrasado_qtd = 0
@@ -1011,7 +999,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 prox = proxima_parcela.iloc[0]
 
-                if eh_financiamento_caixa and "data_vencimento_calc" in prox:
+                if eh_financiamento_caixa and "data_vencimento_calc" in prox.index:
                     data_venc = pd.to_datetime(prox["data_vencimento_calc"], errors="coerce")
                 else:
                     data_venc = _to_datetime_br(pd.Series([prox["data_vencimento"]])).iloc[0]
