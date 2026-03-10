@@ -410,6 +410,8 @@ def render_dashboard_todos(parcelas):
 
     resumo = _resumo_por_contrato(base_regras)
 
+    resumo = _resumo_por_contrato(base_regras)
+
     if resumo.empty:
         st.info("Sem dados para exibir.")
         return
