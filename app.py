@@ -15,15 +15,25 @@ from utils import (
     normalizar_status,
 )
 
-# =========================================================
-# CONFIG
-# =========================================================
-
 st.set_page_config(
     page_title="Apartamento",
     page_icon="imagens/icone_apartamento.png",
     layout="centered",
 )
+
+st.markdown(
+    """
+    <link rel="apple-touch-icon" href="app/static/icone_apartamento.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Apartamento">
+    """,
+    unsafe_allow_html=True,
+)
+
+# =========================================================
+# CONFIG
+# =========================================================
+
 inject_styles()
 st.title("🏠 Apartamento")
 
