@@ -171,7 +171,6 @@ def _aplicar_regras_por_contrato(df):
             parte = _aplicar_regra_direcional(parte)
 
         elif _is_taxas_cartorio(nome):
-            parte = _filtrar_base_taxas_cartorio(parte, somente_compradores=False)
             parte = _aplicar_regra_taxas_cartorio(parte)
 
         elif _is_financiamento_caixa(nome):
