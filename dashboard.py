@@ -474,7 +474,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Valor Pendente Previsto", brl(total_restante), small=True),
             card_html("Total Geral", brl(total_geral), small=True),
             card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=3)
@@ -495,7 +495,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Valor Pendente Previsto", brl(total_restante), small=True),
             card_html("Total Geral", brl(total_geral), small=True),
             card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=3)
@@ -514,7 +514,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Valor Pendente Previsto", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
             card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=3)
@@ -535,7 +535,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Valor Pendente", brl(total_restante), small=True),
+            card_html("Valor Pendente Previsto", brl(total_restante), small=True),
             card_html("Total Geral", brl(total_geral), small=True),
             card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
         ], cols=3)
