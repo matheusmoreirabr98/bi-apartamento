@@ -9,7 +9,6 @@ from dashboard import (
     _is_direcional,
     _is_financiamento_caixa,
     _is_taxas_cartorio,
-    _is_evolucao_obra,
     _to_numeric_brl,
     _to_datetime_br,
     _aplicar_regra_direcional,
@@ -208,7 +207,7 @@ def _aplicar_regras_por_contrato(df):
 
         if _is_financiamento_caixa(nome):
             aberta = parte["aberta_calc"] if "aberta_calc" in parte.columns else (~parte["pago_calc"])
-            parte["pendente_calc"] = parte["pendente_calc"] if "pendente_calc" in parte.columns else aberta
+            parte["pendente_calc"] = aberta
             parte["valor_pago_usado"] = parte["valor_pago_calc"].where(parte["pago_calc"], 0)
             parte["valor_pendente_usado"] = parte["valor_total_calc"].where(aberta, 0)
         else:
@@ -286,7 +285,7 @@ def _proximas_parcelas(df):
 
     abertas = base[
         base["contrato"].isin(ORDEM_PROXIMAS) &
-        (base["pendente_calc"])
+        ((base["pendente_calc"]) | (base["atrasado_calc"]))
     ].copy()
 
     if abertas.empty:
@@ -363,14 +362,16 @@ def render_dashboard_todos(parcelas):
         st.info("Sem dados para exibir.")
         return
 
-    pagamento_total = resumo["valor_pago"].sum()
+    pagamento_total = float(resumo["valor_pago"].sum())
+    valor_total_pendente = float(resumo["valor_pendente"].sum())
+    valor_total_geral = float(resumo["valor_total"].sum())
+
     parcelas_pagas_total = int(resumo["parcelas_pagas"].sum())
     parcelas_pendentes_total = int(resumo["parcelas_pendentes"].sum())
     parcelas_atrasadas_total = int(resumo["parcelas_atrasadas"].sum())
-    total_referencia = parcelas_pagas_total + parcelas_pendentes_total + parcelas_atrasadas_total
 
+    total_referencia = parcelas_pagas_total + parcelas_pendentes_total + parcelas_atrasadas_total
     conclusao_total = (parcelas_pagas_total / total_referencia * 100) if total_referencia > 0 else 0.0
-    valor_total_pendente = resumo["valor_pendente"].sum()
 
     # =========================================================
     # CARDS GERAIS
@@ -380,9 +381,18 @@ def render_dashboard_todos(parcelas):
     ], cols=1)
 
     render_cards_grid([
-        card_html("Conclusão Total", f"{conclusao_total:.2f}%", small=True),
-        card_html("Valor Total Pendente", brl(valor_total_pendente), small=True),
-    ], cols=2)
+        card_html("Valor Pendente", brl(valor_total_pendente), small=True),
+        card_html("Valor Total Geral", brl(valor_total_geral), small=True),
+        card_html("Progresso", f"{conclusao_total:.2f}%", small=True),
+    ], cols=3)
+
+    render_cards_grid([
+        card_html("Quant. Parcelas Pagas", str(parcelas_pagas_total), small=True),
+        card_html("Quant. Parcelas Pendentes", str(parcelas_pendentes_total), small=True),
+        card_html("Quant. Parcelas Atrasadas", str(parcelas_atrasadas_total), small=True),
+    ], cols=3)
+
+    st.progress(min(max(conclusao_total / 100, 0), 1.0))
 
     # =========================================================
     # RESUMO POR CONTRATO
@@ -391,9 +401,13 @@ def render_dashboard_todos(parcelas):
 
     for _, row in resumo.iterrows():
         _render_quatro_cards_linha(
-            card_html(row["contrato"], brl(row["valor_pago"]), small=True),
-            card_html("Pagas", str(int(row["parcelas_pagas"])), small=True),
-            card_html("Pendentes", str(int(row["parcelas_pendentes"])), small=True),
+            card_html(row["contrato"], brl(row["valor_total"]), small=True),
+            card_html("Valor Pago", brl(row["valor_pago"]), small=True),
+            card_html(
+                "Parcelas",
+                f'{int(row["parcelas_pagas"])}/{int(row["parcelas_pendentes"])}',
+                small=True,
+            ),
             card_html("Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
         )
 
@@ -416,7 +430,7 @@ def render_dashboard_todos(parcelas):
             )
 
     # =========================================================
-    # EVOLUÇÃO POR MÊS
+    # EVOLUÇÃO POR MÊS - POR CONTRATO
     # =========================================================
     st.markdown("### Evolução por Mês")
 
@@ -503,6 +517,40 @@ def render_dashboard_todos(parcelas):
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
+
+            # =========================================================
+            # NOVO GRÁFICO - VALOR PAGO POR MÊS
+            # =========================================================
+            st.markdown("### Valor Pago por Mês")
+
+            valor_mes_df = (
+                evolucao.groupby("mes_ordem", as_index=False)
+                .agg(valor_pago_mes=("valor_pago_num", "sum"))
+                .sort_values("mes_ordem")
+            )
+
+            valor_mes_df["Mes"] = _formatar_mes_pt(valor_mes_df["mes_ordem"])
+
+            fig_valor_mes = go.Figure()
+
+            fig_valor_mes.add_trace(
+                go.Bar(
+                    x=valor_mes_df["Mes"],
+                    y=valor_mes_df["valor_pago_mes"],
+                    text=[brl(v) for v in valor_mes_df["valor_pago_mes"]],
+                    textposition="outside",
+                    hovertemplate="<b>%{x}</b><br>Valor Pago: %{text}<extra></extra>",
+                    name="Valor Pago",
+                )
+            )
+
+            fig_valor_mes.update_layout(
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                showlegend=False,
+            )
+
+            st.plotly_chart(fig_valor_mes, use_container_width=True)
 
     # =========================================================
     # GRÁFICO DE PIZZA
