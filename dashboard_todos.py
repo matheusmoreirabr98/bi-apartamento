@@ -9,6 +9,7 @@ from dashboard import (
     _is_direcional,
     _is_financiamento_caixa,
     _is_taxas_cartorio,
+    _is_evolucao_obra,
     _to_numeric_brl,
     _to_datetime_br,
     _aplicar_regra_direcional,
@@ -179,7 +180,7 @@ def _aplicar_regras_por_contrato(df):
         else:
             status = _status_norm(parte["status"]) if "status" in parte.columns else pd.Series("", index=parte.index)
             parte["pago_calc"] = status.eq("pago")
-            parte["pendente_calc"] = ~parte["pago_calc"]
+            parte["pendente_calc"] = status.ne("pago")
             parte["atrasado_calc"] = False
 
         if "valor_total" in parte.columns:
@@ -207,12 +208,18 @@ def _aplicar_regras_por_contrato(df):
 
         if _is_financiamento_caixa(nome):
             aberta = parte["aberta_calc"] if "aberta_calc" in parte.columns else (~parte["pago_calc"])
-            parte["pendente_calc"] = aberta
+            atrasada = parte["atrasado_calc"] if "atrasado_calc" in parte.columns else False
+            pendente = parte["pendente_calc"] if "pendente_calc" in parte.columns else aberta
+
+            parte["pendente_calc"] = pendente
+            parte["atrasado_calc"] = atrasada
             parte["valor_pago_usado"] = parte["valor_pago_calc"].where(parte["pago_calc"], 0)
             parte["valor_pendente_usado"] = parte["valor_total_calc"].where(aberta, 0)
         else:
             parte["valor_pago_usado"] = parte["valor_pago_calc"].where(parte["pago_calc"], 0)
-            parte["valor_pendente_usado"] = parte["valor_total_calc"].where(parte["pendente_calc"], 0)
+            parte["valor_pendente_usado"] = parte["valor_total_calc"].where(
+                parte["pendente_calc"] | parte["atrasado_calc"], 0
+            )
 
         parte["contrato"] = nome
         partes.append(parte)
@@ -285,7 +292,7 @@ def _proximas_parcelas(df):
 
     abertas = base[
         base["contrato"].isin(ORDEM_PROXIMAS) &
-        ((base["pendente_calc"]) | (base["atrasado_calc"]))
+        ((base["pendente_calc"]) | (base["atrasado_calc"]) | (base.get("aberta_calc", False)))
     ].copy()
 
     if abertas.empty:
