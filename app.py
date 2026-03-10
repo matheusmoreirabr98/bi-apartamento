@@ -3,6 +3,7 @@ from supabase import create_client
 
 from database import load_parcelas
 from dashboard import render_dashboard
+from dashboard_todos import render_dashboard_todos
 from pagamentos_view import render_pagamentos_tab, render_atualizar_parcelas_tab
 from parcelas_view import render_parcelas_tab
 from utils import (
@@ -207,7 +208,10 @@ tab1, tab2, tab3, tab4 = st.tabs(
 )
 
 with tab1:
-    render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
+    if contrato_selecionado == CONTRATO_TODOS:
+        render_dashboard_todos(parcelas)
+    else:
+        render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
 with tab2:
     render_parcelas_tab(parcelas_contrato, contrato_selecionado)
