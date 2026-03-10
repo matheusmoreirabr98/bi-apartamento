@@ -110,7 +110,6 @@ if not parcelas.empty and "contrato" in parcelas.columns:
     )
 
     aliases_contratos = {
-        "Ato": ["Ato"],
         "Sinal": ["Sinal"],
         "Sinal Ato": ["Sinal Ato"],
         "Diferença": ["Diferença", "Diferenca"],
