@@ -204,6 +204,13 @@ def _to_numeric_brl(coluna):
         return 0.0
 
 
+def _calcular_progresso_percentual_qtd(qtd_pagas, qtd_pendentes, qtd_atrasadas=0):
+    total = int(qtd_pagas or 0) + int(qtd_pendentes or 0) + int(qtd_atrasadas or 0)
+    if total <= 0:
+        return 0.0
+    return (int(qtd_pagas or 0) / total) * 100
+
+
 def _eh_parcela_direcional_paga(row):
     """
     Regra especial solicitada para Entrada Direcional:
@@ -618,7 +625,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_pago_geral = valor_pago_col[parcelas_base["pago_calc"]].sum()
         total_restante = valor_total_col[parcelas_base["pendente_calc"]].sum()
         total_geral = valor_total_col.sum()
-        progresso_base = total_pago_geral
 
         total_pago_qtd = int(parcelas_base["pago_calc"].sum())
         total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
@@ -642,7 +648,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ]).sum()
 
         total_geral = _to_numeric_brl(parcelas_base["valor_total"]).sum()
-        progresso_base = total_pago_geral
 
         total_pago_qtd = int(parcelas_base["pago_calc"].sum())
         total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
@@ -664,7 +669,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         total_pago_geral = valor_pago_col[parcelas_base["pago_calc"]].sum()
         total_geral = valor_total_col.sum()
-        progresso_base = total_pago_geral
 
         if regime_iniciado:
             total_restante = valor_total_col[parcelas_base["aberta_calc"]].sum()
@@ -710,7 +714,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_pago_geral = total_pago_compradores + total_pago_corretora
         total_restante = total_restante_compradores + total_restante_corretora
         total_geral = valor_total_col.sum()
-        progresso_base = total_pago_geral
 
         total_pago_qtd = int(contagem_base["pago_calc"].sum())
         total_pendente_qtd = int(contagem_base["pendente_calc"].sum())
@@ -738,7 +741,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ]).sum()
 
         total_geral = _to_numeric_brl(parcelas_base["valor_total"]).sum()
-        progresso_base = total_pago_geral
 
         total_pago_qtd = int((contagem_base["status"] == "pago").sum())
         total_pendente_qtd = int((contagem_base["status_exibicao"] == "pendente").sum()) if "status_exibicao" in contagem_base.columns else 0
@@ -747,7 +749,11 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_restante_compradores = 0
         total_restante_corretora = 0
 
-    progresso_pct = (progresso_base / total_geral * 100) if total_geral else 0
+    progresso_pct = _calcular_progresso_percentual_qtd(
+        total_pago_qtd,
+        total_pendente_qtd,
+        total_atrasado_qtd,
+    )
 
     contrato_encerrado = False
     if eh_evolucao_obra and "contrato_encerrado" in parcelas_contrato.columns:
