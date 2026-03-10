@@ -942,6 +942,19 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             & (data_venc_ref.dt.year == hoje.year)
         ].shape[0]
 
+        atrasadas_mask = (
+            (contagem_base["status"] != "pago")
+            & data_venc_ref.notna()
+            & (data_venc_ref < hoje.normalize())
+        )
+        total_atrasado_qtd = int(atrasadas_mask.sum())
+
+        total_parcelas_evolucao = len(contagem_base)
+        percentual_atrasado = (
+            (total_atrasado_qtd / total_parcelas_evolucao) * 100
+            if total_parcelas_evolucao > 0 else 0
+        )
+
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral)),
         ], cols=1)
@@ -949,7 +962,11 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         render_cards_grid([
             card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
             card_html(f'Quant. Parcelas Pendentes - {_mes_nome_atual_pt()}', str(int(pendente_mes_vigente)), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html(
+                "Quant. Parcelas Atrasadas",
+                f"{total_atrasado_qtd} ({percentual_atrasado:.2f}%)",
+                small=True
+            ),
         ], cols=3)
 
     else:
