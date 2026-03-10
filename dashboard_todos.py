@@ -9,6 +9,7 @@ from dashboard import (
     _is_direcional,
     _is_financiamento_caixa,
     _is_taxas_cartorio,
+    _is_evolucao_obra,
     _to_numeric_brl,
     _to_datetime_br,
     _aplicar_regra_direcional,
@@ -19,11 +20,17 @@ from dashboard import (
     _formatar_mes_pt,
 )
 
-
 ORDEM_CONTRATOS = [
     "Sinal",
     "Sinal Ato",
     "Diferença",
+    "Evolução de Obra",
+    "Entrada Direcional",
+    "Taxas Cartoriais",
+    "Financiamento Caixa",
+]
+
+ORDEM_PROXIMAS = [
     "Evolução de Obra",
     "Taxas Cartoriais",
     "Entrada Direcional",
@@ -35,19 +42,21 @@ CORES_GRAFICO = {
     "Sinal Ato": "#c084fc",
     "Diferença": "#f59e0b",
     "Evolução de Obra": "#06b6d4",
-    "Taxas Cartoriais": "#56c718",
     "Entrada Direcional": "#d4c300",
+    "Taxas Cartoriais": "#56c718",
     "Financiamento Caixa": "#ef4444",
 }
 
 
 def _contrato_label(valor):
     nome = str(valor).strip()
-    if nome == "Diferenca":
+    nome_lower = nome.lower()
+
+    if nome_lower == "diferenca":
         return "Diferença"
-    if nome == "Evolucao de Obra":
+    if nome_lower == "evolucao de obra":
         return "Evolução de Obra"
-    if nome.lower() == "financiamento da caixa":
+    if nome_lower == "financiamento da caixa":
         return "Financiamento Caixa"
     return nome
 
@@ -56,6 +65,14 @@ def _ordem_contrato(nome):
     nome = _contrato_label(nome)
     try:
         return ORDEM_CONTRATOS.index(nome)
+    except ValueError:
+        return 999
+
+
+def _ordem_proxima(nome):
+    nome = _contrato_label(nome)
+    try:
+        return ORDEM_PROXIMAS.index(nome)
     except ValueError:
         return 999
 
@@ -72,20 +89,6 @@ def _render_quatro_cards_linha(card1, card2, card3, card4):
         st.markdown(card4, unsafe_allow_html=True)
 
 
-def _render_proximas_cards(df):
-    if df.empty:
-        st.success("✅ Não há parcelas em aberto.")
-        return
-
-    for _, row in df.iterrows():
-        _render_quatro_cards_linha(
-            card_html("Contrato", row["Contrato"], small=True),
-            card_html("Parcela", row["Parcela"], small=True),
-            card_html("Vencimento", row["Vencimento"], small=True),
-            card_html("Valor", row["Valor"], small=True),
-        )
-
-
 def _normalizar_contrato(df):
     base = df.copy()
     if "contrato" in base.columns:
@@ -99,11 +102,50 @@ def _status_norm(serie):
     return pd.Series(dtype="object")
 
 
+def _calcular_total_parcelas_df(df):
+    if df.empty:
+        return 0
+
+    base = df.copy()
+
+    if "total_parcelas" in base.columns:
+        base["total_parcelas_num"] = pd.to_numeric(base["total_parcelas"], errors="coerce")
+        validos = base[base["total_parcelas_num"].notna()].copy()
+
+        if not validos.empty:
+            if "serie" in validos.columns:
+                validos["serie_calc"] = validos["serie"].fillna("").astype(str).str.strip()
+                if validos["serie_calc"].replace("", pd.NA).notna().any():
+                    validos["serie_calc"] = validos["serie_calc"].replace("", "__sem_serie__")
+                    total = validos.groupby("serie_calc")["total_parcelas_num"].max().sum()
+                    if total > 0:
+                        return int(total)
+
+            max_total = validos["total_parcelas_num"].max()
+            if pd.notnull(max_total) and max_total > 0:
+                return int(max_total)
+
+    if "numero_parcela" in base.columns:
+        base["numero_parcela_num"] = pd.to_numeric(base["numero_parcela"], errors="coerce")
+        validos = base[base["numero_parcela_num"].notna()].copy()
+
+        if not validos.empty:
+            if "serie" in validos.columns:
+                validos["serie_calc"] = validos["serie"].fillna("").astype(str).str.strip()
+                if validos["serie_calc"].replace("", pd.NA).notna().any():
+                    validos["serie_calc"] = validos["serie_calc"].replace("", "__sem_serie__")
+                    total = validos.groupby("serie_calc")["numero_parcela_num"].max().sum()
+                    if total > 0:
+                        return int(total)
+
+            max_num = validos["numero_parcela_num"].max()
+            if pd.notnull(max_num) and max_num > 0:
+                return int(max_num)
+
+    return int(len(base))
+
+
 def _aplicar_regras_por_contrato(df):
-    """
-    Aplica as regras já existentes no dashboard individual,
-    mas somente para montar a visão "Todos os Contratos".
-    """
     if df.empty:
         return df.copy()
 
@@ -139,6 +181,7 @@ def _aplicar_regras_por_contrato(df):
             status = _status_norm(parte["status"]) if "status" in parte.columns else pd.Series("", index=parte.index)
             parte["pago_calc"] = status.eq("pago")
             parte["pendente_calc"] = ~parte["pago_calc"]
+            parte["atrasado_calc"] = False
 
         if "valor_total" in parte.columns:
             parte["valor_total_calc"] = _to_numeric_brl(parte["valor_total"])
@@ -160,12 +203,14 @@ def _aplicar_regras_por_contrato(df):
         else:
             parte["total_parcelas_calc"] = pd.NA
 
+        if "atrasado_calc" not in parte.columns:
+            parte["atrasado_calc"] = False
+
         if _is_financiamento_caixa(nome):
             aberta = parte["aberta_calc"] if "aberta_calc" in parte.columns else (~parte["pago_calc"])
-            parte["pendente_calc"] = aberta
+            parte["pendente_calc"] = parte["pendente_calc"] if "pendente_calc" in parte.columns else aberta
             parte["valor_pago_usado"] = parte["valor_pago_calc"].where(parte["pago_calc"], 0)
             parte["valor_pendente_usado"] = parte["valor_total_calc"].where(aberta, 0)
-
         else:
             parte["valor_pago_usado"] = parte["valor_pago_calc"].where(parte["pago_calc"], 0)
             parte["valor_pendente_usado"] = parte["valor_total_calc"].where(parte["pendente_calc"], 0)
@@ -185,39 +230,38 @@ def _resumo_por_contrato(df):
     if df.empty:
         return pd.DataFrame()
 
-    resumo = (
-        df.groupby("contrato", as_index=False)
-        .agg(
-            valor_total=("valor_total_calc", "sum"),
-            valor_pago=("valor_pago_usado", "sum"),
-            valor_pendente=("valor_pendente_usado", "sum"),
-            parcelas_pagas=("pago_calc", "sum"),
-            total_linhas=("contrato", "size"),
-            total_parcelas_max=("total_parcelas_calc", "max"),
-        )
-        .reset_index(drop=True)
-    )
+    linhas = []
 
-    resumo["parcelas_pagas"] = resumo["parcelas_pagas"].fillna(0).astype(int)
+    for contrato, grupo in df.groupby("contrato", dropna=False):
+        nome = _contrato_label(contrato)
+        grupo = grupo.copy()
 
-    def _total_parcelas_row(row):
-        total_max = row["total_parcelas_max"]
-        total_linhas = row["total_linhas"]
-        if pd.notnull(total_max) and total_max > 0:
-            return int(total_max)
-        return int(total_linhas)
+        valor_total = float(grupo["valor_total_calc"].sum())
+        valor_pago = float(grupo["valor_pago_usado"].sum())
+        valor_pendente = float(grupo["valor_pendente_usado"].sum())
 
-    resumo["total_parcelas"] = resumo.apply(_total_parcelas_row, axis=1)
-    resumo["parcelas_pendentes"] = (resumo["total_parcelas"] - resumo["parcelas_pagas"]).clip(lower=0)
+        parcelas_pagas = int(grupo["pago_calc"].sum())
+        parcelas_pendentes = int(grupo["pendente_calc"].sum())
+        parcelas_atrasadas = int(grupo["atrasado_calc"].sum()) if "atrasado_calc" in grupo.columns else 0
 
-    resumo["percentual_qtd"] = resumo.apply(
-        lambda row: (row["parcelas_pagas"] / row["total_parcelas"] * 100) if row["total_parcelas"] > 0 else 0,
-        axis=1,
-    )
+        total_parcelas = _calcular_total_parcelas_df(grupo)
+        percentual = (parcelas_pagas / total_parcelas * 100) if total_parcelas > 0 else 0.0
 
-    resumo["ordem_contrato"] = resumo["contrato"].map(_ordem_contrato)
+        linhas.append({
+            "contrato": nome,
+            "valor_total": valor_total,
+            "valor_pago": valor_pago,
+            "valor_pendente": valor_pendente,
+            "parcelas_pagas": parcelas_pagas,
+            "parcelas_pendentes": parcelas_pendentes,
+            "parcelas_atrasadas": parcelas_atrasadas,
+            "total_parcelas": total_parcelas,
+            "percentual_qtd": percentual,
+            "ordem_contrato": _ordem_contrato(nome),
+        })
+
+    resumo = pd.DataFrame(linhas)
     resumo = resumo.sort_values(["ordem_contrato", "contrato"]).reset_index(drop=True)
-
     return resumo
 
 
@@ -240,21 +284,24 @@ def _proximas_parcelas(df):
         else:
             base["numero_parcela_calc"] = pd.NA
 
-    abertas = base[base["pendente_calc"]].copy()
+    abertas = base[
+        base["contrato"].isin(ORDEM_PROXIMAS) &
+        (base["pendente_calc"])
+    ].copy()
 
     if abertas.empty:
         return pd.DataFrame()
 
-    abertas["ordem_contrato"] = abertas["contrato"].map(_ordem_contrato)
+    abertas["ordem_proxima"] = abertas["contrato"].map(_ordem_proxima)
 
     abertas = abertas.sort_values(
-        ["ordem_contrato", "vencimento_ordem", "numero_parcela_calc"],
+        ["ordem_proxima", "vencimento_ordem", "numero_parcela_calc"],
         na_position="last",
     )
 
     proximas = abertas.groupby("contrato", as_index=False).first()
-    proximas["ordem_contrato"] = proximas["contrato"].map(_ordem_contrato)
-    proximas = proximas.sort_values(["ordem_contrato", "contrato"]).reset_index(drop=True)
+    proximas["ordem_proxima"] = proximas["contrato"].map(_ordem_proxima)
+    proximas = proximas.sort_values(["ordem_proxima", "contrato"]).reset_index(drop=True)
 
     if "data_vencimento_calc" in proximas.columns:
         venc = pd.to_datetime(proximas["data_vencimento_calc"], errors="coerce")
@@ -317,9 +364,12 @@ def render_dashboard_todos(parcelas):
         return
 
     pagamento_total = resumo["valor_pago"].sum()
-    total_parcelas_geral = resumo["total_parcelas"].sum()
-    total_parcelas_pagas_geral = resumo["parcelas_pagas"].sum()
-    conclusao_total = (total_parcelas_pagas_geral / total_parcelas_geral * 100) if total_parcelas_geral > 0 else 0
+    parcelas_pagas_total = int(resumo["parcelas_pagas"].sum())
+    parcelas_pendentes_total = int(resumo["parcelas_pendentes"].sum())
+    parcelas_atrasadas_total = int(resumo["parcelas_atrasadas"].sum())
+    total_referencia = parcelas_pagas_total + parcelas_pendentes_total + parcelas_atrasadas_total
+
+    conclusao_total = (parcelas_pagas_total / total_referencia * 100) if total_referencia > 0 else 0.0
     valor_total_pendente = resumo["valor_pendente"].sum()
 
     # =========================================================
@@ -330,7 +380,7 @@ def render_dashboard_todos(parcelas):
     ], cols=1)
 
     render_cards_grid([
-        card_html("Conclusão Total", f"{conclusao_total:.1f}%", small=True),
+        card_html("Conclusão Total", f"{conclusao_total:.2f}%", small=True),
         card_html("Valor Total Pendente", brl(valor_total_pendente), small=True),
     ], cols=2)
 
@@ -341,19 +391,11 @@ def render_dashboard_todos(parcelas):
 
     for _, row in resumo.iterrows():
         _render_quatro_cards_linha(
-            card_html(row["contrato"], brl(row["valor_total"]), small=True),
-            card_html("Valor Pago", brl(row["valor_pago"]), small=True),
-            card_html(
-                "Parcelas",
-                f'{int(row["parcelas_pagas"])} pagas / {int(row["parcelas_pendentes"])} pendentes',
-                small=True,
-            ),
-            card_html("Conclusão", f'{row["percentual_qtd"]:.1f}%', small=True),
+            card_html(row["contrato"], brl(row["valor_pago"]), small=True),
+            card_html("Pagas", str(int(row["parcelas_pagas"])), small=True),
+            card_html("Pendentes", str(int(row["parcelas_pendentes"])), small=True),
+            card_html("Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
         )
-
-    render_cards_grid([
-        card_html("Valor Total Pendente", brl(valor_total_pendente), small=True),
-    ], cols=1)
 
     # =========================================================
     # PRÓXIMAS PARCELAS
@@ -361,7 +403,17 @@ def render_dashboard_todos(parcelas):
     st.markdown("### Próximas Parcelas")
 
     proximas = _proximas_parcelas(base_regras)
-    _render_proximas_cards(proximas)
+
+    if proximas.empty:
+        st.success("✅ Não há parcelas em aberto.")
+    else:
+        for _, row in proximas.iterrows():
+            _render_quatro_cards_linha(
+                card_html("Contrato", row["Contrato"], small=True),
+                card_html("Parcela", row["Parcela"], small=True),
+                card_html("Vencimento", row["Vencimento"], small=True),
+                card_html("Valor", row["Valor"], small=True),
+            )
 
     # =========================================================
     # EVOLUÇÃO POR MÊS
@@ -373,9 +425,7 @@ def render_dashboard_todos(parcelas):
     if "data_pagamento" not in evolucao.columns:
         st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
     else:
-        if "data_pagamento_ref" not in evolucao.columns:
-            evolucao["data_pagamento_ref"] = _to_datetime_br(evolucao["data_pagamento"])
-
+        evolucao["data_pagamento_ref"] = _to_datetime_br(evolucao["data_pagamento"])
         evolucao = evolucao[
             (evolucao["pago_calc"])
             & (evolucao["data_pagamento_ref"].notna())
@@ -398,7 +448,6 @@ def render_dashboard_todos(parcelas):
             )
 
             mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
-            mensal_df["ordem_contrato"] = mensal_df["contrato"].map(_ordem_contrato)
 
             fig_mensal = go.Figure()
 
@@ -495,6 +544,7 @@ def render_dashboard_todos(parcelas):
             pizza_df,
             names="grupo",
             values="valor",
+            category_orders={"grupo": pizza_df["grupo"].tolist()},
         )
 
         fig_pizza.update_traces(
@@ -503,38 +553,3 @@ def render_dashboard_todos(parcelas):
         )
 
         st.plotly_chart(fig_pizza, use_container_width=True)
-
-    # =========================================================
-    # TABELA FINAL
-    # =========================================================
-    st.markdown("### Resumo Consolidado")
-
-    resumo_exibir = resumo.copy()
-    resumo_exibir = resumo_exibir[[
-        "contrato",
-        "valor_total",
-        "valor_pago",
-        "valor_pendente",
-        "parcelas_pagas",
-        "parcelas_pendentes",
-        "total_parcelas",
-        "percentual_qtd",
-    ]].copy()
-
-    resumo_exibir["valor_total"] = resumo_exibir["valor_total"].apply(brl)
-    resumo_exibir["valor_pago"] = resumo_exibir["valor_pago"].apply(brl)
-    resumo_exibir["valor_pendente"] = resumo_exibir["valor_pendente"].apply(brl)
-    resumo_exibir["percentual_qtd"] = resumo_exibir["percentual_qtd"].map(lambda x: f"{x:.1f}%")
-
-    resumo_exibir = resumo_exibir.rename(columns={
-        "contrato": "Contrato",
-        "valor_total": "Valor Total",
-        "valor_pago": "Valor Pago",
-        "valor_pendente": "Valor Pendente",
-        "parcelas_pagas": "Parcelas Pagas",
-        "parcelas_pendentes": "Parcelas Pendentes",
-        "total_parcelas": "Total Parcelas",
-        "percentual_qtd": "% Conclusão",
-    })
-
-    st.dataframe(resumo_exibir, use_container_width=True, hide_index=True)
