@@ -204,11 +204,69 @@ def _to_numeric_brl(coluna):
         return 0.0
 
 
-def _calcular_progresso_percentual_qtd(qtd_pagas, qtd_pendentes, qtd_atrasadas=0):
-    total = int(qtd_pagas or 0) + int(qtd_pendentes or 0) + int(qtd_atrasadas or 0)
+def _calcular_total_parcelas_base(df):
+    """
+    Calcula o total real de parcelas do contrato.
+
+    Regras:
+    - se existir coluna total_parcelas + serie, soma o maior total_parcelas de cada série
+    - se existir só total_parcelas, usa o maior total_parcelas
+    - se não existir, tenta usar numero_parcela
+    - se nada disso existir, usa a quantidade de linhas
+    """
+    if df.empty:
+        return 0
+
+    base = df.copy()
+
+    if "total_parcelas" in base.columns:
+        base["total_parcelas_num"] = pd.to_numeric(base["total_parcelas"], errors="coerce")
+
+        validos = base[base["total_parcelas_num"].notna()].copy()
+        if not validos.empty:
+            if "serie" in validos.columns:
+                validos["serie_calc"] = validos["serie"].fillna("").astype(str).str.strip()
+
+                # quando houver mais de uma série, soma o máximo de cada uma
+                if validos["serie_calc"].replace("", pd.NA).notna().any():
+                    validos["serie_calc"] = validos["serie_calc"].replace("", "__sem_serie__")
+                    total = validos.groupby("serie_calc")["total_parcelas_num"].max().sum()
+                    if total > 0:
+                        return int(total)
+
+            max_total = validos["total_parcelas_num"].max()
+            if pd.notnull(max_total) and max_total > 0:
+                return int(max_total)
+
+    if "numero_parcela" in base.columns:
+        base["numero_parcela_num"] = pd.to_numeric(base["numero_parcela"], errors="coerce")
+        validos = base[base["numero_parcela_num"].notna()].copy()
+
+        if not validos.empty:
+            if "serie" in validos.columns:
+                validos["serie_calc"] = validos["serie"].fillna("").astype(str).str.strip()
+
+                if validos["serie_calc"].replace("", pd.NA).notna().any():
+                    validos["serie_calc"] = validos["serie_calc"].replace("", "__sem_serie__")
+                    total = validos.groupby("serie_calc")["numero_parcela_num"].max().sum()
+                    if total > 0:
+                        return int(total)
+
+            max_num = validos["numero_parcela_num"].max()
+            if pd.notnull(max_num) and max_num > 0:
+                return int(max_num)
+
+    return int(len(base))
+
+
+def _calcular_progresso_percentual_qtd(qtd_pagas, total_parcelas):
+    total = int(total_parcelas or 0)
+    pagas = int(qtd_pagas or 0)
+
     if total <= 0:
         return 0.0
-    return (int(qtd_pagas or 0) / total) * 100
+
+    return (pagas / total) * 100
 
 
 def _eh_parcela_direcional_paga(row):
@@ -749,10 +807,11 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_restante_compradores = 0
         total_restante_corretora = 0
 
+    total_parcelas_calc = _calcular_total_parcelas_base(contagem_base)
+
     progresso_pct = _calcular_progresso_percentual_qtd(
         total_pago_qtd,
-        total_pendente_qtd,
-        total_atrasado_qtd,
+        total_parcelas_calc,
     )
 
     contrato_encerrado = False
@@ -770,7 +829,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         render_cards_grid([
             card_html("Valor Pendente", brl(total_restante), small=True),
             card_html("Total Geral", brl(total_geral), small=True),
-            card_html("Progresso", f"{progresso_pct:.1f}%", small=True),
+            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
         ], cols=3)
 
         render_cards_grid([
