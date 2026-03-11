@@ -1292,7 +1292,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d"
                     ],
-                    "modeBarButtonsToAdd": [
+                    "modeBarButtons": [
                         "resetScale2d"
                         "toImage"
                     ],
@@ -1400,7 +1400,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d"
                     ],
-                    "modeBarButtonsToAdd": [
+                    "modeBarButtons": [
                         "resetScale2d"
                         "toImage"
                     ],
@@ -1507,7 +1507,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d"
                     ],
-                    "modeBarButtonsToAdd": [
+                    "modeBarButtons": [
                         "resetScale2d"
                         "toImage"
                     ],
@@ -1614,7 +1614,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d"
                     ],
-                    "modeBarButtonsToAdd": [
+                    "modeBarButtons": [
                         "resetScale2d"
                         "toImage"
                     ],
@@ -1764,7 +1764,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d"
                     ],
-                    "modeBarButtonsToAdd": [
+                    "modeBarButtons": [
                         "resetScale2d"
                         "toImage"
                     ],
@@ -1874,7 +1874,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d"
                     ],
-                    "modeBarButtonsToAdd": [
+                    "modeBarButtons": [
                         "resetScale2d"
                         "toImage"
                     ],
@@ -2015,7 +2015,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d"
                     ],
-                    "modeBarButtonsToAdd": [
+                    "modeBarButtons": [
                         "resetScale2d"
                         "toImage"
                     ],
@@ -2130,7 +2130,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "zoomIn2d",
                             "zoomOut2d"
                         ],
-                        "modeBarButtonsToAdd": [
+                        "modeBarButtons": [
                             "resetScale2d"
                             "toImage"
                         ],
@@ -2225,7 +2225,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "zoomIn2d",
                             "zoomOut2d"
                         ],
-                        "modeBarButtonsToAdd": [
+                        "modeBarButtons": [
                             "resetScale2d"
                             "toImage"
                         ],
@@ -2292,7 +2292,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "zoomIn2d",
                             "zoomOut2d"
                         ],
-                        "modeBarButtonsToAdd": [
+                        "modeBarButtons": [
                             "resetScale2d"
                             "toImage"
                         ],
