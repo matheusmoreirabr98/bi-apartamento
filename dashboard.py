@@ -129,7 +129,7 @@ def _render_barra_progresso_custom(progresso_pct):
                 font-weight:700;
                 white-space:nowrap;
                 min-width:36px;
-            ">%</div>
+            ">{progresso_pct:.0f}%</div>
         </div>
     </div>
     """
