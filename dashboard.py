@@ -32,9 +32,9 @@ CORES_CONTRATO = {
 }
 
 CORES_TAXAS_CARTORIO_PIZZA = {
-    "Valor Pago - Compradores": "#56c718",
+    "Valor Pago - Compradores": "#185bc7",
     "Valor Pendente - Compradores": "#db8181",
-    "Valor Pago - Corretora": "#d4c300",
+    "Valor Pago - Corretora": "#e59a3f",
     "Valor Pendente - Corretora": "#eadf8a",
 }
 
