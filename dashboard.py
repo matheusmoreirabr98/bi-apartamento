@@ -93,40 +93,19 @@ def _render_barra_progresso_custom(progresso_pct):
     elif progresso_pct < 70:
         cor = "#d4c300"
 
-    st.markdown(
-        f"""
-        <div style="margin:12px 0 18px 0;">
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                margin-bottom:8px;
-                font-size:14px;
-                font-weight:600;
-                color:#262730;
-            ">
-                <span>Progresso do contrato</span>
-                <span>{progresso_pct:.2f}%</span>
-            </div>
-
-            <div style="
-                width:100%;
-                height:18px;
-                background:#e9ecef;
-                border-radius:999px;
-                overflow:hidden;
-            ">
-                <div style="
-                    width:{progresso_pct:.2f}%;
-                    height:100%;
-                    background:{cor};
-                    border-radius:999px;
-                "></div>
-            </div>
+    html = f"""
+    <div style="margin:12px 0 18px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px;font-weight:600;color:#262730;">
+            <span>Progresso do contrato</span>
+            <span>{progresso_pct:.2f}%</span>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+        <div style="width:100%;height:18px;background:#e9ecef;border-radius:999px;overflow:hidden;">
+            <div style="width:{progresso_pct:.2f}%;height:100%;background:{cor};border-radius:999px;"></div>
+        </div>
+    </div>
+    """
+
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def _is_evolucao_obra(valor_contrato) -> bool:
