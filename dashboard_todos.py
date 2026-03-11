@@ -278,6 +278,9 @@ def _resumo_por_contrato(df):
 
         if _is_taxas_cartorio(nome):
             valor_total = float(valor_pago + valor_pendente)
+        elif nome == "Evolução de Obra":
+            valor_total = float(grupo["valor_total_calc"].sum())
+            valor_pendente = max(valor_total - valor_pago, 0.0)
         else:
             valor_total = float(grupo["valor_total_calc"].sum())
 
