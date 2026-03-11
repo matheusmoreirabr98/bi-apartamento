@@ -1251,7 +1251,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     )
                 )
 
-            fig_mensal.update_layout(
+            fig_mensal.update_layout(dragmode=False
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
@@ -1278,9 +1278,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
-                        "resetScale2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
+                        "autoScale2d",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1356,7 +1359,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(
+            fig_mensal.update_layout(dragmode=False
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
@@ -1383,9 +1386,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
-                        "resetScale2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
+                        "autoScale2d",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1460,7 +1466,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(
+            fig_mensal.update_layout(dragmode=False
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
@@ -1487,9 +1493,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
-                        "resetScale2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
+                        "autoScale2d",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1564,7 +1573,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(
+            fig_mensal.update_layout(dragmode=False
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
@@ -1591,9 +1600,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
-                        "resetScale2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
+                        "autoScale2d",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1711,7 +1723,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     )
                 )
 
-            fig_mensal.update_layout(
+            fig_mensal.update_layout(dragmode=False
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
@@ -1738,9 +1750,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
-                        "resetScale2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
+                        "autoScale2d",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1818,7 +1833,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(
+            fig_mensal.update_layout(dragmode=False
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
@@ -1845,9 +1860,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
-                        "resetScale2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
+                        "autoScale2d",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1956,7 +1974,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     )
                 )
 
-            fig_mensal.update_layout(
+            fig_mensal.update_layout(dragmode=False
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
@@ -1983,9 +2001,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
-                        "resetScale2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
+                        "autoScale2d",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
