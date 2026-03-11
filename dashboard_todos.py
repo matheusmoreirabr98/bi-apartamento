@@ -345,9 +345,9 @@ def _proximas_parcelas(df):
         return pd.DataFrame()
 
     abertas = abertas.sort_values(
-    ["vencimento_ordem", "numero_parcela_calc", "contrato"],
-    na_position="last",
-)
+        ["vencimento_ordem", "numero_parcela_calc", "contrato"],
+        na_position="last",
+    )
 
     proximas_linhas = []
 
