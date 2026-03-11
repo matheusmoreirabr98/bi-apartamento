@@ -572,7 +572,15 @@ def render_dashboard_todos(parcelas):
                 if df_contrato.empty:
                     continue
 
-                df_contrato = ordem_meses.merge(
+                primeiro_mes = df_contrato["mes_ordem"].min()
+                ultimo_mes = df_contrato["mes_ordem"].max()
+
+                ordem_meses_contrato = ordem_meses[
+                    (ordem_meses["mes_ordem"] >= primeiro_mes)
+                    & (ordem_meses["mes_ordem"] <= ultimo_mes)
+                ].copy()
+
+                df_contrato = ordem_meses_contrato.merge(
                     df_contrato,
                     on=["mes_ordem", "Mes"],
                     how="left"
