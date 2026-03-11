@@ -809,8 +809,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Quant. Parc. Pagas", str(total_pago_qtd), small=True),
-            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html("Quant. Parc. Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Quant. Parc. Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
     elif eh_financiamento_caixa:
