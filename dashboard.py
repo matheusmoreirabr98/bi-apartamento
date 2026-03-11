@@ -88,12 +88,12 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.06,
+                y=-0.18,
                 xanchor="center",
                 x=0.5,
                 title_text="",
             ),
-            margin=dict(t=30, b=40, l=20, r=20),
+            margin=dict(t=30, b=80, l=20, r=20),
         )
 
 
@@ -2178,10 +2178,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 grupos.append({"grupo": "Valor Pendente - Compradores", "valor": valor_pendente_compradores})
 
             if valor_pago_compradores > 0:
-                grupos.append({"grupo": "Valor Pago (Compradores)", "valor": valor_pago_compradores})
+                grupos.append({"grupo": "Valor Pago - Compradores", "valor": valor_pago_compradores})
 
             if valor_pendente_corretora > 0:
-                grupos.append({"grupo": "Valor Pendente (Corretora)", "valor": valor_pendente_corretora})
+                grupos.append({"grupo": "Valor Pendente - Corretora", "valor": valor_pendente_corretora})
 
             if valor_pago_corretora > 0:
                 grupos.append({"grupo": "Valor Pago - Corretora", "valor": valor_pago_corretora})
