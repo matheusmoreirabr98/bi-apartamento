@@ -349,11 +349,6 @@ def _proximas_parcelas(df):
     na_position="last",
 )
 
-    abertas = abertas.sort_values(
-        ["ordem_proxima", "vencimento_ordem", "numero_parcela_calc"],
-        na_position="last",
-    )
-
     proximas_linhas = []
 
     for contrato, grupo in abertas.groupby("contrato", sort=False):
