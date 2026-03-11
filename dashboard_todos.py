@@ -420,7 +420,7 @@ def _proximas_parcelas(df):
         elif pd.notnull(n):
             parcela_txt.append(str(int(n)))
         else:
-            parcela_txt.append("-")
+            parcela_txt.append("A definir")
 
     resultado = pd.DataFrame({
         "Contrato": proximas["contrato"].astype(str),
