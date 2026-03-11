@@ -420,7 +420,7 @@ def _proximas_parcelas(df):
         elif pd.notnull(n):
             parcela_txt.append(str(int(n)))
         else:
-            parcela_txt.append("A definir")
+            parcela_txt.append("-")
 
     resultado = pd.DataFrame({
         "Contrato": proximas["contrato"].astype(str),
@@ -535,10 +535,15 @@ def render_dashboard_todos(parcelas):
             else:
                 valor_exibicao = row["Valor"]
 
+            if row["Contrato"] == "Financiamento Caixa" and str(row["Vencimento"]).strip() in ["-", "", "NaT"]:
+                vencimento_exibicao = "A definir"
+            else:
+                vencimento_exibicao = row["Vencimento"]
+
             _render_tres_cards_linha(
                 card_html(row["Contrato"], row["Parcela"], small=True),
                 card_html("Valor", valor_exibicao, small=True),
-                card_html("Vencimento", row["Vencimento"], small=True),
+                card_html("Vencimento", vencimento_exibicao, small=True),
             )
 
     # =========================================================
