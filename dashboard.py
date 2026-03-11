@@ -879,8 +879,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # CARDS
     # =========================================================
-    if not eh_evolucao_obra:
-        _render_barra_progresso_custom(progresso_pct)
+
+    _render_barra_progresso_custom(progresso_pct)
 
     if eh_sinal_ato:
         render_cards_grid([
@@ -903,13 +903,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
-        ], cols=2)
-
-        render_cards_grid([
             card_html("Pendente Estimado", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
-            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
+
+        render_cards_grid([
+            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
+        ], cols=1)
 
         render_cards_grid([
             card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
@@ -922,13 +922,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
-        ], cols=2)
-
-        render_cards_grid([
             card_html("Pendente Estimado", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
-            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
+
+        render_cards_grid([
+            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
+        ], cols=1)
 
         render_cards_grid([
             card_html("Valor Pago - Compradores", brl(total_pago_compradores), small=True),
@@ -946,13 +946,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
-        ], cols=2)
-
-        render_cards_grid([
             card_html("Pendente Estimado", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
-            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
+
+        render_cards_grid([
+            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
+        ], cols=1)
 
         render_cards_grid([
             card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
