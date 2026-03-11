@@ -344,7 +344,10 @@ def _proximas_parcelas(df):
     if abertas.empty:
         return pd.DataFrame()
 
-    abertas["ordem_proxima"] = abertas["contrato"].map(_ordem_proxima)
+    abertas = abertas.sort_values(
+    ["vencimento_ordem", "numero_parcela_calc", "contrato"],
+    na_position="last",
+)
 
     abertas = abertas.sort_values(
         ["ordem_proxima", "vencimento_ordem", "numero_parcela_calc"],
@@ -353,10 +356,8 @@ def _proximas_parcelas(df):
 
     proximas_linhas = []
 
-    for contrato in ORDEM_PROXIMAS:
-        grupo = abertas[abertas["contrato"] == contrato].copy()
-        if grupo.empty:
-            continue
+    for contrato, grupo in abertas.groupby("contrato", sort=False):
+        grupo = grupo.copy()
 
         if contrato == "Financiamento Caixa":
             regime_iniciado = bool(grupo["regime_iniciado"].any()) if "regime_iniciado" in grupo.columns else False
@@ -390,13 +391,18 @@ def _proximas_parcelas(df):
         else:
             parcela_txt.append("-")
 
-    return pd.DataFrame({
+    resultado = pd.DataFrame({
         "Contrato": proximas["contrato"].astype(str),
         "Parcela": parcela_txt,
         "Valor": proximas["valor_total_calc"].apply(brl),
         "Vencimento": venc.dt.strftime("%d/%m/%Y").fillna("-"),
-        "ordem_proxima": proximas["ordem_proxima"].values,
-    }).sort_values("ordem_proxima").reset_index(drop=True)
+        "vencimento_ordem": venc,
+    })
+
+    return resultado.sort_values(
+        ["vencimento_ordem", "Contrato"],
+        na_position="last"
+    ).drop(columns="vencimento_ordem").reset_index(drop=True)
 
 
 def render_dashboard_todos(parcelas):
