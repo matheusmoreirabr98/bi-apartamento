@@ -460,9 +460,9 @@ def render_dashboard_todos(parcelas):
     ], cols=1)
 
     render_cards_grid([
-        card_html("Quant. Parcelas Pagas", str(parcelas_pagas_total), small=True),
-        card_html("Quant. Parcelas Pendentes", str(parcelas_pendentes_total), small=True),
-        card_html("Quant. Parcelas Atrasadas", str(parcelas_atrasadas_total), small=True),
+        card_html("Parcelas Pagas", str(parcelas_pagas_total), small=True),
+        card_html("Parcelas Pendentes", str(parcelas_pendentes_total), small=True),
+        card_html("Parcelas Atrasadas", str(parcelas_atrasadas_total), small=True),
     ], cols=3)
 
     # =========================================================
@@ -473,11 +473,10 @@ def render_dashboard_todos(parcelas):
     for _, row in resumo.iterrows():
         pend_atr = int(row["parcelas_pendentes"]) + int(row["parcelas_atrasadas"])
 
-        _render_quatro_cards_linha(
-            card_html(f'Valor Pendente - {row["contrato"]}', brl(row["valor_pendente"]), small=True),
+        _render_tres_cards_linha(
+            card_html(row["contrato"], brl(row["valor_pendente"]), small=True),
             card_html("Parcelas", f'{int(row["parcelas_pagas"])}/{pend_atr}', small=True),
             card_html("Porcentagem de Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
-            card_html("Contrato", row["contrato"], small=True),
         )
 
     # =========================================================
