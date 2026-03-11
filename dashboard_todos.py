@@ -80,19 +80,6 @@ def _ordem_proxima(nome):
     except ValueError:
         return 999
 
-
-def _render_quatro_cards_linha(card1, card2, card3, card4):
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown(card1, unsafe_allow_html=True)
-    with c2:
-        st.markdown(card2, unsafe_allow_html=True)
-    with c3:
-        st.markdown(card3, unsafe_allow_html=True)
-    with c4:
-        st.markdown(card4, unsafe_allow_html=True)
-
-
 def _render_tres_cards_linha(card1, card2, card3):
     c1, c2, c3 = st.columns(3)
     with c1:
