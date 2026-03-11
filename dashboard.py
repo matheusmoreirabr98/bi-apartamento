@@ -53,6 +53,70 @@ MAPA_MESES = {
     12: "Dez",
 }
 
+# =========================================================
+# ESTILO LEGENDAS E PROGRESSO
+# =========================================================
+
+def _aplicar_estilo_legenda_abaixo(fig):
+    fig.update_layout(
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.25,
+            xanchor="center",
+            x=0.5,
+            title_text="",
+        ),
+        margin=dict(t=30, b=90, l=20, r=20),
+    )
+
+
+def _render_barra_progresso_custom(progresso_pct):
+    progresso_pct = max(0.0, min(float(progresso_pct or 0), 100.0))
+
+    cor = "#56c718"
+    if progresso_pct < 35:
+        cor = "#db8181"
+    elif progresso_pct < 70:
+        cor = "#d4c300"
+
+    st.markdown(
+        f"""
+        <div style="margin: 10px 0 18px 0;">
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                margin-bottom:6px;
+                font-size:0.9rem;
+                font-weight:600;
+            ">
+                <span>Progresso</span>
+                <span>{progresso_pct:.2f}%</span>
+            </div>
+
+            <div style="
+                width:100%;
+                height:14px;
+                background:#ececec;
+                border-radius:999px;
+                overflow:hidden;
+                box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+            ">
+
+                <div style="
+                    width:{progresso_pct}%;
+                    height:100%;
+                    background:linear-gradient(90deg,{cor},{cor});
+                    border-radius:999px;
+                    transition:width .4s ease;
+                "></div>
+
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 def _is_evolucao_obra(valor_contrato) -> bool:
     contrato = str(valor_contrato).strip().lower()
@@ -953,7 +1017,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
     if not eh_evolucao_obra:
-        st.progress(min(max(progresso_pct / 100, 0), 1.0))
+        _render_barra_progresso_custom(progresso_pct)
 
     # =========================================================
     # PRÓXIMA PARCELA
@@ -1188,6 +1252,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 hovermode="x unified",
                 xaxis=dict(tickangle=320),
             )
+
+            _aplicar_estilo_legenda_abaixo(fig_mensal)
+
             _configurar_eixo_y_valor(
                 fig_mensal,
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
@@ -1268,6 +1335,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
+            _aplicar_estilo_legenda_abaixo(fig_mensal)
+
             _configurar_eixo_y_valor(
                 fig_mensal,
                 float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 500,
@@ -1347,6 +1416,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
+            _aplicar_estilo_legenda_abaixo(fig_mensal)
+
             _configurar_eixo_y_valor(
                 fig_mensal,
                 float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 500,
@@ -1425,6 +1496,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 hovermode="x unified",
                 xaxis=dict(tickangle=320),
             )
+
+            _aplicar_estilo_legenda_abaixo(fig_mensal)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1547,6 +1620,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 hovermode="x unified",
                 xaxis=dict(tickangle=320),
             )
+
+            _aplicar_estilo_legenda_abaixo(fig_mensal)
+
             _configurar_eixo_y_valor(
                 fig_mensal,
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
@@ -1628,6 +1704,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 hovermode="x unified",
                 xaxis=dict(tickangle=320),
             )
+
+            _aplicar_estilo_legenda_abaixo(fig_mensal)
+
             _configurar_eixo_y_valor(
                 fig_mensal,
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
@@ -1740,6 +1819,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 hovermode="x unified",
                 xaxis=dict(tickangle=320),
             )
+
+            _aplicar_estilo_legenda_abaixo(fig_mensal)
+
             _configurar_eixo_y_valor(
                 fig_mensal,
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
@@ -1822,6 +1904,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     },
                 )
 
+                _aplicar_estilo_legenda_abaixo(fig_resp)
+
                 fig_resp.update_traces(
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
                     customdata=[[brl(v)] for v in resp_df["valor"]]
@@ -1881,6 +1965,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color_discrete_map=CORES_TAXAS_CARTORIO_PIZZA,
                 )
 
+                _aplicar_estilo_legenda_abaixo(fig_resp)
+
                 fig_resp.update_traces(
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
                     customdata=[[brl(v)] for v in resp_df["valor"]]
@@ -1909,6 +1995,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "Pendente": CORES_RESPONSAVEL["Pendente"],
                     },
                 )
+                
+                _aplicar_estilo_legenda_abaixo(fig_resp)
 
                 fig_resp.update_traces(
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
