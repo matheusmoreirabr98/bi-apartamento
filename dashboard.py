@@ -2227,7 +2227,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "select2d",
                             "lasso2d",
                             "autoScale2d",
-                            "toImage",
                             "toggleSpikelines",
                             "zoomIn2d",
                             "zoomOut2d"
@@ -2284,7 +2283,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     config={
                         "displayModeBar": True,
                         "displaylogo": False,
-                        "scrollZoom": False,
+                        "scrollZoom": True,
                         "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
@@ -2292,10 +2291,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "select2d",
                             "lasso2d",
                             "autoScale2d",
-                            "toImage",
                             "toggleSpikelines",
-                            "zoomIn2d",
-                            "zoomOut2d",
                             "zoomIn2d",
                             "zoomOut2d"
                         ],
