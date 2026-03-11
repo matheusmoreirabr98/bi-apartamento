@@ -17,9 +17,9 @@ from utils import (
 
 CORES_RESPONSAVEL = {
     "Compradores": "#185bc7",
-    "Corretora": "#00d4d4",
-    "Pendente": "#cd3f3f",
-    "Pago": "#5df00e",
+    "Corretora": "#d4c300",
+    "Pendente": "#db8181",
+    "Pago": "#56c718",
 }
 
 CORES_CONTRATO = {
@@ -908,7 +908,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
             card_html("Pendente Estimado", brl(total_restante), small=True),
-            card_html("Total Previsto", brl(total_geral), small=True),
+            card_html("Total Estimado", brl(total_geral), small=True),
         ], cols=3)
 
         render_cards_grid([
@@ -927,7 +927,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
             card_html("Pendente Estimado", brl(total_restante), small=True),
-            card_html("Total Previsto", brl(total_geral), small=True),
+            card_html("Total Estimado", brl(total_geral), small=True),
         ], cols=3)
 
         render_cards_grid([
@@ -951,7 +951,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
             card_html("Pendente Estimado", brl(total_restante), small=True),
-            card_html("Total Previsto", brl(total_geral), small=True),
+            card_html("Total Estimado", brl(total_geral), small=True),
         ], cols=3)
 
         render_cards_grid([
@@ -1120,8 +1120,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 if eh_evolucao_obra:
                     render_cards_grid([
-                        card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
                         card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
+                        card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
                         card_html(
                             "Vencimento",
                             data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
