@@ -234,20 +234,6 @@ def _texto_parcela(row, somente_numero=False):
     total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
     return f"{num}/{total}"
 
-
-def _render_quatro_cards_em_linha(cards_html):
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-        st.markdown(cards_html[0], unsafe_allow_html=True)
-    with c2:
-        st.markdown(cards_html[1], unsafe_allow_html=True)
-    with c3:
-        st.markdown(cards_html[2], unsafe_allow_html=True)
-    with c4:
-        st.markdown(cards_html[3], unsafe_allow_html=True)
-
-
 def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
     faixa_max = max(float(faixa_max or 0), float(passo))
     topo = ((int(faixa_max) + passo - 1) // passo) * passo
@@ -263,16 +249,6 @@ def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
             ticktext=ticktext,
         )
     )
-
-
-def _configurar_eixo_y_quantidade(fig, max_qtd):
-    fig.update_layout(
-        yaxis=dict(
-            range=[0.5, max(1, max_qtd + 1)],
-            dtick=1,
-        )
-    )
-
 
 def _normalizar_texto_serie(valor):
     if pd.isnull(valor):
@@ -1070,17 +1046,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 if not prox_taxas.empty:
                     row = prox_taxas.iloc[0]
                     data_venc = _to_datetime_br(pd.Series([row["data_vencimento"]])).iloc[0]
-
-                    _render_quatro_cards_em_linha([
-                        card_html("Contrato", CONTRATO_TAXAS, small=True),
-                        card_html("Parcela", _texto_parcela(row), small=True),
-                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
-                        card_html(
-                            "Vencimento",
-                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                            small=True,
-                        ),
-                    ])
 
                 if not prox_direcional.empty:
                     row = prox_direcional.iloc[0]

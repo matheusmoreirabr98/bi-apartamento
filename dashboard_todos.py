@@ -16,7 +16,6 @@ from dashboard import (
     _aplicar_regra_taxas_cartorio,
     _aplicar_regra_financiamento_caixa,
     _filtrar_base_entrada_direcional,
-    _filtrar_base_taxas_cartorio,
     _formatar_mes_pt,
     _render_barra_progresso_custom,
     _configurar_eixo_y_valor,
