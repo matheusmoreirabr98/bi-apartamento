@@ -1259,7 +1259,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode="pan")
+            fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                xaxis=dict(tickangle=320),
+            )
 
             st.plotly_chart(
                 fig_mensal,
@@ -1360,7 +1367,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode="pan")
+            fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                xaxis=dict(tickangle=320),
+            )
 
             st.plotly_chart(
                 fig_mensal,
@@ -1460,7 +1474,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode="pan")
+            fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                xaxis=dict(tickangle=320),
+            )
 
             st.plotly_chart(
                 fig_mensal,
@@ -1560,7 +1581,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode="pan")
+            fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                xaxis=dict(tickangle=320),
+            )
 
             st.plotly_chart(
                 fig_mensal,
@@ -1703,7 +1731,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode="pan")
+            fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                xaxis=dict(tickangle=320),
+            )
 
             st.plotly_chart(
                 fig_mensal,
@@ -1806,7 +1841,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode="pan")
+            fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                xaxis=dict(tickangle=320),
+            )
 
             st.plotly_chart(
                 fig_mensal,
@@ -1940,7 +1982,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode="pan")
+            fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                legend_title_text="",
+                xaxis=dict(tickangle=320),
+            )
 
             st.plotly_chart(
                 fig_mensal,
@@ -2045,7 +2094,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_layout(dragmode="pan")
+                fig_mensal.update_layout(
+                    dragmode="pan",
+                    hovermode="x unified",
+                    xaxis_title="Mês do Pagamento",
+                    yaxis_title="Valor Pago",
+                    legend_title_text="",
+                    xaxis=dict(tickangle=320),
+                )
 
                 st.plotly_chart(
                     fig_resp,
@@ -2127,7 +2183,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_layout(dragmode="pan")
+                fig_mensal.update_layout(
+                    dragmode="pan",
+                    hovermode="x unified",
+                    xaxis_title="Mês do Pagamento",
+                    yaxis_title="Valor Pago",
+                    legend_title_text="",
+                    xaxis=dict(tickangle=320),
+                )
 
                 st.plotly_chart(
                     fig_resp,
@@ -2180,7 +2243,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_layout(dragmode="pan")
+                fig_mensal.update_layout(
+                    dragmode="pan",
+                    hovermode="x unified",
+                    xaxis_title="Mês do Pagamento",
+                    yaxis_title="Valor Pago",
+                    legend_title_text="",
+                    xaxis=dict(tickangle=320),
+                )
 
                 st.plotly_chart(
                     fig_resp,
