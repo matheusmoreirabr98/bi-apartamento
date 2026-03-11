@@ -34,7 +34,8 @@ def inject_styles():
 
     .dash-grid-1,
     .dash-grid-2,
-    .dash-grid-3{
+    .dash-grid-3,
+    .dash-grid-4{
         display: grid;
         gap: 10px;
         margin-bottom: 10px;
@@ -51,6 +52,10 @@ def inject_styles():
 
     .dash-grid-3{
         grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .dash-grid-4{
+        grid-template-columns: 1fr 1fr 1fr 1fr;
     }
 
     .metric-card{
@@ -91,6 +96,10 @@ def inject_styles():
 
         .dash-grid-3{
             grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .dash-grid-4{
+            grid-template-columns: 1fr 1fr 1fr 1fr;
         }
 
         .metric-card{
@@ -136,6 +145,7 @@ def render_cards_grid(cards_html, cols=1):
         1: "dash-grid-1",
         2: "dash-grid-2",
         3: "dash-grid-3",
+        4: "dash-grid-4",
     }.get(cols, "dash-grid-1")
 
     html = f'<div class="{grid_class}">{"".join(cards_html)}</div>'
