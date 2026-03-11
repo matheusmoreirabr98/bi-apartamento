@@ -1259,7 +1259,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode=False)
+            fig_mensal.update_layout(dragmode="pan")
 
             st.plotly_chart(
                 fig_mensal,
@@ -1267,7 +1267,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": False,
+                    "scrollZoom": True,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -1284,6 +1284,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d",
                         "resetScale2d"
+                        "toImage"
                     ],
                 },
             )
@@ -1360,7 +1361,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode=False)
+            fig_mensal.update_layout(dragmode="pan")
 
             st.plotly_chart(
                 fig_mensal,
@@ -1368,7 +1369,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": False,
+                    "scrollZoom": True,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -1385,6 +1386,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d",
                         "resetScale2d"
+                        "toImage"
                     ],
                 },
             )
@@ -1460,7 +1462,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode=False)
+            fig_mensal.update_layout(dragmode="pan")
 
             st.plotly_chart(
                 fig_mensal,
@@ -1468,7 +1470,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": False,
+                    "scrollZoom": True,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -1485,6 +1487,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d",
                         "resetScale2d"
+                        "toImage"
                     ],
                 },
             )
@@ -1560,7 +1563,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode=False)
+            fig_mensal.update_layout(dragmode="pan")
 
             st.plotly_chart(
                 fig_mensal,
@@ -1568,7 +1571,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": False,
+                    "scrollZoom": True,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -1585,6 +1588,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d",
                         "resetScale2d"
+                        "toImage"
                     ],
                 },
             )
@@ -1703,7 +1707,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode=False)
+            fig_mensal.update_layout(dragmode="pan")
 
             st.plotly_chart(
                 fig_mensal,
@@ -1711,7 +1715,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": False,
+                    "scrollZoom": True,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -1728,6 +1732,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d",
                         "resetScale2d"
+                        "toImage"
                     ],
                 },
             )
@@ -1806,7 +1811,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode=False)
+            fig_mensal.update_layout(dragmode="pan")
 
             st.plotly_chart(
                 fig_mensal,
@@ -1814,7 +1819,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": False,
+                    "scrollZoom": True,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -1831,6 +1836,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d",
                         "resetScale2d"
+                        "toImage"
                     ],
                 },
             )
@@ -1940,7 +1946,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            fig_mensal.update_layout(dragmode=False)
+            fig_mensal.update_layout(dragmode="pan")
 
             st.plotly_chart(
                 fig_mensal,
@@ -1948,7 +1954,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": False,
+                    "scrollZoom": True,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -1965,6 +1971,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomIn2d",
                         "zoomOut2d",
                         "resetScale2d"
+                        "toImage"
                     ],
                 },
             )
@@ -2045,7 +2052,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_layout(dragmode=False)
+                fig_resp.update_layout(dragmode="pan")
 
                 st.plotly_chart(
                     fig_resp,
@@ -2053,7 +2060,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     config={
                         "displayModeBar": True,
                         "displaylogo": False,
-                        "scrollZoom": False,
+                        "scrollZoom": True,
                         "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
@@ -2122,7 +2129,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_layout(dragmode=False)
+                fig_resp.update_layout(dragmode="pan")
 
                 st.plotly_chart(
                     fig_resp,
@@ -2130,7 +2137,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     config={
                         "displayModeBar": True,
                         "displaylogo": False,
-                        "scrollZoom": False,
+                        "scrollZoom": True,
                         "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
@@ -2169,7 +2176,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_layout(dragmode=False)
+                fig_resp.update_layout(dragmode="pan")
 
                 st.plotly_chart(
                     fig_resp,
