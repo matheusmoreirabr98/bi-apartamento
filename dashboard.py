@@ -993,7 +993,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
-        ], cols=2)
+        ], cols=1)
 
         render_cards_grid([
             card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
