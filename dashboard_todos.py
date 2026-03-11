@@ -27,8 +27,8 @@ ORDEM_CONTRATOS = [
     "Sinal Ato",
     "Diferença",
     "Evolução de Obra",
-    "Entrada Direcional",
     "Taxas Cartoriais",
+    "Entrada Direcional",
     "Financiamento Caixa",
 ]
 
