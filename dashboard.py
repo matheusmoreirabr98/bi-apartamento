@@ -798,8 +798,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     if eh_sinal_ato:
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral)),
-            card_html("Progresso", f"{progresso_pct:.2f}%"),
+            card_html("Pagamento Total", brl(total_pago_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
         ], cols=2)
 
         render_cards_grid([
@@ -820,8 +820,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         )
 
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral)),
-            card_html("Progresso", f"{progresso_pct:.2f}%"),
+            card_html("Pagamento Total", brl(total_pago_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
         ], cols=2)
 
         render_cards_grid([
@@ -831,17 +831,17 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=3)
 
         render_cards_grid([
-            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
     elif eh_taxas_cartorio:
         total_desconto_obtido = _calcular_desconto_taxas_cartorio(base_taxas_todas)
 
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral)),
-            card_html("Progresso", f"{progresso_pct:.2f}%"),
+            card_html("Pagamento Total", brl(total_pago_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
         ], cols=2)
 
         render_cards_grid([
@@ -856,17 +856,17 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
     elif eh_entrada_direcional:
         total_desconto_obtido = _calcular_desconto_entrada_direcional(parcelas_base)
 
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral)),
-            card_html("Progresso", f"{progresso_pct:.2f}%"),
+            card_html("Pagamento Total", brl(total_pago_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
         ], cols=2)
 
         render_cards_grid([
@@ -876,26 +876,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=3)
 
         render_cards_grid([
-            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
     elif eh_direcional:
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral)),
-        ], cols=1)
+            card_html("Pagamento Total", brl(total_pago_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
+        ], cols=2)
 
         render_cards_grid([
             card_html("Valor Pendente", brl(total_restante), small=True),
             card_html("Total Geral", brl(total_geral), small=True),
-            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
-        ], cols=3)
+        ], cols=2)
 
         render_cards_grid([
-            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
     elif eh_evolucao_obra:
@@ -917,19 +917,19 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 proxima_parcela_pendente_mes = _nome_mes_por_data(abertas_evolucao.iloc[0].get("data_vencimento"))
 
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral)),
-            card_html("Progresso", f"{progresso_pct:.2f}%"),
+            card_html("Pagamento Total", brl(total_pago_geral), small=True),
+            card_html("Progresso", f"{progresso_pct:.2f}%", small=True),
         ], cols=2)
 
         render_cards_grid([
-            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html("Parcela Pendente", proxima_parcela_pendente_mes, small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Parcela Pendentes", proxima_parcela_pendente_mes, small=True),
+            card_html("Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
     else:
         render_cards_grid([
-            card_html("Pagamento Total", brl(total_pago_geral)),
+            card_html("Pagamento Total", brl(total_pago_geral), small=True),
         ], cols=1)
 
         render_cards_grid([
@@ -943,9 +943,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Quant. Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html("Quant. Parcelas Pendentes", str(total_pendente_qtd), small=True),
-            card_html("Quant. Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
+            card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
+            card_html("Parcelas Pendentes", str(total_pendente_qtd), small=True),
+            card_html("Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
         render_cards_grid([
