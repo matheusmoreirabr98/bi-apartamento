@@ -422,11 +422,28 @@ def _proximas_parcelas(df):
         else:
             parcela_txt.append("-")
 
+    valores_exibicao = []
+    for _, row in proximas.iterrows():
+        if str(row.get("contrato", "")).strip() == "Evolução de Obra" and float(row.get("valor_total_calc", 0) or 0) == 0:
+            valores_exibicao.append("A definir")
+        else:
+            valores_exibicao.append(brl(row.get("valor_total_calc", 0)))
+
+    vencimentos_exibicao = []
+    for _, row in proximas.iterrows():
+        contrato_nome = str(row.get("contrato", "")).strip()
+        data_venc = pd.to_datetime(row.get("vencimento_ordem"), errors="coerce")
+
+        if contrato_nome == "Financiamento Caixa" and pd.isna(data_venc):
+            vencimentos_exibicao.append("A definir")
+        else:
+            vencimentos_exibicao.append(data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-")
+
     resultado = pd.DataFrame({
         "Contrato": proximas["contrato"].astype(str),
         "Parcela": parcela_txt,
-        "Valor": proximas["valor_total_calc"].apply(brl),
-        "Vencimento": venc.dt.strftime("%d/%m/%Y").fillna("-"),
+        "Valor": valores_exibicao,
+        "Vencimento": vencimentos_exibicao,
         "vencimento_ordem": venc,
     })
 
