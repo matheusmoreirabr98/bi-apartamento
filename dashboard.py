@@ -1326,7 +1326,22 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 .sort_values("mes_ordem")
             )
 
-            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
+            periodo_completo = pd.period_range(
+                start=mensal_df["mes_ordem"].min(),
+                end=mensal_df["mes_ordem"].max(),
+                freq="M"
+            )
+
+            ordem_meses = pd.DataFrame({
+                "mes_ordem": periodo_completo.astype(str)
+            })
+
+            ordem_meses["Mes"] = _formatar_mes_pt(ordem_meses["mes_ordem"])
+
+            mensal_df = ordem_meses.merge(mensal_df, on="mes_ordem", how="left")
+
+            mensal_df["valor_pago_mes"] = mensal_df["valor_pago_mes"].fillna(0)
+            mensal_df["qtd_parcelas"] = mensal_df["qtd_parcelas"].fillna(0)
 
             hover_textos = [
                 (
@@ -1341,7 +1356,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             ]
 
-            textos = [str(int(qtd)) for qtd in mensal_df["qtd_parcelas"]]
+            textos = [
+                str(int(qtd)) if qtd > 0 else ""
+                for qtd in mensal_df["qtd_parcelas"]
+            ]
 
             fig_mensal = go.Figure()
 
