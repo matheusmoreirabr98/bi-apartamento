@@ -1290,12 +1290,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
-                        "toImage"
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d",
-                        "fullscreen"
+                        "fullscreen",
+                        "toImage"
                     ],
                 },
             )
@@ -1399,12 +1399,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
-                        "toImage"
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d",
-                        "fullscreen"
+                        "fullscreen",
+                        "toImage"
                     ],
                 },
             )
@@ -1507,12 +1507,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
-                        "toImage"
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d",
-                        "fullscreen"
+                        "fullscreen",
+                        "toImage"
                     ],
                 },
             )
@@ -1615,12 +1615,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
-                        "toImage"
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d",
-                        "fullscreen"
+                        "fullscreen",
+                        "toImage"
                     ],
                 },
             )
@@ -1766,12 +1766,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
-                        "toImage"
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d",
-                        "fullscreen"
+                        "fullscreen",
+                        "toImage"
                     ],
                 },
             )
@@ -1877,12 +1877,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
-                        "toImage"
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d",
-                        "fullscreen"
+                        "fullscreen",
+                        "toImage"
                     ],
                 },
             )
@@ -2019,12 +2019,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
-                        "toImage"
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d",
-                        "fullscreen"
+                        "fullscreen",
+                        "toImage"
                     ],
                 },
             )
