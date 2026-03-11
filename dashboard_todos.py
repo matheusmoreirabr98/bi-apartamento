@@ -474,7 +474,7 @@ def render_dashboard_todos(parcelas):
         _render_tres_cards_linha(
             card_html(row["contrato"], brl(row["valor_pago"]), small=True),
             card_html("Parcelas", f'{int(row["parcelas_pagas"])}/{int(row["total_parcelas"])}', small=True),
-            card_html("Porcentagem de Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
+            card_html("Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
         )
 
     # =========================================================
