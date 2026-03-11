@@ -266,12 +266,6 @@ def _aplicar_regras_por_contrato(df):
 def _resumo_por_contrato(df):
     if df.empty:
         return pd.DataFrame()
-    
-    if nome == "Evolução de Obra":
-        st.write("EVOLUÇÃO DEBUG")
-        st.write("valor_pago", float(grupo["valor_pago_usado"].sum()))
-        st.write("valor_total_calc", float(grupo["valor_total_calc"].sum()))
-        st.write("valor_pendente_usado", float(grupo["valor_pendente_usado"].sum()))
 
     linhas = []
 
@@ -284,9 +278,13 @@ def _resumo_por_contrato(df):
 
         if _is_taxas_cartorio(nome):
             valor_total = float(valor_pago + valor_pendente)
+
         elif nome == "Evolução de Obra":
             valor_total = float(grupo["valor_total_calc"].sum())
-            valor_pendente = max(valor_total - valor_pago, 0.0)
+
+            if valor_pendente <= 0:
+                valor_pendente = max(valor_total - valor_pago, 0.0)
+
         else:
             valor_total = float(grupo["valor_total_calc"].sum())
 
