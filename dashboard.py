@@ -257,7 +257,7 @@ def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
 
     fig.update_layout(
         yaxis=dict(
-            range=[0.5, topo],
+            range=[-200, topo],
             tickmode="array",
             tickvals=tickvals,
             ticktext=ticktext,
