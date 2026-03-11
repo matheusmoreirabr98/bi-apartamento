@@ -72,14 +72,6 @@ def _ordem_contrato(nome):
     except ValueError:
         return 999
 
-
-def _ordem_proxima(nome):
-    nome = _contrato_label(nome)
-    try:
-        return ORDEM_PROXIMAS.index(nome)
-    except ValueError:
-        return 999
-
 def _render_tres_cards_linha(card1, card2, card3):
     c1, c2, c3 = st.columns(3)
     with c1:
