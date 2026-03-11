@@ -118,7 +118,7 @@ def _render_barra_progresso_custom(progresso_pct):
         cor = "#00d4bf"
     elif progresso_pct < 80:
         cor = "#00d478"
-    elif progresso_pct < 90:
+    elif progresso_pct < 99:
         cor = "#00d447"
 
     texto_interno = f"{progresso_pct:.2f}%"
