@@ -106,6 +106,8 @@ def _render_barra_progresso_custom(progresso_pct):
     elif progresso_pct < 70:
         cor = "#d4c300"
 
+    texto_interno = f"{progresso_pct:.0f}%"
+
     html = f"""
     <div style="margin:6px 0 14px 0;">
         <div style="
@@ -118,6 +120,7 @@ def _render_barra_progresso_custom(progresso_pct):
         ">
             <div style="
                 width:{progresso_pct:.2f}%;
+                min-width:52px;
                 height:100%;
                 background:{cor};
                 border-radius:999px;
@@ -128,8 +131,9 @@ def _render_barra_progresso_custom(progresso_pct):
                 font-size:12px;
                 font-weight:700;
                 white-space:nowrap;
-                min-width:36px;
-            ">{progresso_pct:.0f}%</div>
+                padding:0 8px;
+                box-sizing:border-box;
+            ">{texto_interno}</div>
         </div>
     </div>
     """
