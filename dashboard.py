@@ -59,7 +59,14 @@ MAPA_MESES = {
 
 def _titulo_centralizado(texto, nivel=3):
     st.markdown(
-        f"<h{nivel} style='text-align:center; margin-bottom: 0.8rem;'>{texto}</h{nivel}>",
+        f"""
+        <h{nivel} style="
+            text-align:center;
+            width:100%;
+            display:block;
+            margin: 0.8rem 0 1rem 0;
+        ">{texto}</h{nivel}>
+        """,
         unsafe_allow_html=True,
     )
 
@@ -69,24 +76,24 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.08,
+                y=-0.03,
                 xanchor="center",
                 x=0.5,
                 title_text="",
             ),
-            margin=dict(t=30, b=80, l=20, r=20),
+            margin=dict(t=30, b=45, l=20, r=20),
         )
     else:
         fig.update_layout(
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.12,
+                y=-0.06,
                 xanchor="center",
                 x=0.5,
                 title_text="",
             ),
-            margin=dict(t=30, b=70, l=20, r=20),
+            margin=dict(t=30, b=40, l=20, r=20),
         )
 
 
@@ -98,8 +105,6 @@ def _render_barra_progresso_custom(progresso_pct):
         cor = "#db8181"
     elif progresso_pct < 70:
         cor = "#d4c300"
-
-    texto_interno = f"{int(round(progresso_pct))}%"
 
     html = f"""
     <div style="margin:6px 0 14px 0;">
@@ -123,8 +128,8 @@ def _render_barra_progresso_custom(progresso_pct):
                 font-size:12px;
                 font-weight:700;
                 white-space:nowrap;
-                min-width:48px;
-            ">{texto_interno}</div>
+                min-width:36px;
+            ">%</div>
         </div>
     </div>
     """
@@ -244,7 +249,7 @@ def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
     topo = ((int(faixa_max) + passo - 1) // passo) * passo
 
     tickvals = list(range(0, topo + passo, passo))
-    ticktext = ["0" if v == 0 else f"{int(v/1000)}k" for v in tickvals]
+    ticktext = ["0"] + [f"{int(v/1000)}k" for v in tickvals[1:]]
 
     fig.update_layout(
         yaxis=dict(
