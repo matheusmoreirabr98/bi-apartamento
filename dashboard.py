@@ -1833,13 +1833,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(dragmode=False
-                xaxis_title="Mês do Pagamento",
-                yaxis_title="Valor Pago",
-                legend_title_text="",
-                hovermode="x unified",
-                xaxis=dict(tickangle=320),
-            )
+            fig_mensal.update_layout(dragmode=False)
 
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
