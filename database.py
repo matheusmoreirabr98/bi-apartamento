@@ -43,7 +43,7 @@ def load_parcelas(supabase):
             df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
 
         df["eh_linha_resumo"] = (
-            df["categoria"].fillna("").astype(str).str.lower().eq("taxas banco")
+            df["categoria"].fillna("").astype(str).str.lower().eq(" banco")
             | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
         )
 
