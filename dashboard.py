@@ -88,12 +88,12 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.18,
+                y=-0.28,
                 xanchor="center",
                 x=0.5,
                 title_text="",
             ),
-            margin=dict(t=30, b=80, l=20, r=20),
+            margin=dict(t=30, b=110, l=20, r=20),
         )
 
 
