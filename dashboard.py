@@ -16,10 +16,10 @@ from utils import (
 
 
 CORES_RESPONSAVEL = {
-    "Compradores": "#56c718",
-    "Corretora": "#d4c300",
-    "Pendente": "#db8181",
-    "Pago": "#56c718",
+    "Compradores": "#185bc7",
+    "Corretora": "#00d4d4",
+    "Pendente": "#cd3f3f",
+    "Pago": "#5df00e",
 }
 
 CORES_CONTRATO = {
