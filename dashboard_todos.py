@@ -530,9 +530,14 @@ def render_dashboard_todos(parcelas):
         st.success("✅ Não há parcelas em aberto.")
     else:
         for _, row in proximas.iterrows():
+            if row["Contrato"] == "Evolução de Obra" and row["Valor"] == brl(0):
+                valor_exibicao = "A definir no mês"
+            else:
+                valor_exibicao = row["Valor"]
+
             _render_tres_cards_linha(
                 card_html(row["Contrato"], row["Parcela"], small=True),
-                card_html("Valor", row["Valor"], small=True),
+                card_html("Valor", valor_exibicao, small=True),
                 card_html("Vencimento", row["Vencimento"], small=True),
             )
 
