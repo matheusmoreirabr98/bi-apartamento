@@ -467,7 +467,7 @@ def render_dashboard_todos(parcelas):
 
     pagamento_total = float(resumo["valor_pago"].sum())
     valor_total_geral = float(resumo["valor_total"].sum())
-    valor_total_pendente = max(float(resumo["valor_pendente"].sum()), 0.0)
+    valor_total_pendente = max(valor_total_geral - pagamento_total, 0.0)
     desconto_total = float(base_regras["desconto_obtido_calc"].sum()) if "desconto_obtido_calc" in base_regras.columns else 0.0
 
     parcelas_pagas_total = int(resumo["parcelas_pagas"].sum())
