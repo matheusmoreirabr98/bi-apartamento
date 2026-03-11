@@ -509,7 +509,7 @@ def render_dashboard_todos(parcelas):
 
     for _, row in resumo.iterrows():
         if row["contrato"] == "Evolução de Obra":
-            valor_exibicao = "A definir no mês"
+            valor_exibicao = "A definir"
         else:
             valor_exibicao = brl(row["valor_pago"])
 
@@ -531,7 +531,7 @@ def render_dashboard_todos(parcelas):
     else:
         for _, row in proximas.iterrows():
             if row["Contrato"] == "Evolução de Obra" and row["Valor"] == brl(0):
-                valor_exibicao = "A definir no mês"
+                valor_exibicao = "A definir"
             else:
                 valor_exibicao = row["Valor"]
 
