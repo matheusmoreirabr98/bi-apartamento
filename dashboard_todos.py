@@ -18,6 +18,8 @@ from dashboard import (
     _filtrar_base_entrada_direcional,
     _filtrar_base_taxas_cartorio,
     _formatar_mes_pt,
+    _render_barra_progresso_custom,
+    _configurar_eixo_y_valor,
 )
 
 ORDEM_CONTRATOS = [
@@ -232,6 +234,9 @@ def _aplicar_regras_por_contrato(df):
                 parte["pendente_calc"] | parte["atrasado_calc"], 0
             )
 
+        desconto_calc = (parte["valor_total_calc"] - parte["valor_pago_calc"]).clip(lower=0)
+        parte["desconto_obtido_calc"] = desconto_calc.where(parte["pago_calc"], 0)
+
         parte["contrato"] = nome
         partes.append(parte)
 
@@ -377,22 +382,21 @@ def _proximas_parcelas(df):
     for _, row in proximas.iterrows():
         n = pd.to_numeric(row.get("numero_parcela_calc"), errors="coerce")
         t = pd.to_numeric(row.get("total_parcelas_calc"), errors="coerce")
-        contrato_nome = str(row.get("contrato", "")).strip()
 
         if pd.notnull(n) and pd.notnull(t) and t > 0:
-            texto_base = f"{int(n)}/{int(t)}"
+            parcela_txt.append(f"{int(n)}/{int(t)}")
         elif pd.notnull(n):
-            texto_base = str(int(n))
+            parcela_txt.append(str(int(n)))
         else:
-            texto_base = "-"
-
-        parcela_txt.append(f"Parcela - {contrato_nome}: {texto_base}")
+            parcela_txt.append("-")
 
     return pd.DataFrame({
+        "Contrato": proximas["contrato"].astype(str),
         "Parcela": parcela_txt,
         "Valor": proximas["valor_total_calc"].apply(brl),
         "Vencimento": venc.dt.strftime("%d/%m/%Y").fillna("-"),
-    })
+        "ordem_proxima": proximas["ordem_proxima"].values,
+    }).sort_values("ordem_proxima").reset_index(drop=True)
 
 
 def render_dashboard_todos(parcelas):
@@ -430,7 +434,8 @@ def render_dashboard_todos(parcelas):
 
     pagamento_total = float(resumo["valor_pago"].sum())
     valor_total_geral = float(resumo["valor_total"].sum())
-    valor_total_pendente = max(valor_total_geral - pagamento_total, 0.0)
+    valor_total_pendente = max(float(resumo["valor_pendente"].sum()), 0.0)
+    desconto_total = float(base_regras["desconto_obtido_calc"].sum()) if "desconto_obtido_calc" in base_regras.columns else 0.0
 
     parcelas_pagas_total = int(resumo["parcelas_pagas"].sum())
     parcelas_pendentes_total = int(resumo["parcelas_pendentes"].sum())
@@ -442,23 +447,23 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # CARDS GERAIS
     # =========================================================
-    render_cards_grid([
-        card_html("Pagamento Total", brl(pagamento_total)),
-        card_html("Progresso", f"{conclusao_total:.2f}%"),
-    ], cols=2)
+    _render_barra_progresso_custom(conclusao_total)
 
     render_cards_grid([
-        card_html("Valor Pendente Previsto", brl(valor_total_pendente), small=True),
-        card_html("Total Previsto", brl(valor_total_geral), small=True),
-    ], cols=2)
+        card_html("Pagamento Total", brl(pagamento_total), small=True),
+        card_html("Pendente Estimado", brl(valor_total_pendente), small=True),
+        card_html("Total Estimado", brl(valor_total_geral), small=True),
+    ], cols=3)
+
+    render_cards_grid([
+        card_html("Desconto Obtido", brl(desconto_total), small=True),
+    ], cols=1)
 
     render_cards_grid([
         card_html("Quant. Parcelas Pagas", str(parcelas_pagas_total), small=True),
         card_html("Quant. Parcelas Pendentes", str(parcelas_pendentes_total), small=True),
         card_html("Quant. Parcelas Atrasadas", str(parcelas_atrasadas_total), small=True),
     ], cols=3)
-
-    st.progress(min(max(conclusao_total / 100, 0), 1.0))
 
     # =========================================================
     # RESUMO POR CONTRATO
@@ -469,14 +474,10 @@ def render_dashboard_todos(parcelas):
         pend_atr = int(row["parcelas_pendentes"]) + int(row["parcelas_atrasadas"])
 
         _render_quatro_cards_linha(
-            card_html(row["contrato"], row["contrato"], small=True),
-            card_html("Valor Pendente", brl(row["valor_pendente"]), small=True),
-            card_html(
-                "Parcelas Pagas / Pend. + Atr.",
-                f'{int(row["parcelas_pagas"])}/{pend_atr}',
-                small=True,
-            ),
-            card_html("Porcentagem", f'{row["percentual_qtd"]:.2f}%', small=True),
+            card_html(f'Valor Pendente - {row["contrato"]}', brl(row["valor_pendente"]), small=True),
+            card_html("Parcelas", f'{int(row["parcelas_pagas"])}/{pend_atr}', small=True),
+            card_html("Porcentagem de Conclusão", f'{row["percentual_qtd"]:.2f}%', small=True),
+            card_html("Contrato", row["contrato"], small=True),
         )
 
     # =========================================================
@@ -491,7 +492,7 @@ def render_dashboard_todos(parcelas):
     else:
         for _, row in proximas.iterrows():
             _render_tres_cards_linha(
-                card_html("Parcela", row["Parcela"], small=True),
+                card_html(row["Contrato"], row["Parcela"], small=True),
                 card_html("Valor", row["Valor"], small=True),
                 card_html("Vencimento", row["Vencimento"], small=True),
             )
@@ -530,6 +531,12 @@ def render_dashboard_todos(parcelas):
 
             mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
 
+            ordem_meses = (
+                mensal_df[["mes_ordem", "Mes"]]
+                .drop_duplicates()
+                .sort_values("mes_ordem")
+            )
+
             fig_mensal = go.Figure()
 
             for contrato in ORDEM_CONTRATOS:
@@ -537,6 +544,15 @@ def render_dashboard_todos(parcelas):
 
                 if df_contrato.empty:
                     continue
+
+                df_contrato = ordem_meses.merge(
+                    df_contrato,
+                    on=["mes_ordem", "Mes"],
+                    how="left"
+                )
+
+                df_contrato["total_pago"] = df_contrato["total_pago"].fillna(0)
+                df_contrato["qtd_parcelas"] = df_contrato["qtd_parcelas"].fillna(0)
 
                 hover_textos = [
                     (
@@ -575,15 +591,47 @@ def render_dashboard_todos(parcelas):
                     )
                 )
 
+            _configurar_eixo_y_valor(
+                fig_mensal,
+                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
+            )
+
             fig_mensal.update_layout(
+                dragmode="pan",
+                hovermode="x unified",
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                hovermode="x unified",
                 xaxis=dict(tickangle=320),
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "displaylogo": False,
+                    "scrollZoom": True,
+                    "doubleClick": False,
+                    "modeBarButtonsToRemove": [
+                        "zoom2d",
+                        "pan2d",
+                        "select2d",
+                        "lasso2d",
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d",
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "resetScale2d",
+                        "fullscreen",
+                        "toImage",
+                    ],
+                },
+            )
 
             st.markdown("### Valor Pago por Mês")
 
@@ -595,6 +643,26 @@ def render_dashboard_todos(parcelas):
 
             valor_mes_df["Mes"] = _formatar_mes_pt(valor_mes_df["mes_ordem"])
 
+            detalhes_mes = (
+                evolucao.groupby(["mes_ordem", "contrato"], as_index=False)
+                .agg(
+                    valor_pago=("valor_pago_num", "sum"),
+                    qtd_parcelas=("valor_pago_num", "size"),
+                )
+                .sort_values(["mes_ordem", "contrato"])
+            )
+
+            resumo_hover_mes = {}
+            for mes_ordem, grupo in detalhes_mes.groupby("mes_ordem"):
+                linhas = []
+                for _, row in grupo.iterrows():
+                    linhas.append(
+                        f'{row["contrato"]}: {int(row["qtd_parcelas"])} parcela(s) - {brl(row["valor_pago"])}'
+                    )
+                resumo_hover_mes[mes_ordem] = "<br>".join(linhas)
+
+            valor_mes_df["hover_resumo"] = valor_mes_df["mes_ordem"].map(resumo_hover_mes)
+
             fig_valor_mes = go.Figure()
 
             fig_valor_mes.add_trace(
@@ -603,18 +671,51 @@ def render_dashboard_todos(parcelas):
                     y=valor_mes_df["valor_pago_mes"],
                     text=[brl(v) for v in valor_mes_df["valor_pago_mes"]],
                     textposition="outside",
-                    hovertemplate="<b>%{x}</b><br>Valor Pago: %{text}<extra></extra>",
+                    customdata=valor_mes_df["hover_resumo"],
+                    hovertemplate="<b>%{x}</b><br>%{customdata}<br><b>Total do Mês:</b> %{text}<extra></extra>",
                     name="Valor Pago",
                 )
+            )
+
+            _configurar_eixo_y_valor(
+                fig_valor_mes,
+                float(valor_mes_df["valor_pago_mes"].max()) * 1.2 if not valor_mes_df.empty else 1000,
+                1000,
             )
 
             fig_valor_mes.update_layout(
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 showlegend=False,
+                hovermode="x unified",
             )
 
-            st.plotly_chart(fig_valor_mes, use_container_width=True)
+            st.plotly_chart(
+                fig_valor_mes,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "displaylogo": False,
+                    "scrollZoom": True,
+                    "doubleClick": False,
+                    "modeBarButtonsToRemove": [
+                        "zoom2d",
+                        "pan2d",
+                        "select2d",
+                        "lasso2d",
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d",
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "resetScale2d",
+                        "fullscreen",
+                        "toImage",
+                    ],
+                },
+            )
 
     # =========================================================
     # GRÁFICO DE PIZZA
@@ -660,8 +761,8 @@ def render_dashboard_todos(parcelas):
         )
 
         fig_pizza.update_traces(
-            hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
-            customdata=[[brl(v)] for v in pizza_df["valor"]],
+            hovertemplate="Valor: %{customdata}<extra></extra>",
+            customdata=[brl(v) for v in pizza_df["valor"]],
         )
 
         st.plotly_chart(fig_pizza, use_container_width=True)
