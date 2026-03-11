@@ -2052,10 +2052,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_traces(
-                    hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
-                    customdata=[[brl(v)] for v in resp_df["valor"]]
-                )
+                fig_resp.update_layout(dragmode=False)
+
                 st.plotly_chart(
                     fig_resp,
                     use_container_width=True,
@@ -2063,10 +2061,16 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "displayModeBar": True,
                         "displaylogo": False,
                         "scrollZoom": False,
+                        "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
                             "pan2d",
+                            "select2d",
+                            "lasso2d",
                             "resetScale2d",
+                            "autoScale2d",
+                            "zoomIn2d",
+                            "zoomOut2d"
                         ],
                         "toImageButtonOptions": {
                             "format": "png",
@@ -2133,10 +2137,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_traces(
-                    hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
-                    customdata=[[brl(v)] for v in resp_df["valor"]]
-                )
+                fig_resp.update_layout(dragmode=False)
+                
                 st.plotly_chart(
                     fig_resp,
                     use_container_width=True,
@@ -2144,10 +2146,16 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "displayModeBar": True,
                         "displaylogo": False,
                         "scrollZoom": False,
+                        "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
                             "pan2d",
+                            "select2d",
+                            "lasso2d",
                             "resetScale2d",
+                            "autoScale2d",
+                            "zoomIn2d",
+                            "zoomOut2d"
                         ],
                         "toImageButtonOptions": {
                             "format": "png",
@@ -2184,10 +2192,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
-                fig_resp.update_traces(
-                    hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
-                    customdata=[[brl(v)] for v in resp_df["valor"]]
-                )
+                fig_resp.update_layout(dragmode=False)
+
                 st.plotly_chart(
                     fig_resp,
                     use_container_width=True,
@@ -2195,10 +2201,16 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "displayModeBar": True,
                         "displaylogo": False,
                         "scrollZoom": False,
+                        "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
                             "pan2d",
+                            "select2d",
+                            "lasso2d",
                             "resetScale2d",
+                            "autoScale2d",
+                            "zoomIn2d",
+                            "zoomOut2d"
                         ],
                         "toImageButtonOptions": {
                             "format": "png",
