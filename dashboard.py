@@ -1293,7 +1293,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d"
+                        "resetScale2d",
+                        "fullscreen",
                         "toImage"
                     ],
                 },
@@ -1401,7 +1402,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d"
+                        "resetScale2d",
+                        "fullscreen",
                         "toImage"
                     ],
                 },
@@ -1508,7 +1510,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d"
+                        "resetScale2d",
+                        "fullscreen",
                         "toImage"
                     ],
                 },
@@ -1615,7 +1618,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d"
+                        "resetScale2d",
+                        "fullscreen",
                         "toImage"
                     ],
                 },
@@ -1765,7 +1769,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d"
+                        "resetScale2d",
+                        "fullscreen",
                         "toImage"
                     ],
                 },
@@ -1875,7 +1880,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d"
+                        "resetScale2d",
+                        "fullscreen",
                         "toImage"
                     ],
                 },
@@ -2016,7 +2022,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d"
+                        "resetScale2d",
+                        "fullscreen",
                         "toImage"
                     ],
                 },
