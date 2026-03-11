@@ -57,18 +57,31 @@ MAPA_MESES = {
 # ESTILO LEGENDAS E PROGRESSO
 # =========================================================
 
-def _aplicar_estilo_legenda_abaixo(fig):
-    fig.update_layout(
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=-0.25,
-            xanchor="center",
-            x=0.5,
-            title_text="",
-        ),
-        margin=dict(t=30, b=90, l=20, r=20),
-    )
+def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
+    if tipo == "pizza":
+        fig.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.18,
+                xanchor="center",
+                x=0.5,
+                title_text="",
+            ),
+            margin=dict(t=30, b=140, l=20, r=20),
+        )
+    else:
+        fig.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.25,
+                xanchor="center",
+                x=0.5,
+                title_text="",
+            ),
+            margin=dict(t=30, b=100, l=20, r=20),
+        )
 
 
 def _render_barra_progresso_custom(progresso_pct):
@@ -82,35 +95,33 @@ def _render_barra_progresso_custom(progresso_pct):
 
     st.markdown(
         f"""
-        <div style="margin: 10px 0 18px 0;">
+        <div style="margin:12px 0 18px 0;">
             <div style="
                 display:flex;
                 justify-content:space-between;
-                margin-bottom:6px;
-                font-size:0.9rem;
+                align-items:center;
+                margin-bottom:8px;
+                font-size:14px;
                 font-weight:600;
+                color:#262730;
             ">
-                <span>Progresso</span>
+                <span>Progresso do contrato</span>
                 <span>{progresso_pct:.2f}%</span>
             </div>
 
             <div style="
                 width:100%;
-                height:14px;
-                background:#ececec;
+                height:18px;
+                background:#e9ecef;
                 border-radius:999px;
                 overflow:hidden;
-                box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
             ">
-
                 <div style="
-                    width:{progresso_pct}%;
+                    width:{progresso_pct:.2f}%;
                     height:100%;
-                    background:linear-gradient(90deg,{cor},{cor});
+                    background:{cor};
                     border-radius:999px;
-                    transition:width .4s ease;
                 "></div>
-
             </div>
         </div>
         """,
@@ -1253,7 +1264,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
-            _aplicar_estilo_legenda_abaixo(fig_mensal)
+            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1335,7 +1346,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
-            _aplicar_estilo_legenda_abaixo(fig_mensal)
+            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1416,7 +1427,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
-            _aplicar_estilo_legenda_abaixo(fig_mensal)
+            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1497,7 +1508,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
-            _aplicar_estilo_legenda_abaixo(fig_mensal)
+            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1621,7 +1632,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
-            _aplicar_estilo_legenda_abaixo(fig_mensal)
+            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1705,7 +1716,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
-            _aplicar_estilo_legenda_abaixo(fig_mensal)
+            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1820,7 +1831,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis=dict(tickangle=320),
             )
 
-            _aplicar_estilo_legenda_abaixo(fig_mensal)
+            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
                 fig_mensal,
@@ -1904,7 +1915,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     },
                 )
 
-                _aplicar_estilo_legenda_abaixo(fig_resp)
+                _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
                 fig_resp.update_traces(
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
@@ -1965,7 +1976,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color_discrete_map=CORES_TAXAS_CARTORIO_PIZZA,
                 )
 
-                _aplicar_estilo_legenda_abaixo(fig_resp)
+                _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
                 fig_resp.update_traces(
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
