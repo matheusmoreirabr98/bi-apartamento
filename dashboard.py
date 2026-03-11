@@ -1251,8 +1251,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     )
                 )
 
-            fig_mensal.update_layout(dragmode=False)
-
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
@@ -1260,6 +1258,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
                 1000,
             )
+
+            fig_mensal.update_layout(dragmode=False)
 
             st.plotly_chart(
                 fig_mensal,
@@ -1276,7 +1276,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "lasso2d",
                         "autoScale2d",
                         "toImage",
-                        "toggleSpikelines"
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian"
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d"
                     ],
                 },
             )
@@ -1345,8 +1352,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(dragmode=False)
-
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
@@ -1354,6 +1359,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 1000,
                 1000,
             )
+
+            fig_mensal.update_layout(dragmode=False)
 
             st.plotly_chart(
                 fig_mensal,
@@ -1370,7 +1377,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "lasso2d",
                         "autoScale2d",
                         "toImage",
-                        "toggleSpikelines"
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian"
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d"
                     ],
                 },
             )
@@ -1438,8 +1452,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(dragmode=False)
-
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
@@ -1447,6 +1459,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 1000,
                 1000,
             )
+
+            fig_mensal.update_layout(dragmode=False)
 
             st.plotly_chart(
                 fig_mensal,
@@ -1463,7 +1477,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "lasso2d",
                         "autoScale2d",
                         "toImage",
-                        "toggleSpikelines"
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian"
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d"
                     ],
                 },
             )
@@ -1531,8 +1552,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(dragmode=False)
-
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
@@ -1540,6 +1559,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 1000,
                 1000,
             )
+
+            fig_mensal.update_layout(dragmode=False)
 
             st.plotly_chart(
                 fig_mensal,
@@ -1556,7 +1577,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "lasso2d",
                         "autoScale2d",
                         "toImage",
-                        "toggleSpikelines"
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian"
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d"
                     ],
                 },
             )
@@ -1667,8 +1695,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     )
                 )
 
-            fig_mensal.update_layout(dragmode=False)
-
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
@@ -1676,6 +1702,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
                 1000,
             )
+
+            fig_mensal.update_layout(dragmode=False)
 
             st.plotly_chart(
                 fig_mensal,
@@ -1692,7 +1720,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "lasso2d",
                         "autoScale2d",
                         "toImage",
-                        "toggleSpikelines"
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian"
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d"
                     ],
                 },
             )
@@ -1763,8 +1798,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             )
 
-            fig_mensal.update_layout(dragmode=False)
-
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
@@ -1772,6 +1805,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
                 1000,
             )
+
+            fig_mensal.update_layout(dragmode=False)
 
             st.plotly_chart(
                 fig_mensal,
@@ -1788,7 +1823,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "lasso2d",
                         "autoScale2d",
                         "toImage",
-                        "toggleSpikelines"
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian"
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d"
                     ],
                 },
             )
@@ -1890,8 +1932,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     )
                 )
 
-            fig_mensal.update_layout(dragmode=False)
-
             _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
             _configurar_eixo_y_valor(
@@ -1899,6 +1939,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
                 1000,
             )
+
+            fig_mensal.update_layout(dragmode=False)
 
             st.plotly_chart(
                 fig_mensal,
@@ -1915,7 +1957,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "lasso2d",
                         "autoScale2d",
                         "toImage",
-                        "toggleSpikelines"
+                        "toggleSpikelines",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian"
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d"
                     ],
                 },
             )
