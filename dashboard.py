@@ -2094,6 +2094,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>%{value}<extra></extra>"
+                )
+
                 fig_mensal.update_layout(
                     dragmode="pan",
                     hovermode="x unified",
@@ -2183,6 +2187,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>%{value}<extra></extra>"
+                )
+
                 fig_mensal.update_layout(
                     dragmode="pan",
                     hovermode="x unified",
@@ -2242,6 +2250,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
                 
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
+
+                fig_resp.update_traces(
+                    hovertemplate="%{label}<br>%{value}<extra></extra>"
+                )
 
                 fig_mensal.update_layout(
                     dragmode="pan",
