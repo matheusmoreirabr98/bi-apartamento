@@ -1,4 +1,5 @@
 # dashboard.py
+
 from datetime import date
 import pandas as pd
 import plotly.express as px
@@ -954,15 +955,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=3)
 
     elif eh_evolucao_obra:
-        hoje = pd.Timestamp.today()
-        data_venc_ref = _to_datetime_br(contagem_base["data_vencimento"]) if "data_vencimento" in contagem_base.columns else pd.Series(dtype="datetime64[ns]")
-
-        pendente_mes_vigente = contagem_base[
-            (contagem_base["status"] != "pago")
-            & (data_venc_ref.dt.month == hoje.month)
-            & (data_venc_ref.dt.year == hoje.year)
-        ].shape[0]
-
         proxima_parcela_pendente_mes = "-"
         abertas_evolucao = contagem_base[contagem_base["status"] != "pago"].copy()
         if not abertas_evolucao.empty:
@@ -1051,7 +1043,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     row = prox_direcional.iloc[0]
                     data_venc = _to_datetime_br(pd.Series([row["data_vencimento"]])).iloc[0]
 
-                    _render_quatro_cards_em_linha([
+                    render_cards_grid([
                         card_html("Contrato", CONTRATO_DIRECIONAL, small=True),
                         card_html("Parcela", _texto_parcela(row), small=True),
                         card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
@@ -1060,7 +1052,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             small=True,
                         ),
-                    ])
+                    ], cols=4)
 
             else:
                 if eh_financiamento_caixa and "data_vencimento_calc" in abertas.columns:

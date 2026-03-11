@@ -1,3 +1,5 @@
+#pagamentos_view.py
+
 from datetime import date
 import pandas as pd
 import streamlit as st
@@ -37,11 +39,6 @@ def _formatar_mes_referencia(valor_data):
     if pd.isnull(data_ref):
         return "-"
     return f"{MAPA_MESES[data_ref.month]}/{data_ref.year}"
-
-
-def _primeiro_dia_mes(ano, mes):
-    return date(ano, mes, 1)
-
 
 def _data_vencimento_padrao(ano, mes):
     return date(ano, mes, 24)
