@@ -1267,7 +1267,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "displaylogo": False,
+                    "modeBarButtonsToRemove": [
+                        "select2d",
+                        "lasso2d",
+                        "zoom2d",
+                        "pan2d",
+                        "autoScale2d",
+                        "resetScale2d",
+                    ],
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": "grafico",
+                        "height": 800,
+                        "width": 1400,
+                        "scale": 2,
+                    },
+                },
+            )
 
     elif eh_entrada_direcional:
         evolucao_pago = _filtrar_base_entrada_direcional(evolucao_df)
@@ -1349,7 +1373,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "displaylogo": False,
+                    "modeBarButtonsToRemove": [
+                        "select2d",
+                        "lasso2d",
+                        "zoom2d",
+                        "pan2d",
+                        "autoScale2d",
+                        "resetScale2d",
+                    ],
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": "grafico",
+                        "height": 800,
+                        "width": 1400,
+                        "scale": 2,
+                    },
+                },
+            )
 
     elif eh_direcional:
         evolucao_pago = _aplicar_regra_direcional(evolucao_df)
@@ -1430,7 +1478,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "displaylogo": False,
+                    "modeBarButtonsToRemove": [
+                        "select2d",
+                        "lasso2d",
+                        "zoom2d",
+                        "pan2d",
+                        "autoScale2d",
+                        "resetScale2d",
+                    ],
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": "grafico",
+                        "height": 800,
+                        "width": 1400,
+                        "scale": 2,
+                    },
+                },
+            )
 
     elif eh_financiamento_caixa:
         evolucao_fc = _aplicar_regra_financiamento_caixa(evolucao_df)
@@ -1511,7 +1583,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "displaylogo": False,
+                    "modeBarButtonsToRemove": [
+                        "select2d",
+                        "lasso2d",
+                        "zoom2d",
+                        "pan2d",
+                        "autoScale2d",
+                        "resetScale2d",
+                    ],
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": "grafico",
+                        "height": 800,
+                        "width": 1400,
+                        "scale": 2,
+                    },
+                },
+            )
 
     elif eh_taxas_cartorio:
         evolucao_taxas = _filtrar_base_taxas_cartorio(evolucao_df, somente_compradores=False)
@@ -1635,7 +1731,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "displaylogo": False,
+                    "modeBarButtonsToRemove": [
+                        "select2d",
+                        "lasso2d",
+                        "zoom2d",
+                        "pan2d",
+                        "autoScale2d",
+                        "resetScale2d",
+                    ],
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": "grafico",
+                        "height": 800,
+                        "width": 1400,
+                        "scale": 2,
+                    },
+                },
+            )
 
     elif eh_evolucao_obra:
         evolucao_pago = evolucao_df.copy()
@@ -1719,7 +1839,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "displaylogo": False,
+                    "modeBarButtonsToRemove": [
+                        "select2d",
+                        "lasso2d",
+                        "zoom2d",
+                        "pan2d",
+                        "autoScale2d",
+                        "resetScale2d",
+                    ],
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": "grafico",
+                        "height": 800,
+                        "width": 1400,
+                        "scale": 2,
+                    },
+                },
+            )
 
     else:
         if "responsavel_pagamento" in evolucao_df.columns:
@@ -1834,7 +1978,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 1000,
             )
 
-            st.plotly_chart(fig_mensal, use_container_width=True)
+            st.plotly_chart(
+                fig_mensal,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "displaylogo": False,
+                    "modeBarButtonsToRemove": [
+                        "select2d",
+                        "lasso2d",
+                        "zoom2d",
+                        "pan2d",
+                        "autoScale2d",
+                        "resetScale2d",
+                    ],
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": "grafico",
+                        "height": 800,
+                        "width": 1400,
+                        "scale": 2,
+                    },
+                },
+            )
 
     # =========================================================
     # GRÁFICO DE PIZZA
@@ -1916,7 +2084,23 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
                     customdata=[[brl(v)] for v in resp_df["valor"]]
                 )
-                st.plotly_chart(fig_resp, use_container_width=True)
+                st.plotly_chart(
+                    fig_resp,
+                    use_container_width=True,
+                    config={
+                        "displayModeBar": True,
+                        "scrollZoom": False,
+                        "doubleClick": False,
+                        "displaylogo": False,
+                        "toImageButtonOptions": {
+                            "format": "png",
+                            "filename": "grafico",
+                            "height": 800,
+                            "width": 1400,
+                            "scale": 2,
+                        },
+                    },
+                )
 
         elif eh_taxas_cartorio:
             base_pizza = _filtrar_base_taxas_cartorio(parcelas_contrato, somente_compradores=False)
@@ -1977,7 +2161,23 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
                     customdata=[[brl(v)] for v in resp_df["valor"]]
                 )
-                st.plotly_chart(fig_resp, use_container_width=True)
+                st.plotly_chart(
+                    fig_resp,
+                    use_container_width=True,
+                    config={
+                        "displayModeBar": True,
+                        "scrollZoom": False,
+                        "doubleClick": False,
+                        "displaylogo": False,
+                        "toImageButtonOptions": {
+                            "format": "png",
+                            "filename": "grafico",
+                            "height": 800,
+                            "width": 1400,
+                            "scale": 2,
+                        },
+                    },
+                )
 
         else:
             grupos = []
@@ -2008,4 +2208,20 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
                     customdata=[[brl(v)] for v in resp_df["valor"]]
                 )
-                st.plotly_chart(fig_resp, use_container_width=True)
+                st.plotly_chart(
+                    fig_resp,
+                    use_container_width=True,
+                    config={
+                        "displayModeBar": True,
+                        "scrollZoom": False,
+                        "doubleClick": False,
+                        "displaylogo": False,
+                        "toImageButtonOptions": {
+                            "format": "png",
+                            "filename": "grafico",
+                            "height": 800,
+                            "width": 1400,
+                            "scale": 2,
+                        },
+                    },
+                )
