@@ -1277,7 +1277,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "autoScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
-                        "hoverCompareCartesian"
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d"
@@ -1376,7 +1378,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "autoScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
-                        "hoverCompareCartesian"
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d"
@@ -1474,7 +1478,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "autoScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
-                        "hoverCompareCartesian"
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d"
@@ -1572,7 +1578,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "autoScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
-                        "hoverCompareCartesian"
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d"
@@ -1713,7 +1721,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "autoScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
-                        "hoverCompareCartesian"
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d"
@@ -1814,7 +1824,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "autoScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
-                        "hoverCompareCartesian"
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d"
@@ -1946,7 +1958,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "autoScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
-                        "hoverCompareCartesian"
+                        "hoverCompareCartesian",
+                        "zoomIn2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
                         "resetScale2d"
@@ -2047,7 +2061,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "select2d",
                             "lasso2d",
                             "autoScale2d",
-                            "toggleSpikelines"
+                            "toggleSpikelines",
+                            "zoomIn2d",
+                            "zoomOut2d"
                         ],
                         "modeBarButtonsToAdd": [
                             "resetScale2d"
@@ -2128,7 +2144,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "lasso2d",
                             "autoScale2d",
                             "toImage",
-                            "toggleSpikelines"
+                            "toggleSpikelines",
+                            "zoomIn2d",
+                            "zoomOut2d"
                         ],
                         "modeBarButtonsToAdd": [
                             "resetScale2d"
@@ -2179,7 +2197,11 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "lasso2d",
                             "autoScale2d",
                             "toImage",
-                            "toggleSpikelines"
+                            "toggleSpikelines",
+                            "zoomIn2d",
+                            "zoomOut2d",
+                            "zoomIn2d",
+                            "zoomOut2d"
                         ],
                         "modeBarButtonsToAdd": [
                             "resetScale2d"
