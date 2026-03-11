@@ -266,6 +266,12 @@ def _aplicar_regras_por_contrato(df):
 def _resumo_por_contrato(df):
     if df.empty:
         return pd.DataFrame()
+    
+    if nome == "Evolução de Obra":
+        st.write("EVOLUÇÃO DEBUG")
+        st.write("valor_pago", float(grupo["valor_pago_usado"].sum()))
+        st.write("valor_total_calc", float(grupo["valor_total_calc"].sum()))
+        st.write("valor_pendente_usado", float(grupo["valor_pendente_usado"].sum()))
 
     linhas = []
 
