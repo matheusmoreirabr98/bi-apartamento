@@ -20,6 +20,8 @@ from dashboard import (
     _formatar_mes_pt,
     _render_barra_progresso_custom,
     _configurar_eixo_y_valor,
+    _calcular_desconto_entrada_direcional,
+    _calcular_desconto_taxas_cartorio,
 )
 
 ORDEM_CONTRATOS = [
@@ -234,8 +236,21 @@ def _aplicar_regras_por_contrato(df):
                 parte["pendente_calc"] | parte["atrasado_calc"], 0
             )
 
-        desconto_calc = (parte["valor_total_calc"] - parte["valor_pago_calc"]).clip(lower=0)
-        parte["desconto_obtido_calc"] = desconto_calc.where(parte["pago_calc"], 0)
+        if _is_entrada_direcional(nome):
+            desconto_total_contrato = _calcular_desconto_entrada_direcional(parte)
+        elif _is_taxas_cartorio(nome):
+            desconto_total_contrato = _calcular_desconto_taxas_cartorio(parte)
+        elif _is_financiamento_caixa(nome):
+            desconto_total_contrato = (
+                (parte.loc[parte["pago_calc"], "valor_total_calc"].sum())
+                - (parte.loc[parte["pago_calc"], "valor_pago_calc"].sum())
+            )
+        else:
+            desconto_total_contrato = 0.0
+
+        parte["desconto_obtido_calc"] = 0.0
+        if len(parte) > 0:
+            parte.iloc[0, parte.columns.get_loc("desconto_obtido_calc")] = float(desconto_total_contrato)
 
         parte["contrato"] = nome
         partes.append(parte)
