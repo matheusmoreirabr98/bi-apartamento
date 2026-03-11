@@ -106,7 +106,7 @@ def _render_barra_progresso_custom(progresso_pct):
     elif progresso_pct < 70:
         cor = "#d4c300"
 
-    texto_interno = f"{progresso_pct:.0f}%"
+    texto_interno = f"{progresso_pct:.2f}%"
 
     html = f"""
     <div style="margin:6px 0 14px 0;">
