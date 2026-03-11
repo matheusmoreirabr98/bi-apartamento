@@ -963,12 +963,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     elif eh_direcional:
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
-        ], cols=2)
-
-        render_cards_grid([
             card_html("Valor Pendente", brl(total_restante), small=True),
             card_html("Total Geral", brl(total_geral), small=True),
-        ], cols=2)
+        ], cols=3)
 
         render_cards_grid([
             card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
