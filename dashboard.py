@@ -57,30 +57,36 @@ MAPA_MESES = {
 # ESTILO LEGENDAS E PROGRESSO
 # =========================================================
 
+def _titulo_centralizado(texto, nivel=3):
+    st.markdown(
+        f"<h{nivel} style='text-align:center; margin-bottom: 0.8rem;'>{texto}</h{nivel}>",
+        unsafe_allow_html=True,
+    )
+
 def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
     if tipo == "pizza":
         fig.update_layout(
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.18,
+                y=-0.08,
                 xanchor="center",
                 x=0.5,
                 title_text="",
             ),
-            margin=dict(t=30, b=140, l=20, r=20),
+            margin=dict(t=30, b=80, l=20, r=20),
         )
     else:
         fig.update_layout(
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.25,
+                y=-0.12,
                 xanchor="center",
                 x=0.5,
                 title_text="",
             ),
-            margin=dict(t=30, b=100, l=20, r=20),
+            margin=dict(t=30, b=70, l=20, r=20),
         )
 
 
@@ -93,14 +99,32 @@ def _render_barra_progresso_custom(progresso_pct):
     elif progresso_pct < 70:
         cor = "#d4c300"
 
+    texto_interno = f"{int(round(progresso_pct))}%"
+
     html = f"""
-    <div style="margin:12px 0 18px 0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px;font-weight:600;color:#262730;">
-            <span>Progresso do contrato</span>
-            <span>{progresso_pct:.2f}%</span>
-        </div>
-        <div style="width:100%;height:18px;background:#e9ecef;border-radius:999px;overflow:hidden;">
-            <div style="width:{progresso_pct:.2f}%;height:100%;background:{cor};border-radius:999px;"></div>
+    <div style="margin:6px 0 14px 0;">
+        <div style="
+            width:100%;
+            height:22px;
+            background:#e9ecef;
+            border-radius:999px;
+            overflow:hidden;
+            position:relative;
+        ">
+            <div style="
+                width:{progresso_pct:.2f}%;
+                height:100%;
+                background:{cor};
+                border-radius:999px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                color:white;
+                font-size:12px;
+                font-weight:700;
+                white-space:nowrap;
+                min-width:48px;
+            ">{texto_interno}</div>
         </div>
     </div>
     """
@@ -215,12 +239,12 @@ def _render_quatro_cards_em_linha(cards_html):
         st.markdown(cards_html[3], unsafe_allow_html=True)
 
 
-def _configurar_eixo_y_valor(fig, faixa_max, passo=500):
+def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
     faixa_max = max(float(faixa_max or 0), float(passo))
     topo = ((int(faixa_max) + passo - 1) // passo) * passo
 
     tickvals = list(range(0, topo + passo, passo))
-    ticktext = [brl(v) for v in tickvals]
+    ticktext = ["0" if v == 0 else f"{int(v/1000)}k" for v in tickvals]
 
     fig.update_layout(
         yaxis=dict(
@@ -850,6 +874,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # CARDS
     # =========================================================
+    if not eh_evolucao_obra:
+        _render_barra_progresso_custom(progresso_pct)
+
     if eh_sinal_ato:
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
@@ -1006,13 +1033,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Total Restante", brl(total_restante), small=True),
         ], cols=1)
 
-    if not eh_evolucao_obra:
-        _render_barra_progresso_custom(progresso_pct)
-
     # =========================================================
     # PRÓXIMA PARCELA
     # =========================================================
-    st.markdown("### Próxima Parcela")
+    _titulo_centralizado("Próxima Parcela", nivel=3)
 
     if eh_evolucao_obra and contrato_encerrado:
         st.success("✅ Evolução de Obra concluída.")
@@ -1122,7 +1146,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # EVOLUÇÃO POR MÊS
     # =========================================================
-    st.markdown("### Evolução por Mês")
+    _titulo_centralizado("Evolução por Mês", nivel=3)
 
     evolucao_df = parcelas_contrato.copy()
 
@@ -1247,8 +1271,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
-                500,
+                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
@@ -1329,8 +1353,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 500,
-                500,
+                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
@@ -1410,8 +1434,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 500,
-                500,
+                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
@@ -1491,8 +1515,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 500,
-                500,
+                float(mensal_df["valor_pago_mes"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
@@ -1615,8 +1639,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
-                500,
+                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
@@ -1699,8 +1723,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
-                500,
+                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
@@ -1814,8 +1838,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 500,
-                500,
+                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
+                1000,
             )
 
             st.plotly_chart(fig_mensal, use_container_width=True)
@@ -1824,7 +1848,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # GRÁFICO DE PIZZA
     # =========================================================
     if not eh_evolucao_obra:
-        st.markdown("### Distribuição dos Valores")
+        _titulo_centralizado("Distribuição dos Valores", nivel=3)
 
         if eh_todos:
             base_pizza = parcelas_contrato.copy()
@@ -1986,7 +2010,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     },
                 )
                 
-                _aplicar_estilo_legenda_abaixo(fig_resp)
+                _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
                 fig_resp.update_traces(
                     hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
