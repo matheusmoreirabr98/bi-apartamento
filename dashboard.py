@@ -825,7 +825,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Valor Pendente Previsto", brl(total_restante), small=True),
+            card_html("Pendente Estimado", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
             card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
@@ -845,7 +845,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Valor Pendente Previsto", brl(total_restante), small=True),
+            card_html("Pendente Estimado", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
             card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
@@ -870,7 +870,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=2)
 
         render_cards_grid([
-            card_html("Valor Pendente Previsto", brl(total_restante), small=True),
+            card_html("Pendente Estimado", brl(total_restante), small=True),
             card_html("Total Previsto", brl(total_geral), small=True),
             card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
         ], cols=3)
@@ -923,7 +923,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         render_cards_grid([
             card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
-            card_html("Parcela Pendentes", proxima_parcela_pendente_mes, small=True),
+            card_html("Parcela Pendente", proxima_parcela_pendente_mes, small=True),
             card_html("Parcelas Atrasadas", str(total_atrasado_qtd), small=True),
         ], cols=3)
 
