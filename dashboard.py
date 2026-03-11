@@ -1272,16 +1272,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 use_container_width=True,
                 config={
                     "displayModeBar": True,
-                    "scrollZoom": False,
-                    "doubleClick": False,
                     "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": "reset",
                     "modeBarButtonsToRemove": [
                         "select2d",
                         "lasso2d",
-                        "zoom2d",
-                        "pan2d",
-                        "autoScale2d",
-                        "resetScale2d",
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1378,16 +1374,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 use_container_width=True,
                 config={
                     "displayModeBar": True,
-                    "scrollZoom": False,
-                    "doubleClick": False,
                     "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": "reset",
                     "modeBarButtonsToRemove": [
                         "select2d",
                         "lasso2d",
-                        "zoom2d",
-                        "pan2d",
-                        "autoScale2d",
-                        "resetScale2d",
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1483,16 +1475,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 use_container_width=True,
                 config={
                     "displayModeBar": True,
-                    "scrollZoom": False,
-                    "doubleClick": False,
                     "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": "reset",
                     "modeBarButtonsToRemove": [
                         "select2d",
                         "lasso2d",
-                        "zoom2d",
-                        "pan2d",
-                        "autoScale2d",
-                        "resetScale2d",
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1588,16 +1576,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 use_container_width=True,
                 config={
                     "displayModeBar": True,
-                    "scrollZoom": False,
-                    "doubleClick": False,
                     "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": "reset",
                     "modeBarButtonsToRemove": [
                         "select2d",
                         "lasso2d",
-                        "zoom2d",
-                        "pan2d",
-                        "autoScale2d",
-                        "resetScale2d",
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1736,16 +1720,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 use_container_width=True,
                 config={
                     "displayModeBar": True,
-                    "scrollZoom": False,
-                    "doubleClick": False,
                     "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": "reset",
                     "modeBarButtonsToRemove": [
                         "select2d",
                         "lasso2d",
-                        "zoom2d",
-                        "pan2d",
-                        "autoScale2d",
-                        "resetScale2d",
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1844,16 +1824,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 use_container_width=True,
                 config={
                     "displayModeBar": True,
-                    "scrollZoom": False,
-                    "doubleClick": False,
                     "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": "reset",
                     "modeBarButtonsToRemove": [
                         "select2d",
                         "lasso2d",
-                        "zoom2d",
-                        "pan2d",
-                        "autoScale2d",
-                        "resetScale2d",
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -1983,16 +1959,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 use_container_width=True,
                 config={
                     "displayModeBar": True,
-                    "scrollZoom": False,
-                    "doubleClick": False,
                     "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": "reset",
                     "modeBarButtonsToRemove": [
                         "select2d",
                         "lasso2d",
-                        "zoom2d",
-                        "pan2d",
-                        "autoScale2d",
-                        "resetScale2d",
                     ],
                     "toImageButtonOptions": {
                         "format": "png",
@@ -2089,9 +2061,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     use_container_width=True,
                     config={
                         "displayModeBar": True,
-                        "scrollZoom": False,
-                        "doubleClick": False,
                         "displaylogo": False,
+                        "scrollZoom": False,
+                        "doubleClick": "reset",
                         "toImageButtonOptions": {
                             "format": "png",
                             "filename": "grafico",
@@ -2166,9 +2138,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     use_container_width=True,
                     config={
                         "displayModeBar": True,
-                        "scrollZoom": False,
-                        "doubleClick": False,
                         "displaylogo": False,
+                        "scrollZoom": False,
+                        "doubleClick": "reset",
                         "toImageButtonOptions": {
                             "format": "png",
                             "filename": "grafico",
@@ -2213,9 +2185,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     use_container_width=True,
                     config={
                         "displayModeBar": True,
-                        "scrollZoom": False,
-                        "doubleClick": False,
                         "displaylogo": False,
+                        "scrollZoom": False,
+                        "doubleClick": "reset",
                         "toImageButtonOptions": {
                             "format": "png",
                             "filename": "grafico",
