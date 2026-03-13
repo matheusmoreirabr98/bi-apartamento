@@ -5,7 +5,6 @@ import streamlit as st
 
 from utils import (
     CONTRATO_DIRECIONAL,
-    CONTRATO_TODOS,
     CONTRATO_TAXAS,
     STATUS_MAP_FILTRO,
     brl,
@@ -14,10 +13,12 @@ from utils import (
 
 def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     eh_direcional = contrato_selecionado == CONTRATO_DIRECIONAL
-    eh_todos = contrato_selecionado == CONTRATO_TODOS
     eh_taxas = contrato_selecionado == CONTRATO_TAXAS
 
-    st.subheader(f"Parcelas — {contrato_selecionado}")
+    st.markdown(
+        f"<h3 style='text-align: center;'>Parcelas — {contrato_selecionado}</h3>",
+        unsafe_allow_html=True
+    )
 
     if parcelas_contrato.empty:
         st.info("Sem parcelas cadastradas.")
