@@ -1022,7 +1022,7 @@ def render_dashboard_todos(parcelas):
                 font=dict(size=15),
                 itemwidth=30,
             ),
-            margin=dict(t=60, b=90, l=10, r=10),
+            margin=dict(t=30, b=90, l=10, r=10)
         )
 
         st.plotly_chart(fig_pizza_pendente, use_container_width=True)
