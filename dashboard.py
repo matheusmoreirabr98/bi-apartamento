@@ -15,7 +15,7 @@ from utils import (
 
 
 CORES_RESPONSAVEL = {
-    "Pendente": "#cecece",
+    "Pendente": "#d3d3d3",
 }
 
 CORES_CONTRATO = {
