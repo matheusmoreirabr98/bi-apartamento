@@ -60,11 +60,16 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             .str.lower()
         )
 
+    status_filtro_real = STATUS_MAP_FILTRO.get(status_filtro)
+
     st.write("Status selecionado:", status_filtro)
     st.write("Status real:", status_filtro_real)
-    st.write("Valores únicos status_exibicao:", parc_f["status_exibicao"].unique())
 
-    status_filtro_real = STATUS_MAP_FILTRO.get(status_filtro)
+    if "status_exibicao" in parc_f.columns:
+        st.write("Valores únicos status_exibicao:", parc_f["status_exibicao"].unique())
+    else:
+        st.write("Coluna status_exibicao não existe em parc_f")
+
     if status_filtro != "Todos" and status_filtro_real and "status_exibicao" in parc_f.columns:
         parc_f = parc_f[
             parc_f["status_exibicao"] == str(status_filtro_real).strip().lower()
