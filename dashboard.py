@@ -46,7 +46,7 @@ def inject_styles():
         left: 50% !important;
         transform: translateX(-50%) !important;
         right: auto !important;
-        top: -8px !important;
+        top: -2px !important;
     }
 
     /* reduz espaço entre ícones e gráfico */
@@ -110,7 +110,7 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
                 font=dict(size=15),
                 title_text="",
             ),
-            margin=dict(t=10, b=140, l=10, r=10),
+            margin=dict(t=30, b=140, l=10, r=10),
         )
 
 
