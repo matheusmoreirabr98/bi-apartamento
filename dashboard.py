@@ -1202,10 +1202,17 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
         evolucao_pago["valor_pago_num"] = _to_numeric_brl(evolucao_pago["valor_pago"])
 
-        evolucao_pago = evolucao_pago[
-            (evolucao_pago["pago_calc"])
-            & (evolucao_pago["data_pagamento_ref"].notna())
-        ].copy()
+        if eh_entrada_direcional:
+
+            evolucao_pago = _filtrar_base_entrada_direcional(evolucao_df).copy()
+
+            evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
+            evolucao_pago["valor_pago_num"] = _to_numeric_brl(evolucao_pago["valor_pago"])
+
+            evolucao_pago = evolucao_pago[
+                (evolucao_pago["data_pagamento_ref"].notna())
+                & (evolucao_pago["valor_pago_num"] > 0)
+            ].copy()
 
 
     # ---------------------------------------------------------
@@ -1569,7 +1576,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color="grupo",
                     color_discrete_map={
                         "Valor Pago (Compradores)": cor_contrato_atual,
-                        "Valor Pendente (Compradores)": "#dcdcdcd2",
+                        "Valor Pendente (Compradores)": "#bdbdbd",
                         "Valor Pago (Corretora)": "#ef4444",
                         "Valor Pendente (Corretora)": "#bdbdbd",
                     }
