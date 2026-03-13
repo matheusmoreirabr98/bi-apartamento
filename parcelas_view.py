@@ -21,9 +21,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     parc_f = parcelas_contrato.copy()
 
-    st.write("Total recebido:", len(parcelas_contrato))
-    st.write("Total após copy:", len(parc_f))
-
     # =========================================================
     # FILTROS
     # =========================================================
@@ -39,7 +36,11 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             )
             resp_filtro = st.selectbox("Responsável", resp_disp, key="taxas_resp")
     else:
-        status_filtro = st.selectbox("Status", status_disp, key=f"status_{contrato_selecionado}")
+        status_filtro = st.selectbox(
+            "Status",
+            status_disp,
+            key=f"status_{contrato_selecionado}"
+        )
         resp_filtro = "Todos"
 
     # =========================================================
@@ -48,11 +49,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     if eh_direcional:
         if "categoria" in parc_f.columns:
             parc_f = parc_f[parc_f["categoria"] == "Entrada Direcional"]
-
-        if "responsavel_pagamento" in parc_f.columns:
-            parc_f = parc_f[parc_f["responsavel_pagamento"] == "Compradores"]
-
-        st.write("Total após filtro direcional/taxas:", len(parc_f))
 
     if eh_taxas and resp_filtro != "Todos" and "responsavel_pagamento" in parc_f.columns:
         parc_f = parc_f[parc_f["responsavel_pagamento"] == resp_filtro]
@@ -71,6 +67,15 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         parc_f = parc_f[
             parc_f["status_exibicao"] == str(status_filtro_real).strip().lower()
         ]
+
+    colunas_ordenacao = [
+        c for c in ["status_ordem", "data_vencimento", "numero_parcela"]
+        if c in parc_f.columns
+    ]
+    if colunas_ordenacao:
+        parc_f = parc_f.sort_values(colunas_ordenacao).copy()
+    else:
+        parc_f = parc_f.copy()
 
     # =========================================================
     # TABELA
@@ -132,7 +137,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             lambda x: brl(x) if pd.notnull(x) else "-"
         )
 
-    # renomear colunas
     parc_show.columns = [
         "Parcela",
         "Vencimento",
