@@ -772,9 +772,14 @@ def render_dashboard_todos(parcelas):
                     tickmode="array",
                     tickvals=ordem_meses["x_pos"].tolist(),
                     ticktext=ordem_meses["Mes"].tolist(),
-                    range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
+                    range=[
+                        max(-0.5, len(ordem_meses) - 12.5),
+                        len(ordem_meses) - 0.5
+                    ],
+                    minallowed=-0.5,
+                    maxallowed=len(ordem_meses) - 0.5,
                     fixedrange=False,
-                ),
+),
                 yaxis=dict(
                     fixedrange=True,
                 ),
