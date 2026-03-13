@@ -114,7 +114,7 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
         )
 
 
-def _render_barra_progresso_custom(progresso_pct):
+def _render_barra_progresso_custom(progresso_pct, cor="#23d400"):
     progresso_pct = max(0.0, min(float(progresso_pct or 0), 100.0))
 
     texto_interno = f"{progresso_pct:.2f}%"
@@ -133,7 +133,7 @@ def _render_barra_progresso_custom(progresso_pct):
                 width:{progresso_pct:.2f}%;
                 min-width:52px;
                 height:100%;
-                background:#23d400;
+                background:{cor};
                 border-radius:999px;
                 display:flex;
                 align-items:center;
@@ -926,7 +926,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # CARDS
     # =========================================================
 
-    _render_barra_progresso_custom(progresso_pct)
+    _render_barra_progresso_custom(progresso_pct, cor=cor_contrato_atual)
 
     if eh_sinal_ato:
         render_cards_grid([
