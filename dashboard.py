@@ -107,10 +107,10 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
                 xanchor="center",
                 x=0.5,
                 traceorder="normal",
-                font=dict(size=15),
+                font=dict(size=14),
                 title_text="",
             ),
-            margin=dict(t=50, b=140, l=10, r=10),
+            margin=dict(t=50, b=170, l=10, r=10),
         )
 
 
@@ -1572,6 +1572,27 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "grupo": "Pago - Compradores",
                     "valor": valor_pago_compradores,
                     "cor": cor_contrato_atual,
+                })
+
+            if valor_pendente_compradores > 0:
+                grupos.append({
+                    "grupo": "Pendente - Compradores",
+                    "valor": valor_pendente_compradores,
+                    "cor": "#9bdc8d",
+                })
+
+            if valor_pago_corretora > 0:
+                grupos.append({
+                    "grupo": "Pago - Corretora",
+                    "valor": valor_pago_corretora,
+                    "cor": COR_PAGO_CORRETORA,
+                })
+
+            if valor_pendente_corretora > 0:
+                grupos.append({
+                    "grupo": "Pendente - Corretora",
+                    "valor": valor_pendente_corretora,
+                    "cor": "#f5a3a3",
                 })
 
             pizza_df = pd.DataFrame(grupos)
