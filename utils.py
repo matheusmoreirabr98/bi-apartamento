@@ -19,7 +19,7 @@ STATUS_MAP_FILTRO = {
     "Pago": "pago",
 }
 
-CONTRATO_TODOS = "Todos os contratos"
+CONTRATO_TODOS = "Todos os Contratos"
 CONTRATO_TAXAS = "Taxas Cartoriais"
 CONTRATO_DIRECIONAL = "Entrada Direcional"
 

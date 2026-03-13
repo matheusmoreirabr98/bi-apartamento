@@ -162,7 +162,7 @@ if not parcelas.empty and "contrato" in parcelas.columns:
 
     opcoes_contrato.extend(contratos_restantes)
 
-# contrato padrão: Diferença
+# contrato padrão: Todos os Contratos
 contrato_padrao = (
     "Todos os Contratos"
     if "Todos os Contratos" in opcoes_contrato
