@@ -809,7 +809,7 @@ def render_dashboard_todos(parcelas):
                         xanchor="center",
                         x=0.5,
                         traceorder="normal",
-                        font=dict(size=11),
+                        font=dict(size=14),
                     ),
                     margin=dict(t=10, b=120, l=10, r=10)
                 )
