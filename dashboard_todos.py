@@ -767,16 +767,16 @@ def render_dashboard_todos(parcelas):
 
             fig_mensal.update_layout(
                 dragmode="pan",
-                hovermode="x unified",
-                xaxis_title="Mês do Pagamento",
-                yaxis_title="Valor Pago",
-                legend_title_text="",
                 xaxis=dict(
                     tickangle=320,
                     tickmode="array",
                     tickvals=ordem_meses["x_pos"].tolist(),
                     ticktext=ordem_meses["Mes"].tolist(),
                     range=[-0.8, len(ordem_meses) - 0.2],
+                    fixedrange=False,
+                ),
+                yaxis=dict(
+                    fixedrange=True,
                 ),
                 legend=dict(
                     orientation="h",
@@ -802,15 +802,15 @@ def render_dashboard_todos(parcelas):
                         "pan2d",
                         "select2d",
                         "lasso2d",
-                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d"
+                        "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "autoScale2d",
                         "fullscreen",
                         "toImage"
                     ],
@@ -866,7 +866,8 @@ def render_dashboard_todos(parcelas):
                 yaxis_title="Valor Pago",
                 showlegend=False,
                 hovermode="x unified",
-                margin=dict(t=5, b=40, l=10, r=10),
+                dragmode=False,
+                margin=dict(t=35, b=40, l=10, r=10),
             )
 
             st.plotly_chart(
@@ -887,9 +888,10 @@ def render_dashboard_todos(parcelas):
                         "hoverCompareCartesian",
                         "zoomIn2d",
                         "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d",
                         "fullscreen",
                         "toImage",
                     ],
@@ -957,7 +959,7 @@ def render_dashboard_todos(parcelas):
                 font=dict(size=9),
                 itemwidth=70,
             ),
-            margin=dict(t=5, b=190, l=10, r=10),
+            margin=dict(t=35, b=190, l=10, r=10),
         )
 
         st.plotly_chart(fig_pizza, use_container_width=True)
