@@ -975,6 +975,7 @@ def render_dashboard_todos(parcelas):
         )
 
         fig_pizza_pago.update_layout(
+            height=320,
             legend=dict(
                 orientation="h",
                 yanchor="top",
@@ -1012,6 +1013,7 @@ def render_dashboard_todos(parcelas):
         )
 
         fig_pizza_pendente.update_layout(
+            height=320,
             legend=dict(
                 orientation="h",
                 yanchor="top",
