@@ -1486,6 +1486,29 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     st.plotly_chart(
         fig_mensal,
         use_container_width=True,
+        config={
+            "displayModeBar": True,
+            "displaylogo": False,
+            "scrollZoom": False,
+            "doubleClick": False,
+            "modeBarButtonsToRemove": [
+                "zoom2d",
+                "pan2d",
+                "select2d",
+                "lasso2d",
+                "autoScale2d",
+                "toggleSpikelines",
+                "zoomIn2d",
+                "zoomOut2d",
+                "resetScale2d",
+                "hoverClosestCartesian",
+                "hoverCompareCartesian",
+            ],
+            "modeBarButtonsToAdd": [
+                "fullscreen",
+                "toImage"
+            ],
+        }
     )
 
     # =========================================================
