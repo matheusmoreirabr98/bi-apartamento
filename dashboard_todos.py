@@ -763,7 +763,10 @@ def render_dashboard_todos(parcelas):
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                xaxis=dict(tickangle=320),
+                xaxis=dict(
+                    tickangle=320,
+                    range=[-0.5, len(ordem_meses) - 0.5]
+                )
                 legend=dict(
                     orientation="h",
                     yanchor="top",
