@@ -843,7 +843,6 @@ def render_dashboard_todos(parcelas):
                 resumo_hover_mes[mes_ordem] = "<br>".join(linhas)
 
             valor_mes_df["hover_resumo"] = valor_mes_df["mes_ordem"].map(resumo_hover_mes)
-
             valor_mes_df["valor_pago_fmt"] = valor_mes_df["valor_pago_mes"].apply(brl)
 
             fig_valor_mes = go.Figure()
@@ -852,8 +851,19 @@ def render_dashboard_todos(parcelas):
                 go.Bar(
                     x=valor_mes_df["x_pos"],
                     y=valor_mes_df["valor_pago_mes"],
-                    customdata=list(zip(valor_mes_df["hover_resumo"], valor_mes_df["valor_pago_fmt"])),
-                    hovertemplate="<b>%{x}</b><br>%{customdata[0]}<br><b>Total do Mês:</b> %{customdata[1]}<extra></extra>",
+                    customdata=list(
+                        zip(
+                            valor_mes_df["Mes"],
+                            valor_mes_df["hover_resumo"],
+                            valor_mes_df["valor_pago_fmt"],
+                        )
+                    ),
+                    hovertemplate=(
+                        "<b>%{customdata[0]}</b><br>"
+                        "%{customdata[1]}<br>"
+                        "<b>Total do Mês:</b> %{customdata[2]}"
+                        "<extra></extra>"
+                    ),
                     name="Valor Pago",
                     marker=dict(color=COR_TODOS),
                 )
