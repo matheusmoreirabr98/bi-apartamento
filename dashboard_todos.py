@@ -58,18 +58,21 @@ def inject_styles():
         div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-wrap: nowrap !important;
-            gap: 0.35rem !important;
+            gap: 0.25rem !important;
         }
 
         div[data-testid="column"] {
             flex: 1 1 0 !important;
             min-width: 0 !important;
-            width: 33.33% !important;
+            width: 0 !important;
+            padding: 0 !important;
         }
 
         .metric-card {
             padding: 6px !important;
             margin: 0 !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
         }
 
         .metric-card h3,
