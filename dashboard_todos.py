@@ -918,11 +918,12 @@ def render_dashboard_todos(parcelas):
             )
 
     # =========================================================
-    # GRÁFICO DE PIZZA
+    # GRÁFICOS DE PIZZA
     # =========================================================
-    _titulo_centralizado("Distribuição dos Valores")
+    _titulo_centralizado("Distribuição dos Valores Pagos")
 
-    pizza_rows = []
+    pizza_pago_rows = []
+    pizza_pendente_rows = []
 
     for contrato in ORDEM_CONTRATOS:
         linha = resumo[resumo["contrato"] == contrato]
@@ -933,53 +934,47 @@ def render_dashboard_todos(parcelas):
         valor_pendente = float(linha["valor_pendente"].iloc[0])
 
         label_curto = _label_pizza(contrato)
+        cor_contrato = CORES_CONTRATO.get(contrato, COR_TODOS)
 
         if valor_pago > 0:
-            pizza_rows.append({
-                "grupo": f"{label_curto} Pago",
+            pizza_pago_rows.append({
+                "grupo": label_curto,
                 "valor": valor_pago,
-                "ordem": _ordem_contrato(contrato) * 2,
+                "ordem": _ordem_contrato(contrato),
+                "cor": cor_contrato,
             })
 
         if valor_pendente > 0:
-            pizza_rows.append({
-                "grupo": f"{label_curto} Pend.",
+            pizza_pendente_rows.append({
+                "grupo": label_curto,
                 "valor": valor_pendente,
-                "ordem": _ordem_contrato(contrato) * 2 + 1,
+                "ordem": _ordem_contrato(contrato),
+                "cor": cor_contrato,
             })
 
-    pizza_df = pd.DataFrame(pizza_rows)
+    pizza_pago_df = pd.DataFrame(pizza_pago_rows)
+    pizza_pendente_df = pd.DataFrame(pizza_pendente_rows)
 
-    if pizza_df.empty:
-        st.info("Não há valores suficientes para montar o gráfico de pizza.")
+    if pizza_pago_df.empty:
+        st.info("Não há valores pagos suficientes para montar o gráfico de pizza.")
     else:
-        pizza_df = pizza_df.sort_values("ordem").reset_index(drop=True)
+        pizza_pago_df = pizza_pago_df.sort_values("ordem").reset_index(drop=True)
 
-        COR_PENDENTE_PIZZA = "#d4d4d4"
-
-        color_map_pizza = {}
-        for contrato in ORDEM_CONTRATOS:
-            label_curto = _label_pizza(contrato)
-            color_map_pizza[f"{label_curto} Pago"] = CORES_CONTRATO.get(contrato, COR_TODOS)
-            color_map_pizza[f"{label_curto} Pend."] = COR_PENDENTE_PIZZA
-
-        pizza_df["cor"] = pizza_df["grupo"].map(color_map_pizza)
-
-        fig_pizza = go.Figure(
+        fig_pizza_pago = go.Figure(
             data=[
                 go.Pie(
-                    labels=pizza_df["grupo"],
-                    values=pizza_df["valor"],
-                    marker=dict(colors=pizza_df["cor"]),
+                    labels=pizza_pago_df["grupo"],
+                    values=pizza_pago_df["valor"],
+                    marker=dict(colors=pizza_pago_df["cor"]),
                     sort=False,
                     direction="clockwise",
-                    customdata=[brl(v) for v in pizza_df["valor"]],
-                    hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
+                    customdata=[brl(v) for v in pizza_pago_df["valor"]],
+                    hovertemplate="%{label}<br>Valor Pago: %{customdata}<extra></extra>",
                 )
             ]
         )
 
-        fig_pizza.update_layout(
+        fig_pizza_pago.update_layout(
             legend=dict(
                 orientation="h",
                 yanchor="top",
@@ -993,4 +988,41 @@ def render_dashboard_todos(parcelas):
             margin=dict(t=60, b=190, l=10, r=10),
         )
 
-        st.plotly_chart(fig_pizza, use_container_width=True)
+        st.plotly_chart(fig_pizza_pago, use_container_width=True)
+
+    _titulo_centralizado("Distribuição dos Valores Pendentes")
+
+    if pizza_pendente_df.empty:
+        st.info("Não há valores pendentes suficientes para montar o gráfico de pizza.")
+    else:
+        pizza_pendente_df = pizza_pendente_df.sort_values("ordem").reset_index(drop=True)
+
+        fig_pizza_pendente = go.Figure(
+            data=[
+                go.Pie(
+                    labels=pizza_pendente_df["grupo"],
+                    values=pizza_pendente_df["valor"],
+                    marker=dict(colors=pizza_pendente_df["cor"]),
+                    sort=False,
+                    direction="clockwise",
+                    customdata=[brl(v) for v in pizza_pendente_df["valor"]],
+                    hovertemplate="%{label}<br>Valor Pendente: %{customdata}<extra></extra>",
+                )
+            ]
+        )
+
+        fig_pizza_pendente.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.10,
+                xanchor="center",
+                x=0.5,
+                traceorder="normal",
+                font=dict(size=15),
+                itemwidth=30,
+            ),
+            margin=dict(t=60, b=190, l=10, r=10),
+        )
+
+        st.plotly_chart(fig_pizza_pendente, use_container_width=True)
