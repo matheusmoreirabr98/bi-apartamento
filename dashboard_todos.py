@@ -746,7 +746,7 @@ def render_dashboard_todos(parcelas):
                         name=contrato,
                         text=textos,
                         textposition="top center",
-                        textfont={"size": 12},
+                        textfont={"size": 16},
                         cliponaxis=False,
                         line={"width": 3, **({"color": cor} if cor else {})},
                         marker={"size": 9, **({"color": cor} if cor else {})},
