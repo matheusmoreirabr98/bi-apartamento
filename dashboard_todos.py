@@ -103,6 +103,24 @@ def inject_styles():
         overflow-wrap: break-word !important;
     }
 
+    /* diminui espaço acima/abaixo dos gráficos */
+    .stPlotlyChart {
+        margin-top: -8px !important;
+        margin-bottom: 0 !important;
+    }
+
+    .stPlotlyChart > div {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+
+    /* centraliza os ícones da barra do plotly */
+    .js-plotly-plot .plotly .modebar {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+    }
+
     @media (max-width: 768px) {
         .cards-row-3 {
             gap: 6px;
