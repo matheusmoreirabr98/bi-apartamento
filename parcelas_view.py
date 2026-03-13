@@ -1,5 +1,3 @@
-# parcelas_view.py
-
 import pandas as pd
 import streamlit as st
 
@@ -94,24 +92,35 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             st.warning(f"Não existem parcelas com status **{status_filtro}**.")
         return
 
-    # formatacoes
+    # =========================================================
+    # FORMATAÇÕES
+    # =========================================================
     if "data_vencimento" in parc_show.columns:
+        parc_show["data_vencimento"] = pd.to_datetime(
+            parc_show["data_vencimento"], errors="coerce"
+        ).dt.strftime("%d/%m/%Y")
+        parc_show["data_vencimento"] = parc_show["data_vencimento"].fillna("-")
 
+    if "data_pagamento" in parc_show.columns:
+        parc_show["data_pagamento"] = pd.to_datetime(
+            parc_show["data_pagamento"], errors="coerce"
+        ).dt.strftime("%d/%m/%Y")
+        parc_show["data_pagamento"] = parc_show["data_pagamento"].fillna("-")
 
-        if "valor_principal" in parc_show.columns:
-            parc_show["valor_principal"] = parc_show["valor_principal"].apply(
-                lambda x: brl(x) if pd.notnull(x) else "-"
-            )
+    if "valor_principal" in parc_show.columns:
+        parc_show["valor_principal"] = parc_show["valor_principal"].apply(
+            lambda x: brl(x) if pd.notnull(x) else "-"
+        )
 
-        if "valor_total" in parc_show.columns:
-            parc_show["valor_total"] = parc_show["valor_total"].apply(
-                lambda x: brl(x) if pd.notnull(x) else "-"
-            )
+    if "valor_total" in parc_show.columns:
+        parc_show["valor_total"] = parc_show["valor_total"].apply(
+            lambda x: brl(x) if pd.notnull(x) else "-"
+        )
 
-        if "valor_pago" in parc_show.columns:
-            parc_show["valor_pago"] = parc_show["valor_pago"].apply(
-                lambda x: brl(x) if pd.notnull(x) else "-"
-            )
+    if "valor_pago" in parc_show.columns:
+        parc_show["valor_pago"] = parc_show["valor_pago"].apply(
+            lambda x: brl(x) if pd.notnull(x) else "-"
+        )
 
     # renomear colunas
     parc_show.columns = [
@@ -137,16 +146,23 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         max-height: 400px;
         overflow-y: auto;
         border: 1px solid #ddd;
+        border-radius: 8px;
     }
-                
+
     .parcelas-tabela th,
     .parcelas-tabela td {
         text-align: center;
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
     }
 
     .parcelas-tabela th {
         text-align: center;
         font-weight: 600;
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 1;
     }
 
     .parcelas-tabela td:nth-child(1),
@@ -159,6 +175,13 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     .parcelas-tabela td:nth-child(5),
     .parcelas-tabela td:nth-child(6) {
         text-align: center;
+    }
+
+    .resumo-titulo-centralizado {
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 20px 0 10px 0;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -190,7 +213,10 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
                 resumo_base = parc_f.copy()
 
     if not resumo_base.empty and {"status_exibicao", "id", "valor_total"}.issubset(resumo_base.columns):
-        st.markdown("### Resumo Por Status")
+        st.markdown(
+            '<div class="resumo-titulo-centralizado">Resumo Por Status</div>',
+            unsafe_allow_html=True
+        )
 
         resumo_status = (
             resumo_base.groupby("status_exibicao", as_index=False)
@@ -203,4 +229,20 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
         if not resumo_status.empty:
             resumo_status["total"] = resumo_status["total"].apply(brl)
-            st.dataframe(resumo_status, use_container_width=True, hide_index=True)
+
+            resumo_status.columns = [
+                "Status",
+                "Quantidade",
+                "Total",
+            ]
+
+            html_resumo = resumo_status.to_html(index=False, classes="parcelas-tabela")
+
+            st.markdown(
+                f"""
+                <div class="tabela-scroll">
+                    {html_resumo}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
