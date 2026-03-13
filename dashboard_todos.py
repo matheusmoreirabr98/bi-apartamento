@@ -874,13 +874,14 @@ def render_dashboard_todos(parcelas):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.20,
+                y=-0.28,
                 xanchor="center",
                 x=0.5,
                 traceorder="normal",
-                itemwidth=140,
+                itemwidth=90,
+                font=dict(size=11),
             ),
-            margin=dict(b=120),
+            margin=dict(b=160),
         )
 
         st.plotly_chart(fig_pizza, use_container_width=True)
