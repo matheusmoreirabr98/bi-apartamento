@@ -54,40 +54,67 @@ CORES_GRAFICO = {
 def inject_styles():
     st.markdown("""
     <style>
+    .cards-row-3 {
+        display: flex;
+        gap: 6px;
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+        margin-bottom: 0.5rem;
+    }
+
+    .cards-row-3 > div {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: calc((100% - 12px) / 3);
+        box-sizing: border-box;
+    }
+
+    .cards-row-3 .metric-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 8px !important;
+        box-sizing: border-box !important;
+    }
+
+    .cards-row-3 .metric-card h3,
+    .cards-row-3 .metric-card p,
+    .cards-row-3 .metric-card div {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
     @media (max-width: 768px) {
         .cards-row-3 {
-            display: flex;
             gap: 6px;
-            width: 100%;
-            max-width: 100%;
-            overflow: hidden;
-            box-sizing: border-box;
         }
 
         .cards-row-3 > div {
             flex: 1 1 0;
             min-width: 0;
             max-width: calc((100% - 12px) / 3);
-            box-sizing: border-box;
         }
 
         .cards-row-3 .metric-card {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
             padding: 6px !important;
-            box-sizing: border-box !important;
-        }
-
-        .cards-row-3 .metric-card h3,
-        .cards-row-3 .metric-card p,
-        .cards-row-3 .metric-card div {
-            word-break: break-word !important;
-            overflow-wrap: break-word !important;
         }
     }
     </style>
     """, unsafe_allow_html=True)
+
+def _label_pizza(nome):
+    mapa = {
+        "Sinal": "Sinal",
+        "Sinal Ato": "Sinal Ato",
+        "Diferença": "Diferença",
+        "Evolução de Obra": "Evol. Obra",
+        "Taxas Cartoriais": "Taxas Cart.",
+        "Entrada Direcional": "Entrada Dir.",
+        "Financiamento Caixa": "Financ. Caixa",
+    }
+    return mapa.get(nome, nome)
 
 def _contrato_label(valor):
     nome = str(valor).strip()
@@ -837,16 +864,18 @@ def render_dashboard_todos(parcelas):
         valor_pago = float(linha["valor_pago"].iloc[0])
         valor_pendente = float(linha["valor_pendente"].iloc[0])
 
+        label_curto = _label_pizza(contrato)
+
         if valor_pago > 0:
             pizza_rows.append({
-                "grupo": f"{contrato} - Pago",
+                "grupo": f"{label_curto} Pago",
                 "valor": valor_pago,
                 "ordem": _ordem_contrato(contrato) * 2,
             })
 
         if valor_pendente > 0:
             pizza_rows.append({
-                "grupo": f"{contrato} - Pendente",
+                "grupo": f"{label_curto} Pend.",
                 "valor": valor_pendente,
                 "ordem": _ordem_contrato(contrato) * 2 + 1,
             })
@@ -874,14 +903,14 @@ def render_dashboard_todos(parcelas):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.28,
+                y=-0.22,
                 xanchor="center",
                 x=0.5,
                 traceorder="normal",
-                itemwidth=90,
-                font=dict(size=11),
+                font=dict(size=9),
+                itemwidth=70,
             ),
-            margin=dict(b=160),
+            margin=dict(b=190),
         )
 
         st.plotly_chart(fig_pizza, use_container_width=True)
