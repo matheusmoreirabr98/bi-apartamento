@@ -130,17 +130,45 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         "Valor Pago",
     ]
 
-    st.dataframe(
-        parc_show.style
-        .set_table_styles([
-            {"selector": "th", "props": [("text-align", "center")]},
-        ])
-        .set_properties(subset=["Parcela"], **{"text-align": "left"})
-        .set_properties(subset=["Vencimento","Pagamento"], **{"text-align": "center"})
-        .set_properties(subset=["Valor Principal","Valor Total","Valor Pago"], **{"text-align": "right"}),
-        use_container_width=True,
-        hide_index=True
-    )
+    html_tabela = parc_show.to_html(index=False, classes="parcelas-tabela")
+
+    st.markdown("""
+    <style>
+    .parcelas-tabela {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    .parcelas-tabela th,
+    .parcelas-tabela td {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+    }
+
+    .parcelas-tabela th {
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .parcelas-tabela td:nth-child(1) {
+        text-align: left;
+    }
+
+    .parcelas-tabela td:nth-child(2),
+    .parcelas-tabela td:nth-child(3) {
+        text-align: center;
+    }
+
+    .parcelas-tabela td:nth-child(4),
+    .parcelas-tabela td:nth-child(5),
+    .parcelas-tabela td:nth-child(6) {
+        text-align: right;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(html_tabela, unsafe_allow_html=True)
 
     # =========================================================
     # RESUMO POR STATUS
