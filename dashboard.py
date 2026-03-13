@@ -1385,14 +1385,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         if eh_sinal_ato or contrato_selecionado.strip().lower() == "sinal":
             faixa_max = 1000
+            _configurar_eixo_y_valor(fig_mensal, 1000, 1000)
         else:
             faixa_max = mensal_df["total_pago"].max() if not mensal_df.empty else 1000
-
-        _configurar_eixo_y_valor(
-            fig_mensal,
-            float(faixa_max) * 1.2,
-            1000,
-        )
+            _configurar_eixo_y_valor(
+                fig_mensal,
+                float(faixa_max) * 1.2,
+                1000,
+            )
 
         fig_mensal.update_layout(
             dragmode="pan",
