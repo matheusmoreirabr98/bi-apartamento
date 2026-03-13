@@ -133,6 +133,12 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         font-size: 14px;
     }
 
+    .tabela-scroll {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+    }
+                
     .parcelas-tabela th,
     .parcelas-tabela td {
         text-align: center;
@@ -157,7 +163,14 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown(html_tabela, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="tabela-scroll">
+            {html_tabela}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
     # =========================================================
     # RESUMO POR STATUS
