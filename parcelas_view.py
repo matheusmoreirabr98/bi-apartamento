@@ -72,14 +72,21 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     # TABELA
     # =========================================================
     colunas_show = [
-        "descricao_parcela",
-        "total_parcelas",
+        "descricao_parcela_formatada",
         "data_vencimento",
         "data_pagamento",
         "valor_principal",
         "valor_total",
         "valor_pago",
     ]
+
+    parc_f["descricao_parcela_formatada"] = (
+        parc_f["contrato"].astype(str)
+        + " "
+        + parc_f["numero_parcela"].astype(str)
+        + "/"
+        + parc_f["total_parcelas"].astype(str)
+    )
 
     colunas_existentes = [col for col in colunas_show if col in parc_f.columns]
     parc_show = parc_f[colunas_existentes].copy()
@@ -119,7 +126,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     # renomear colunas
     parc_show = parc_show.rename(columns={
-        "descricao_parcela": "Descrição da Parcela",
+        "descricao_parcela_formatada": "Parcela",
         "total_parcelas": "Total",
         "data_vencimento": "Vencimento",
         "data_pagamento": "Pagamento",
