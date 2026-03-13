@@ -13,11 +13,6 @@ from utils import (
     render_cards_grid,
 )
 
-
-CORES_RESPONSAVEL = {
-    "Pendente": "#d3d3d3",
-}
-
 CORES_CONTRATO = {
     "Sinal": "#a855f7",
     "Sinal Ato": "#c084fc",
@@ -249,6 +244,10 @@ def _cor_por_contrato(valor_contrato):
         return CORES_CONTRATO["Taxas Cartoriais"]
 
     return "#185bc7"
+
+CORES_RESPONSAVEL = {
+    "Pendente": "#00ff04",
+}
 
 COR_PENDENTE_GRAFICO = CORES_RESPONSAVEL["Pendente"]
 COR_PAGO_CORRETORA = "#ef4444"
