@@ -644,20 +644,21 @@ def render_dashboard_todos(parcelas):
     else:
         for _, row in proximas.iterrows():
             valor_exibicao = row["Valor"]
-        if row["Contrato"] == "Financiamento Caixa" and str(row["Vencimento"]).strip() in ["-", "", "NaT"]:
-            vencimento_exibicao = "A definir"
-        else:
-            vencimento_exibicao = row["Vencimento"]
 
-        _render_tres_cards_linha(
-            card_html(row["Contrato"], row["Parcela"], small=True),
-            card_html("Valor", valor_exibicao, small=True),
-            card_html("Vencimento", vencimento_exibicao, small=True),
-        )
+            if row["Contrato"] == "Financiamento Caixa" and str(row["Vencimento"]).strip() in ["-", "", "NaT"]:
+                vencimento_exibicao = "A definir"
+            else:
+                vencimento_exibicao = row["Vencimento"]
 
-    render_cards_grid([
-        card_html("Total Próximas Parcelas", brl(total_proximas_parcelas), small=True),
-    ], cols=1)
+            _render_tres_cards_linha(
+                card_html(row["Contrato"], row["Parcela"], small=True),
+                card_html("Valor", valor_exibicao, small=True),
+                card_html("Vencimento", vencimento_exibicao, small=True),
+            )
+
+        render_cards_grid([
+            card_html("Total Próximas Parcelas", brl(total_proximas_parcelas), small=True),
+        ], cols=1)
 
     # =========================================================
     # EVOLUÇÃO POR MÊS - POR CONTRATO
