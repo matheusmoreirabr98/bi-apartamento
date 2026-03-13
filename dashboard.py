@@ -1574,27 +1574,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     "cor": cor_contrato_atual,
                 })
 
-            if valor_pendente_compradores > 0:
-                grupos.append({
-                    "grupo": "Pendente - Compradores",
-                    "valor": valor_pendente_compradores,
-                    "cor": "#9bdc8d",
-                })
-
-            if valor_pago_corretora > 0:
-                grupos.append({
-                    "grupo": "Pago - Corretora",
-                    "valor": valor_pago_corretora,
-                    "cor": COR_PAGO_CORRETORA,
-                })
-
-            if valor_pendente_corretora > 0:
-                grupos.append({
-                    "grupo": "Pendente - Corretora",
-                    "valor": valor_pendente_corretora,
-                    "cor": "#f5a3a3",
-                })
-
             pizza_df = pd.DataFrame(grupos)
 
         else:
