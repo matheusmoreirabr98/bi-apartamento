@@ -297,32 +297,16 @@ def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
 
     tickvals = list(range(0, topo + passo, passo))
 
-def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
-    faixa_max = max(float(faixa_max or 0), float(passo))
-    topo = ((int(faixa_max) + passo - 1) // passo) * passo
-
-    tickvals = list(range(0, topo + passo, passo))
-
     def _formatar_tick(v):
         if v == 0:
             return "0"
         if v < 1000:
-            return str(int(v))
+            return f"{v/1000:.1f}k"
         if v % 1000 == 0:
             return f"{int(v/1000)}k"
-        return f"{v/1000:.1f}k".replace(".0k", "k")
+        return f"{v/1000:.1f}k"
 
     ticktext = [_formatar_tick(v) for v in tickvals]
-
-    fig.update_layout(
-        yaxis=dict(
-            range=[0, topo],
-            tickmode="array",
-            tickvals=tickvals,
-            ticktext=ticktext,
-            fixedrange=True,
-        )
-    )
 
     fig.update_layout(
         yaxis=dict(
@@ -1410,23 +1394,30 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
         if eh_sinal_ato or contrato_selecionado.strip().lower() == "sinal":
+            _configurar_eixo_y_valor(fig_mensal, 1500, 500)
+        else:
+            faixa_max = mensal_df["total_pago"].max() if not mensal_df.empty else 1000
+            _configurar_eixo_y_valor(
+                fig_mensal,
+                float(faixa_max) * 1.2,
+                1000,
+            )
 
-
-                fig_mensal.update_layout(
-                    dragmode="pan",
-                    hovermode="x unified",
-                    xaxis_title="Mês do Pagamento",
-                    yaxis_title="Valor Pago",
-                    legend_title_text="",
-                    xaxis=dict(
-                        tickangle=320,
-                        tickmode="array",
-                        tickvals=ordem_meses["x_pos"].tolist(),
-                        ticktext=ordem_meses["Mes"].tolist(),
-                        range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
-                        fixedrange=False,
-                    ),
-                )
+        fig_mensal.update_layout(
+            dragmode="pan",
+            hovermode="x unified",
+            xaxis_title="Mês do Pagamento",
+            yaxis_title="Valor Pago",
+            legend_title_text="",
+            xaxis=dict(
+                tickangle=320,
+                tickmode="array",
+                tickvals=ordem_meses["x_pos"].tolist(),
+                ticktext=ordem_meses["Mes"].tolist(),
+                range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
+                fixedrange=False,
+            ),
+        )
 
     else:
         mensal_df = (
@@ -1485,7 +1476,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
         if eh_sinal_ato or contrato_selecionado.strip().lower() == "sinal":
-            _configurar_eixo_y_valor(fig_mensal, 1000, 500)
+            _configurar_eixo_y_valor(fig_mensal, 1500, 500)
         else:
             _configurar_eixo_y_valor(
                 fig_mensal,
