@@ -103,14 +103,14 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.10,
+                y=-0.22,
                 xanchor="center",
                 x=0.5,
                 traceorder="normal",
                 font=dict(size=14),
                 title_text="",
             ),
-            margin=dict(t=50, b=170, l=10, r=10),
+            margin=dict(t=50, b=95, l=10, r=10),
         )
 
 
