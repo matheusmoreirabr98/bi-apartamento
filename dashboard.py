@@ -246,7 +246,7 @@ def _cor_por_contrato(valor_contrato):
     return "#185bc7"
 
 CORES_RESPONSAVEL = {
-    "Pendente": "#00ff04",
+    "Pendente": "#d4d4d4",
 }
 
 COR_PENDENTE_GRAFICO = CORES_RESPONSAVEL["Pendente"]
