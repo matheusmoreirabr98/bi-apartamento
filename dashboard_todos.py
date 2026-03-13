@@ -55,12 +55,21 @@ def inject_styles():
     st.markdown("""
     <style>
     @media (max-width: 768px) {
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 0.35rem !important;
+        }
+
         div[data-testid="column"] {
+            flex: 1 1 0 !important;
             min-width: 0 !important;
+            width: 33.33% !important;
         }
 
         .metric-card {
-            padding: 8px !important;
+            padding: 6px !important;
+            margin: 0 !important;
         }
 
         .metric-card h3,
@@ -454,6 +463,8 @@ def _proximas_parcelas(df):
 
 
 def render_dashboard_todos(parcelas):
+    inject_styles()
+
     if parcelas.empty:
         st.info("Sem dados para exibir.")
         return
