@@ -857,8 +857,6 @@ def render_dashboard_todos(parcelas):
                 go.Bar(
                     x=valor_mes_df["x_pos"],
                     y=valor_mes_df["valor_pago_mes"],
-                    text=[brl(v) for v in valor_mes_df["valor_pago_mes"]],
-                    textposition="outside",
                     customdata=valor_mes_df["hover_resumo"],
                     hovertemplate="<b>%{x}</b><br>%{customdata}<br><b>Total do Mês:</b> %{text}<extra></extra>",
                     name="Valor Pago",
