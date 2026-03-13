@@ -772,16 +772,11 @@ def render_dashboard_todos(parcelas):
                     tickmode="array",
                     tickvals=ordem_meses["x_pos"].tolist(),
                     ticktext=ordem_meses["Mes"].tolist(),
-                    range=[-0.8, len(ordem_meses) - 0.2],
-                    fixedrange=False,
-                ),
-                xaxis=dict(
-                    tickangle=320,
-                    tickmode="array",
-                    tickvals=ordem_meses["x_pos"].tolist(),
-                    ticktext=ordem_meses["Mes"].tolist(),
                     range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
                     fixedrange=False,
+                ),
+                yaxis=dict(
+                    fixedrange=True,
                 ),
                 legend=dict(
                     orientation="h",
@@ -792,7 +787,7 @@ def render_dashboard_todos(parcelas):
                     traceorder="normal",
                     font=dict(size=14),
                 ),
-                margin=dict(t=5, b=140, l=10, r=10),  # 👈 DIMINUIR ESSE T
+                margin=dict(t=5, b=140, l=10, r=10),
             )
 
             st.plotly_chart(
@@ -801,7 +796,7 @@ def render_dashboard_todos(parcelas):
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
@@ -896,7 +891,7 @@ def render_dashboard_todos(parcelas):
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
