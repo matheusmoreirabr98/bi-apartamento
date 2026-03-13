@@ -14,7 +14,7 @@ from utils import (
 )
 
 CORES_CONTRATO = {
-    "Sinal": "#a855f7",
+    "Sinal": "#002ec5",
     "Sinal Ato": "#c084fc",
     "Diferença": "#f59e0b",
     "Evolução de Obra": "#06b6d4",
