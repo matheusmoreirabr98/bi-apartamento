@@ -51,6 +51,23 @@ CORES_GRAFICO = {
     "Financiamento Caixa": "#ef4444",
 }
 
+def _titulo_centralizado(texto):
+    st.markdown(
+        f"""
+        <div style="
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 25px 0 12px 0;
+            width: 100%;
+            display: block;
+        ">
+            {texto}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def inject_styles():
     st.markdown("""
     <style>
@@ -570,7 +587,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # RESUMO POR CONTRATO
     # =========================================================
-    st.markdown("### Resumo por Contrato")
+    _titulo_centralizado("Resumo por Contrato")
 
     for _, row in resumo.iterrows():
         if row["contrato"] == "Evolução de Obra":
@@ -587,7 +604,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # PRÓXIMAS PARCELAS
     # =========================================================
-    st.markdown("### Próximas Parcelas")
+    _titulo_centralizado("Próximas Parcelas")
 
     proximas = _proximas_parcelas(base_regras)
 
@@ -614,7 +631,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # EVOLUÇÃO POR MÊS - POR CONTRATO
     # =========================================================
-    st.markdown("### Evolução por Mês")
+    _titulo_centralizado("Evolução por Mês")
 
     evolucao = base_regras.copy()
 
@@ -765,7 +782,7 @@ def render_dashboard_todos(parcelas):
                 },
             )
 
-            st.markdown("### Valor Pago por Mês")
+            _titulo_centralizado("Valor Pago por Mês")
 
             valor_mes_df = (
                 evolucao.groupby("mes_ordem", as_index=False)
@@ -852,7 +869,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # GRÁFICO DE PIZZA
     # =========================================================
-    st.markdown("### Distribuição dos Valores")
+    _titulo_centralizado("Distribuição dos Valores")
 
     pizza_rows = []
 
