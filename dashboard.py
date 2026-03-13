@@ -1351,7 +1351,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             if df_resp.empty:
                 continue
 
-            df_resp = ordem_meses.merge(df_resp, on="mes_ordem", how="left")
+            if responsavel == "Corretora":
+                ultimo_mes_resp = df_resp["mes_ordem"].max()
+                ordem_meses_resp = ordem_meses[ordem_meses["mes_ordem"] <= ultimo_mes_resp].copy()
+            else:
+                ordem_meses_resp = ordem_meses.copy()
+
+            df_resp = ordem_meses_resp.merge(df_resp, on="mes_ordem", how="left")
             df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
             df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
 
