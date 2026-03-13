@@ -139,24 +139,6 @@ def inject_styles():
     </style>
     """, unsafe_allow_html=True)
 
-def inject_styles():
-    st.markdown("""
-    <style>
-    ...
-    .js-plotly-plot .plotly .modebar {
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        right: auto !important;
-        top: -8px !important;
-    }
-
-    /* SOMENTE o último gráfico (pizza) */
-    .stPlotlyChart:last-of-type .js-plotly-plot .plotly .modebar {
-        top: 10px !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
 def _label_pizza(nome):
     mapa = {
         "Sinal": "Sinal",
