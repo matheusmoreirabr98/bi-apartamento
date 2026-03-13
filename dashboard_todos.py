@@ -758,30 +758,31 @@ def render_dashboard_todos(parcelas):
                     ticktext=["0", "1k", "2k", "3k"],
                 )
 
-            fig_mensal.update_layout(
-                dragmode="pan",
-                xaxis=dict(
-                    tickangle=320,
-                    tickmode="array",
-                    tickvals=ordem_meses["x_pos"].tolist(),
-                    ticktext=ordem_meses["Mes"].tolist(),
-                    range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
-                    fixedrange=False,
-                ),
-                yaxis=dict(
-                    fixedrange=True,
-                ),
-                legend=dict(
-                    orientation="h",
-                    yanchor="top",
-                    y=-0.20,
-                    xanchor="center",
-                    x=0.5,
-                    traceorder="normal",
-                    font=dict(size=15),
-                ),
-                margin=dict(t=10, b=80, l=10, r=10)
-            )
+                fig_mensal.update_layout(
+                    dragmode="pan",
+                    hovermode="x unified",
+                    xaxis=dict(
+                        tickangle=320,
+                        tickmode="array",
+                        tickvals=ordem_meses["x_pos"].tolist(),
+                        ticktext=ordem_meses["Mes"].tolist(),
+                        range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
+                        fixedrange=False,
+                    ),
+                    yaxis=dict(
+                        fixedrange=True,
+                    ),
+                    legend=dict(
+                        orientation="h",
+                        yanchor="top",
+                        y=-0.20,
+                        xanchor="center",
+                        x=0.5,
+                        traceorder="normal",
+                        font=dict(size=15),
+                    ),
+                    margin=dict(t=10, b=80, l=10, r=10)
+                )
 
             st.plotly_chart(
                 fig_mensal,
