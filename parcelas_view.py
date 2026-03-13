@@ -179,9 +179,9 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     .resumo-titulo-centralizado {
         text-align: center;
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin: 20px 0 10px 0;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 25px 0 12px 0;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -226,6 +226,12 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             )
             .sort_values("status_exibicao")
         )
+
+        resumo_status["status_exibicao"] = resumo_status["status_exibicao"].replace({
+            "pago": "Pagas",
+            "pendente": "Pendentes",
+            "atrasado": "Atrasadas"
+        })
 
         if not resumo_status.empty:
             resumo_status["total"] = resumo_status["total"].apply(brl)
