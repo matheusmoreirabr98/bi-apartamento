@@ -711,6 +711,16 @@ def render_dashboard_todos(parcelas):
                 if df_contrato.empty:
                     continue
 
+                nome_legenda = {
+                    "Sinal": "Sinal",
+                    "Sinal Ato": "Sinal Ato",
+                    "Diferença": "Diferença",
+                    "Evolução de Obra": "Evol. Obra",
+                    "Taxas Cartoriais": "Taxas Cart.",
+                    "Entrada Direcional": "Entrada Dir.",
+                    "Financiamento Caixa": "Financ. Caixa",
+                }.get(contrato, contrato)
+
                 primeiro_mes = df_contrato["mes_ordem"].min()
                 ultimo_mes = df_contrato["mes_ordem"].max()
 
@@ -756,7 +766,7 @@ def render_dashboard_todos(parcelas):
                         x=df_contrato["x_pos"],
                         y=df_contrato["total_pago"],
                         mode="lines+markers+text",
-                        name=contrato,
+                        name=nome_legenda,
                         text=textos,
                         textposition="top center",
                         textfont={"size": 16},
