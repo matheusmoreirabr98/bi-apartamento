@@ -73,7 +73,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     # =========================================================
     colunas_show = [
         "descricao_parcela",
-        "numero_parcela",
         "total_parcelas",
         "data_vencimento",
         "data_pagamento",
@@ -84,6 +83,13 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     colunas_existentes = [col for col in colunas_show if col in parc_f.columns]
     parc_show = parc_f[colunas_existentes].copy()
+
+    if parc_show.empty:
+        if status_filtro == "Todos":
+            st.info("Não existem parcelas para exibir.")
+        else:
+            st.warning(f"Não existem parcelas com status **{status_filtro}**.")
+        return
 
     # formatacoes
     if "data_vencimento" in parc_show.columns:
@@ -114,7 +120,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     # renomear colunas
     parc_show = parc_show.rename(columns={
         "descricao_parcela": "Descrição da Parcela",
-        "numero_parcela": "Parcela",
         "total_parcelas": "Total",
         "data_vencimento": "Vencimento",
         "data_pagamento": "Pagamento",
