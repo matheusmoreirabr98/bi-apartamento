@@ -605,7 +605,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # RESUMO POR CONTRATO
     # =========================================================
-    _titulo_centralizado("Resumo por Contrato")
+    _titulo_centralizado("##Resumo por Contrato")
 
     for _, row in resumo.iterrows():
         if row["contrato"] == "Evolução de Obra":
