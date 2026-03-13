@@ -672,16 +672,17 @@ def render_dashboard_todos(parcelas):
                         "pan2d",
                         "select2d",
                         "lasso2d",
+                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d",
+                        "zoomOut2d"
                     ],
                     "modeBarButtonsToAdd": [
-                        "resetScale2d",
+                        "autoScale2d",
                         "fullscreen",
-                        "toImage",
+                        "toImage"
                     ],
                 },
             )
