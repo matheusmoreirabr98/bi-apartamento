@@ -870,4 +870,17 @@ def render_dashboard_todos(parcelas):
             customdata=[brl(v) for v in pizza_df["valor"]],
         )
 
+        fig_pizza.update_layout(
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=-0.20,
+                xanchor="center",
+                x=0.5,
+                traceorder="normal",
+                itemwidth=140,
+            ),
+            margin=dict(b=120),
+        )
+
         st.plotly_chart(fig_pizza, use_container_width=True)
