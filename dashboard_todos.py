@@ -54,16 +54,8 @@ CORES_GRAFICO = {
 def inject_styles():
     st.markdown("""
     <style>
-    /* força as colunas a continuarem na mesma linha no mobile */
     @media (max-width: 768px) {
-        div[data-testid="stHorizontalBlock"] {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            gap: 0.5rem !important;
-        }
-
         div[data-testid="column"] {
-            flex: 1 1 0 !important;
             min-width: 0 !important;
         }
 
@@ -102,7 +94,7 @@ def _ordem_contrato(nome):
         return 999
 
 def _render_tres_cards_linha(card1, card2, card3):
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3 = st.columns([1, 1, 1], gap="small")
     with c1:
         st.markdown(card1, unsafe_allow_html=True)
     with c2:
