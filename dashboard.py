@@ -1,6 +1,5 @@
 # dashboard.py
 
-from datetime import date
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -9,7 +8,6 @@ import streamlit as st
 from utils import (
     CONTRATO_DIRECIONAL,
     CONTRATO_TAXAS,
-    CONTRATO_TODOS,
     brl,
     card_html,
     render_cards_grid,
@@ -54,11 +52,34 @@ MAPA_MESES = {
     12: "Dez",
 }
 
+def inject_styles():
+    st.markdown("""
+    <style>
+    /* centraliza a barra de ícones do plotly */
+    .js-plotly-plot .plotly .modebar {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+        top: -8px !important;
+    }
+
+    /* reduz espaço entre ícones e gráfico */
+    .js-plotly-plot {
+        padding-top: 0 !important;
+    }
+
+    .stPlotlyChart {
+        margin-top: -10px !important;
+        margin-bottom: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # =========================================================
 # ESTILO LEGENDAS E PROGRESSO
 # =========================================================
 
-def _titulo_centralizado(texto, nivel=3):
+def _titulo_centralizado(texto):
     st.markdown(
         f"""
         <div style="
@@ -81,24 +102,29 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.03,
+                y=-0.10,
                 xanchor="center",
                 x=0.5,
+                traceorder="normal",
+                font=dict(size=15),
+                itemwidth=30,
                 title_text="",
             ),
-            margin=dict(t=30, b=45, l=20, r=20),
+            margin=dict(t=60, b=190, l=10, r=10),
         )
     else:
         fig.update_layout(
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.28,
+                y=-0.20,
                 xanchor="center",
                 x=0.5,
+                traceorder="normal",
+                font=dict(size=15),
                 title_text="",
             ),
-            margin=dict(t=30, b=110, l=20, r=20),
+            margin=dict(t=5, b=140, l=10, r=10),
         )
 
 
@@ -210,12 +236,6 @@ def _formatar_mes_pt(coluna_mes_ordem):
     datas_mes = pd.to_datetime(coluna_mes_ordem, format="%Y-%m", errors="coerce")
     return datas_mes.dt.month.map(MAPA_MESES) + "/" + datas_mes.dt.year.astype(str)
 
-
-def _mes_nome_atual_pt():
-    hoje = date.today()
-    return MAPA_MESES.get(hoje.month, "")
-
-
 def _nome_mes_por_data(valor_data):
     data_ref = pd.to_datetime(valor_data, errors="coerce", dayfirst=True)
     if pd.isnull(data_ref):
@@ -262,10 +282,11 @@ def _configurar_eixo_y_valor(fig, faixa_max, passo=1000):
 
     fig.update_layout(
         yaxis=dict(
-            range=[-200, topo],
+            range=[0, topo],
             tickmode="array",
             tickvals=tickvals,
             ticktext=ticktext,
+            fixedrange=True,
         )
     )
 
@@ -645,9 +666,8 @@ def _aplicar_regra_financiamento_caixa(df):
 
 
 def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado):
-    contrato_sel = str(contrato_selecionado).strip().lower()
+    inject_styles()
     contrato_direcional = str(CONTRATO_DIRECIONAL).strip().lower()
-    contrato_todos = str(CONTRATO_TODOS).strip().lower()
 
     eh_entrada_direcional = _is_entrada_direcional(contrato_selecionado)
     eh_direcional = _is_direcional(contrato_selecionado)
@@ -657,11 +677,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     eh_taxas = eh_sinal_ato or eh_financiamento_caixa or eh_taxas_cartorio
     eh_evolucao_obra = _is_evolucao_obra(contrato_selecionado)
-
-    eh_todos = (
-        contrato_sel == contrato_todos
-        or "todos" in contrato_sel
-    )
 
     if parcelas_contrato.empty:
         st.info("Sem dados para exibir.")
@@ -977,7 +992,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         abertas_evolucao = contagem_base[contagem_base["status"] != "pago"].copy()
         if not abertas_evolucao.empty:
             abertas_evolucao["data_venc_ref"] = _to_datetime_br(abertas_evolucao["data_vencimento"])
-            abertas_evolucao = abertas_evolucao.sort_values(["data_venc_ref", "numero_parcela"], na_position="last")
+            abertas_evolucao["numero_parcela_ord"] = pd.to_numeric(abertas_evolucao["numero_parcela"], errors="coerce")
+            abertas_evolucao = abertas_evolucao.sort_values(["data_venc_ref", "numero_parcela_ord"], na_position="last")
             if not abertas_evolucao.empty:
                 proxima_parcela_pendente_mes = _nome_mes_por_data(abertas_evolucao.iloc[0].get("data_vencimento"))
 
@@ -1018,7 +1034,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # PRÓXIMA PARCELA
     # =========================================================
-    _titulo_centralizado("Próxima Parcela", nivel=3)
+    _titulo_centralizado("Próxima Parcela")
 
     if eh_evolucao_obra and contrato_encerrado:
         st.success("✅ Evolução de Obra concluída.")
@@ -1029,95 +1045,78 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 abertas = pd.DataFrame()
             else:
                 abertas = contagem_base[contagem_base["aberta_calc"]].copy()
+
         elif eh_entrada_direcional or eh_direcional or eh_taxas_cartorio:
             abertas = contagem_base[contagem_base["pendente_calc"]].copy()
+
         else:
-            abertas = contagem_base[contagem_base["status"] != "pago"].copy()
+            abertas = contagem_base.copy()
+            abertas["pago_calc"] = abertas["status"].astype(str).str.lower().eq("pago")
+
+            mask_direcional = (
+                abertas["contrato"].astype(str).str.strip().str.lower() == contrato_direcional
+            )
+
+            if mask_direcional.any():
+                abertas.loc[mask_direcional, "pago_calc"] = abertas.loc[mask_direcional].apply(
+                    _eh_parcela_direcional_paga, axis=1
+                )
+
+            abertas = abertas[~abertas["pago_calc"]].copy()
 
         if abertas.empty:
             if not eh_financiamento_caixa:
                 st.success("✅ Não há parcelas em aberto.")
         else:
-            if eh_todos:
-                prox_taxas = (
-                    abertas[abertas["contrato"] == CONTRATO_TAXAS]
-                    .sort_values(["data_vencimento", "numero_parcela"])
+            if eh_financiamento_caixa and "data_vencimento_calc" in abertas.columns:
+                proxima_parcela = (
+                    abertas.sort_values(["data_vencimento_calc", "numero_parcela_num"], na_position="last")
                     .head(1)
                     .copy()
                 )
-
-                prox_direcional = (
-                    abertas[abertas["contrato"] == CONTRATO_DIRECIONAL]
-                    .sort_values(["data_vencimento", "numero_parcela"])
-                    .head(1)
-                    .copy()
-                )
-
-                if not prox_taxas.empty:
-                    row = prox_taxas.iloc[0]
-                    data_venc = _to_datetime_br(pd.Series([row["data_vencimento"]])).iloc[0]
-
-                if not prox_direcional.empty:
-                    row = prox_direcional.iloc[0]
-                    data_venc = _to_datetime_br(pd.Series([row["data_vencimento"]])).iloc[0]
-
-                    render_cards_grid([
-                        card_html("Contrato", CONTRATO_DIRECIONAL, small=True),
-                        card_html("Parcela", _texto_parcela(row), small=True),
-                        card_html("Valor", brl(_to_numeric_brl(row["valor_total"])), small=True),
-                        card_html(
-                            "Vencimento",
-                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                            small=True,
-                        ),
-                    ], cols=4)
-
             else:
-                if eh_financiamento_caixa and "data_vencimento_calc" in abertas.columns:
-                    proxima_parcela = (
-                        abertas.sort_values(["data_vencimento_calc", "numero_parcela"])
-                        .head(1)
-                        .copy()
-                    )
-                else:
-                    proxima_parcela = (
-                        abertas.sort_values(["data_vencimento", "numero_parcela"])
-                        .head(1)
-                        .copy()
-                    )
+                abertas = abertas.copy()
+                abertas["data_venc_ref"] = _to_datetime_br(abertas["data_vencimento"])
+                abertas["numero_parcela_ord"] = pd.to_numeric(abertas["numero_parcela"], errors="coerce")
 
-                prox = proxima_parcela.iloc[0]
+                proxima_parcela = (
+                    abertas.sort_values(["data_venc_ref", "numero_parcela_ord"], na_position="last")
+                    .head(1)
+                    .copy()
+                )
 
-                if eh_financiamento_caixa and "data_vencimento_calc" in prox.index:
-                    data_venc = pd.to_datetime(prox["data_vencimento_calc"], errors="coerce")
-                else:
-                    data_venc = _to_datetime_br(pd.Series([prox["data_vencimento"]])).iloc[0]
+            prox = proxima_parcela.iloc[0]
 
-                if eh_evolucao_obra:
-                    render_cards_grid([
-                        card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
-                        card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
-                        card_html(
-                            "Vencimento",
-                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                            small=True,
-                        ),
-                    ], cols=3)
-                else:
-                    render_cards_grid([
-                        card_html("Parcela", _texto_parcela(prox), small=True),
-                        card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
-                        card_html(
-                            "Vencimento",
-                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                            small=True,
-                        ),
-                    ], cols=3)
+            if eh_financiamento_caixa and "data_vencimento_calc" in prox.index:
+                data_venc = pd.to_datetime(prox["data_vencimento_calc"], errors="coerce")
+            else:
+                data_venc = _to_datetime_br(pd.Series([prox["data_vencimento"]])).iloc[0]
+
+            if eh_evolucao_obra:
+                render_cards_grid([
+                    card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
+                    card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
+                    card_html(
+                        "Vencimento",
+                        data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
+                        small=True,
+                    ),
+                ], cols=3)
+            else:
+                render_cards_grid([
+                    card_html("Parcela", _texto_parcela(prox), small=True),
+                    card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
+                    card_html(
+                        "Vencimento",
+                        data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
+                        small=True,
+                    ),
+                ], cols=3)
 
     # =========================================================
     # EVOLUÇÃO POR MÊS
     # =========================================================
-    _titulo_centralizado("Evolução por Mês", nivel=3)
+    _titulo_centralizado("Evolução por Mês")
 
     evolucao_df = parcelas_contrato.copy()
 
@@ -1125,157 +1124,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
         return
 
-    if eh_todos:
-        evolucao_df = evolucao_df[
-            evolucao_df["contrato"].isin([CONTRATO_TAXAS, CONTRATO_DIRECIONAL])
-        ].copy()
-
-        if "serie" in evolucao_df.columns:
-            evolucao_df["serie"] = evolucao_df["serie"].astype(str).str.strip()
-
-        evolucao_df["pago_calc"] = evolucao_df["status"].astype(str).str.lower().eq("pago")
-        mask_direcional = evolucao_df["contrato"].astype(str).str.strip().str.lower() == contrato_direcional
-        if mask_direcional.any():
-            evolucao_df.loc[mask_direcional, "pago_calc"] = evolucao_df.loc[mask_direcional].apply(
-                _eh_parcela_direcional_paga, axis=1
-            )
-
-        evolucao_df["data_pagamento_ref"] = _to_datetime_br(evolucao_df["data_pagamento"])
-
-        evolucao_df = evolucao_df[
-            (evolucao_df["pago_calc"])
-            & (evolucao_df["data_pagamento_ref"].notna())
-        ].copy()
-
-        if evolucao_df.empty:
-            st.info("Ainda não há pagamentos com data para mostrar a evolução mensal.")
-        else:
-            evolucao_df["serie_grafico"] = evolucao_df["contrato"].map({
-                CONTRATO_TAXAS: "Registro",
-                CONTRATO_DIRECIONAL: "Entrada",
-            })
-
-            evolucao_df["mes_ref"] = evolucao_df["data_pagamento_ref"].dt.to_period("M")
-            evolucao_df["mes_ordem"] = evolucao_df["mes_ref"].astype(str)
-            evolucao_df["valor_pago_num"] = _to_numeric_brl(evolucao_df["valor_pago"])
-
-            mensal_df = (
-                evolucao_df.groupby(["mes_ordem", "serie_grafico"], as_index=False)
-                .agg(
-                    total_pago=("valor_pago_num", "sum"),
-                    qtd_parcelas=("valor_pago_num", "size"),
-                )
-                .sort_values(["mes_ordem", "serie_grafico"])
-            )
-
-            mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
-
-            ordem_meses = (
-                mensal_df[["mes_ordem", "Mes"]]
-                .drop_duplicates()
-                .sort_values("mes_ordem")
-            )
-
-            fig_mensal = go.Figure()
-
-            for serie in ["Registro", "Entrada"]:
-                df_serie = mensal_df[mensal_df["serie_grafico"] == serie].copy()
-
-                if df_serie.empty:
-                    continue
-
-                df_serie = ordem_meses.merge(
-                    df_serie,
-                    on=["mes_ordem", "Mes"],
-                    how="left"
-                )
-
-                df_serie["total_pago"] = df_serie["total_pago"].fillna(0)
-                df_serie["qtd_parcelas"] = df_serie["qtd_parcelas"].fillna(0)
-
-                textos = [
-                    str(int(qtd)) if qtd > 0 else ""
-                    for qtd in df_serie["qtd_parcelas"]
-                ]
-
-                hover_textos = [
-                    (
-                        f"<b>{mes}</b><br>"
-                        f"Faturas Pagas: {int(qtd)}<br>"
-                        f"Valor Pago no Mês: {brl(valor)}"
-                    )
-                    for mes, valor, qtd in zip(
-                        df_serie["Mes"],
-                        df_serie["total_pago"],
-                        df_serie["qtd_parcelas"],
-                    )
-                ]
-
-                fig_mensal.add_trace(
-                    go.Scatter(
-                        x=df_serie["Mes"],
-                        y=df_serie["total_pago"],
-                        mode="lines+markers+text",
-                        name=serie,
-                        text=textos,
-                        textposition="top center",
-                        textfont={"size": 12},
-                        line={"color": CORES_CONTRATO.get(serie, "#999999"), "width": 3},
-                        marker={
-                            "color": CORES_CONTRATO.get(serie, "#999999"),
-                            "size": 9,
-                        },
-                        hovertemplate="%{customdata}<extra></extra>",
-                        customdata=hover_textos,
-                    )
-                )
-
-            _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
-
-            _configurar_eixo_y_valor(
-                fig_mensal,
-                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
-                1000,
-            )
-
-            fig_mensal.update_layout(
-                dragmode="pan",
-                hovermode="x unified",
-                xaxis_title="Mês do Pagamento",
-                yaxis_title="Valor Pago",
-                legend_title_text="",
-                xaxis=dict(tickangle=320),
-            )
-
-            st.plotly_chart(
-                fig_mensal,
-                use_container_width=True,
-                config={
-                    "displayModeBar": True,
-                    "displaylogo": False,
-                    "scrollZoom": True,
-                    "doubleClick": False,
-                    "modeBarButtonsToRemove": [
-                        "zoom2d",
-                        "pan2d",
-                        "select2d",
-                        "lasso2d",
-                        "resetScale2d",
-                        "toggleSpikelines",
-                        "hoverClosestCartesian",
-                        "hoverCompareCartesian",
-                        "zoomIn2d",
-                        "zoomOut2d"
-                    ],
-                    "modeBarButtonsToAdd": [
-                        "autoScale2d",
-                        "fullscreen",
-                        "toImage"
-                    ],
-                },
-            )
-
-    elif eh_entrada_direcional:
+    if eh_entrada_direcional:
         evolucao_pago = _filtrar_base_entrada_direcional(evolucao_df)
         evolucao_pago = _aplicar_regra_direcional(evolucao_pago)
         evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
@@ -1318,6 +1167,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             mensal_df["valor_pago_mes"] = mensal_df["valor_pago_mes"].fillna(0)
             mensal_df["qtd_parcelas"] = mensal_df["qtd_parcelas"].fillna(0)
 
+            mensal_df = mensal_df.reset_index(drop=True)
+            mensal_df["x_pos"] = range(len(mensal_df))
+
             hover_textos = [
                 (
                     f"<b>{mes}</b><br>"
@@ -1340,13 +1192,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             fig_mensal.add_trace(
                 go.Scatter(
-                    x=mensal_df["Mes"],
+                    x=mensal_df["x_pos"],
                     y=mensal_df["valor_pago_mes"],
                     mode="lines+markers+text",
                     name="Valor Pago",
                     text=textos,
                     textposition="top center",
-                    textfont={"size": 12},
+                    textfont={"size": 16},
+                    cliponaxis=False,
                     line={"color": CORES_CONTRATO["Entrada"], "width": 3},
                     marker={
                         "color": CORES_CONTRATO["Entrada"],
@@ -1371,7 +1224,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                xaxis=dict(tickangle=320),
+                xaxis=dict(
+                    tickangle=320,
+                    tickmode="array",
+                    tickvals=mensal_df["x_pos"].tolist(),
+                    ticktext=mensal_df["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(mensal_df) - 0.5)],
+                    fixedrange=False,
+                ),
             )
 
             st.plotly_chart(
@@ -1380,26 +1240,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
                         "select2d",
                         "lasso2d",
-                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d"
+                        "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "autoScale2d",
                         "fullscreen",
                         "toImage"
                     ],
-                },
+                }
             )
 
     elif eh_direcional:
@@ -1444,6 +1304,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             mensal_df["valor_pago_mes"] = mensal_df["valor_pago_mes"].fillna(0)
             mensal_df["qtd_parcelas"] = mensal_df["qtd_parcelas"].fillna(0)
 
+            mensal_df = mensal_df.reset_index(drop=True)
+            mensal_df["x_pos"] = range(len(mensal_df))
+
             hover_textos = [
                 (
                     f"<b>{mes}</b><br>"
@@ -1466,13 +1329,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             fig_mensal.add_trace(
                 go.Scatter(
-                    x=mensal_df["Mes"],
+                    x=mensal_df["x_pos"],
                     y=mensal_df["valor_pago_mes"],
                     mode="lines+markers+text",
                     name="Valor Pago",
                     text=textos,
                     textposition="top center",
-                    textfont={"size": 12},
+                    textfont={"size": 16},
+                    cliponaxis=False,
                     line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
                     marker={
                         "color": CORES_RESPONSAVEL["Pago"],
@@ -1497,7 +1361,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                xaxis=dict(tickangle=320),
+                xaxis=dict(
+                    tickangle=320,
+                    tickmode="array",
+                    tickvals=mensal_df["x_pos"].tolist(),
+                    ticktext=mensal_df["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(mensal_df) - 0.5)],
+                    fixedrange=False,
+                ),
             )
 
             st.plotly_chart(
@@ -1506,26 +1377,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
                         "select2d",
                         "lasso2d",
-                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d"
+                        "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "autoScale2d",
                         "fullscreen",
                         "toImage"
                     ],
-                },
+                }
             )
 
     elif eh_financiamento_caixa:
@@ -1570,6 +1441,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             mensal_df["valor_pago_mes"] = mensal_df["valor_pago_mes"].fillna(0)
             mensal_df["qtd_parcelas"] = mensal_df["qtd_parcelas"].fillna(0)
 
+            mensal_df = mensal_df.reset_index(drop=True)
+            mensal_df["x_pos"] = range(len(mensal_df))
+
             hover_textos = [
                 (
                     f"<b>{mes}</b><br>"
@@ -1592,13 +1466,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             fig_mensal.add_trace(
                 go.Scatter(
-                    x=mensal_df["Mes"],
+                    x=mensal_df["x_pos"],
                     y=mensal_df["valor_pago_mes"],
                     mode="lines+markers+text",
                     name="Valor Pago",
                     text=textos,
                     textposition="top center",
-                    textfont={"size": 12},
+                    textfont={"size": 16},
+                    cliponaxis=False,
                     line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
                     marker={
                         "color": CORES_RESPONSAVEL["Pago"],
@@ -1623,7 +1498,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                xaxis=dict(tickangle=320),
+                xaxis=dict(
+                    tickangle=320,
+                    tickmode="array",
+                    tickvals=mensal_df["x_pos"].tolist(),
+                    ticktext=mensal_df["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(mensal_df) - 0.5)],
+                    fixedrange=False,
+                ),
             )
 
             st.plotly_chart(
@@ -1632,26 +1514,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
                         "select2d",
                         "lasso2d",
-                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d"
+                        "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "autoScale2d",
                         "fullscreen",
                         "toImage"
                     ],
-                },
+                }
             )
 
     elif eh_taxas_cartorio:
@@ -1690,6 +1572,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 .sort_values("mes_ordem")
             )
 
+            ordem_meses = ordem_meses.reset_index(drop=True)
+            ordem_meses["x_pos"] = range(len(ordem_meses))
+            mapa_x = dict(zip(ordem_meses["Mes"], ordem_meses["x_pos"]))
+
             fig_mensal = go.Figure()
 
             for responsavel in ["Compradores", "Corretora"]:
@@ -1706,6 +1592,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         on=["mes_ordem", "Mes"],
                         how="left"
                     )
+
+                    df_resp["x_pos"] = df_resp["Mes"].map(mapa_x)
                     df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
                     df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
                 else:
@@ -1720,6 +1608,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         on=["mes_ordem", "Mes"],
                         how="left"
                     )
+
+                    df_resp["x_pos"] = df_resp["Mes"].map(mapa_x)
                     df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
                     df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
 
@@ -1743,13 +1633,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 fig_mensal.add_trace(
                     go.Scatter(
-                        x=df_resp["Mes"],
+                        x=df_resp["x_pos"],
                         y=df_resp["total_pago"],
                         mode="lines+markers+text",
                         name=responsavel,
                         text=textos,
                         textposition="top center",
-                        textfont={"size": 12},
+                        textfont={"size": 16},
+                        cliponaxis=False,
                         line={"color": CORES_RESPONSAVEL.get(responsavel, "#999999"), "width": 3},
                         marker={
                             "color": CORES_RESPONSAVEL.get(responsavel, "#999999"),
@@ -1774,7 +1665,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                xaxis=dict(tickangle=320),
+                xaxis=dict(
+                    tickangle=320,
+                    tickmode="array",
+                    tickvals=ordem_meses["x_pos"].tolist(),
+                    ticktext=ordem_meses["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
+                    fixedrange=False,
+                ),
             )
 
             st.plotly_chart(
@@ -1783,26 +1681,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
                         "select2d",
                         "lasso2d",
-                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d"
+                        "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "autoScale2d",
                         "fullscreen",
                         "toImage"
                     ],
-                },
+                }
             )
 
     elif eh_evolucao_obra:
@@ -1832,6 +1730,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
 
+            mensal_df = mensal_df.reset_index(drop=True)
+            mensal_df["x_pos"] = range(len(mensal_df))
+
             textos = [
                 str(int(qtd)) if qtd > 0 else ""
                 for qtd in mensal_df["qtd_parcelas"]
@@ -1854,13 +1755,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
             fig_mensal.add_trace(
                 go.Scatter(
-                    x=mensal_df["Mes"],
+                    x=mensal_df["x_pos"],
                     y=mensal_df["total_pago"],
                     mode="lines+markers+text",
                     name="Pago",
                     text=textos,
                     textposition="top center",
-                    textfont={"size": 12},
+                    textfont={"size": 16},
+                    cliponaxis=False,
                     line={"color": CORES_RESPONSAVEL["Pago"], "width": 3},
                     marker={
                         "color": CORES_RESPONSAVEL["Pago"],
@@ -1885,7 +1787,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                xaxis=dict(tickangle=320),
+                xaxis=dict(
+                    tickangle=320,
+                    tickmode="array",
+                    tickvals=mensal_df["x_pos"].tolist(),
+                    ticktext=mensal_df["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(mensal_df) - 0.5)],
+                    fixedrange=False,
+                ),
             )
 
             st.plotly_chart(
@@ -1894,26 +1803,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
                         "select2d",
                         "lasso2d",
-                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d"
+                        "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "autoScale2d",
                         "fullscreen",
                         "toImage"
                     ],
-                },
+                }
             )
 
     else:
@@ -1957,6 +1866,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 .sort_values("mes_ordem")
             )
 
+            ordem_meses = ordem_meses.reset_index(drop=True)
+            ordem_meses["x_pos"] = range(len(ordem_meses))
+            mapa_x = dict(zip(ordem_meses["Mes"], ordem_meses["x_pos"]))
+
             fig_mensal = go.Figure()
 
             for responsavel in ["Compradores", "Corretora"]:
@@ -1973,6 +1886,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     how="left"
                 )
 
+                df_resp["x_pos"] = df_resp["Mes"].map(mapa_x)
                 df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
                 df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
 
@@ -1996,13 +1910,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
                 fig_mensal.add_trace(
                     go.Scatter(
-                        x=df_resp["Mes"],
+                        x=df_resp["x_pos"],
                         y=df_resp["total_pago"],
                         mode="lines+markers+text",
                         name=responsavel,
                         text=textos,
                         textposition="top center",
-                        textfont={"size": 12},
+                        textfont={"size": 16},
+                        cliponaxis=False,
                         line={"color": CORES_RESPONSAVEL.get(responsavel, "#999999"), "width": 3},
                         marker={
                             "color": CORES_RESPONSAVEL.get(responsavel, "#999999"),
@@ -2027,7 +1942,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 xaxis_title="Mês do Pagamento",
                 yaxis_title="Valor Pago",
                 legend_title_text="",
-                xaxis=dict(tickangle=320),
+                xaxis=dict(
+                    tickangle=320,
+                    tickmode="array",
+                    tickvals=ordem_meses["x_pos"].tolist(),
+                    ticktext=ordem_meses["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
+                    fixedrange=False,
+                ),
             )
 
             st.plotly_chart(
@@ -2036,144 +1958,35 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 config={
                     "displayModeBar": True,
                     "displaylogo": False,
-                    "scrollZoom": True,
+                    "scrollZoom": False,
                     "doubleClick": False,
                     "modeBarButtonsToRemove": [
                         "zoom2d",
                         "pan2d",
                         "select2d",
                         "lasso2d",
-                        "resetScale2d",
                         "toggleSpikelines",
                         "hoverClosestCartesian",
                         "hoverCompareCartesian",
                         "zoomIn2d",
-                        "zoomOut2d"
+                        "zoomOut2d",
+                        "autoScale2d",
+                        "resetScale2d",
                     ],
                     "modeBarButtonsToAdd": [
-                        "autoScale2d",
                         "fullscreen",
                         "toImage"
                     ],
-                },
+                }
             )
 
     # =========================================================
     # GRÁFICO DE PIZZA
     # =========================================================
     if not eh_evolucao_obra:
-        _titulo_centralizado("Distribuição dos Valores", nivel=3)
+        _titulo_centralizado("Distribuição dos Valores")
 
-        if eh_todos:
-            base_pizza = parcelas_contrato.copy()
-            if "serie" in base_pizza.columns:
-                base_pizza["serie"] = base_pizza["serie"].astype(str).str.strip()
-
-            base_pizza["pago_calc"] = base_pizza["status"].astype(str).str.lower().eq("pago")
-            mask_direcional = base_pizza["contrato"].astype(str).str.strip().str.lower() == contrato_direcional
-            if mask_direcional.any():
-                base_pizza.loc[mask_direcional, "pago_calc"] = base_pizza.loc[mask_direcional].apply(
-                    _eh_parcela_direcional_paga, axis=1
-                )
-
-            base_pizza["pendente_calc"] = ~base_pizza["pago_calc"]
-
-            pago_registro = _to_numeric_brl(base_pizza.loc[
-                (base_pizza["contrato"] == CONTRATO_TAXAS)
-                & (base_pizza["pago_calc"]),
-                "valor_pago",
-            ]).sum()
-
-            pendente_registro = _to_numeric_brl(base_pizza.loc[
-                (base_pizza["contrato"] == CONTRATO_TAXAS)
-                & (base_pizza["pendente_calc"]),
-                "valor_total",
-            ]).sum()
-
-            pago_entrada = _to_numeric_brl(base_pizza.loc[
-                (base_pizza["contrato"] == CONTRATO_DIRECIONAL)
-                & (base_pizza["pago_calc"]),
-                "valor_pago",
-            ]).sum()
-
-            pendente_entrada = _to_numeric_brl(base_pizza.loc[
-                (base_pizza["contrato"] == CONTRATO_DIRECIONAL)
-                & (base_pizza["pendente_calc"]),
-                "valor_total",
-            ]).sum()
-
-            grupos = []
-
-            if pago_registro > 0:
-                grupos.append({"grupo": "Pago Registro", "valor": pago_registro})
-
-            if pendente_registro > 0:
-                grupos.append({"grupo": "Pendente Registro", "valor": pendente_registro})
-
-            if pago_entrada > 0:
-                grupos.append({"grupo": "Pago Entrada", "valor": pago_entrada})
-
-            if pendente_entrada > 0:
-                grupos.append({"grupo": "Pendente Entrada", "valor": pendente_entrada})
-
-            resp_df = pd.DataFrame(grupos)
-
-            if not resp_df.empty:
-                fig_resp = px.pie(
-                    resp_df,
-                    names="grupo",
-                    values="valor",
-                    color="grupo",
-                    color_discrete_map={
-                        "Pago Registro": CORES_CONTRATO["Pago Registro"],
-                        "Pendente Registro": CORES_CONTRATO["Pendente Registro"],
-                        "Pago Entrada": CORES_CONTRATO["Pago Entrada"],
-                        "Pendente Entrada": CORES_CONTRATO["Pendente Entrada"],
-                    },
-                )
-
-                _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
-
-                fig_resp.update_traces(
-                    hovertemplate="%{label}<br>%{customdata}<extra></extra>",
-                    customdata=[[brl(v)] for v in resp_df["valor"]]
-                )
-
-                fig_mensal.update_layout(
-                    dragmode="pan",
-                    hovermode="x unified",
-                    xaxis_title="Mês do Pagamento",
-                    yaxis_title="Valor Pago",
-                    legend_title_text="",
-                    xaxis=dict(tickangle=320),
-                )
-
-                st.plotly_chart(
-                    fig_resp,
-                    use_container_width=True,
-                    config={
-                        "displayModeBar": True,
-                        "displaylogo": False,
-                        "scrollZoom": True,
-                        "doubleClick": False,
-                        "modeBarButtonsToRemove": [
-                            "zoom2d",
-                            "pan2d",
-                            "select2d",
-                            "lasso2d",
-                            "autoScale2d",
-                            "toggleSpikelines",
-                            "zoomIn2d",
-                            "zoomOut2d"
-                        ],
-                        "modeBarButtonsToAdd": [
-                            "toImage",
-                            "fullscreen"
-                        ],
-                    },
-                )
-
-        elif eh_taxas_cartorio:
+        if eh_taxas_cartorio:
             base_pizza = _filtrar_base_taxas_cartorio(parcelas_contrato, somente_compradores=False)
             base_pizza = _aplicar_regra_taxas_cartorio(base_pizza)
 
@@ -2233,22 +2046,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     customdata=[[brl(v)] for v in resp_df["valor"]]
                 )
 
-                fig_mensal.update_layout(
-                    dragmode="pan",
-                    hovermode="x unified",
-                    xaxis_title="Mês do Pagamento",
-                    yaxis_title="Valor Pago",
-                    legend_title_text="",
-                    xaxis=dict(tickangle=320),
-                )
-
                 st.plotly_chart(
                     fig_resp,
                     use_container_width=True,
                     config={
                         "displayModeBar": True,
                         "displaylogo": False,
-                        "scrollZoom": True,
+                        "scrollZoom": False,
                         "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
@@ -2258,13 +2062,16 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "autoScale2d",
                             "toggleSpikelines",
                             "zoomIn2d",
-                            "zoomOut2d"
+                            "zoomOut2d",
+                            "resetScale2d",
+                            "hoverClosestCartesian",
+                            "hoverCompareCartesian",
                         ],
                         "modeBarButtonsToAdd": [
-                            "toImage",
-                            "fullscreen"
+                            "fullscreen",
+                            "toImage"
                         ],
-                    },
+                    }
                 )
 
         else:
@@ -2289,21 +2096,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         "Pendente": CORES_RESPONSAVEL["Pendente"],
                     },
                 )
-                
+
                 _aplicar_estilo_legenda_abaixo(fig_resp, tipo="pizza")
 
                 fig_resp.update_traces(
                     hovertemplate="%{label}<br>%{customdata}<extra></extra>",
                     customdata=[[brl(v)] for v in resp_df["valor"]]
-                )
-
-                fig_mensal.update_layout(
-                    dragmode="pan",
-                    hovermode="x unified",
-                    xaxis_title="Mês do Pagamento",
-                    yaxis_title="Valor Pago",
-                    legend_title_text="",
-                    xaxis=dict(tickangle=320),
                 )
 
                 st.plotly_chart(
@@ -2312,7 +2110,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     config={
                         "displayModeBar": True,
                         "displaylogo": False,
-                        "scrollZoom": True,
+                        "scrollZoom": False,
                         "doubleClick": False,
                         "modeBarButtonsToRemove": [
                             "zoom2d",
@@ -2322,11 +2120,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             "autoScale2d",
                             "toggleSpikelines",
                             "zoomIn2d",
-                            "zoomOut2d"
+                            "zoomOut2d",
+                            "resetScale2d",
+                            "hoverClosestCartesian",
+                            "hoverCompareCartesian",
                         ],
                         "modeBarButtonsToAdd": [
-                            "toImage",
-                            "fullscreen"
+                            "fullscreen",
+                            "toImage"
                         ],
-                    },
+                    }
                 )
