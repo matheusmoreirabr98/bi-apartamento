@@ -795,13 +795,13 @@ def render_dashboard_todos(parcelas):
                     legend=dict(
                         orientation="h",
                         yanchor="top",
-                        y=-0.20,
+                        y=-0.28,
                         xanchor="center",
                         x=0.5,
                         traceorder="normal",
-                        font=dict(size=15),
+                        font=dict(size=12),
                     ),
-                    margin=dict(t=10, b=80, l=10, r=10)
+                    margin=dict(t=10, b=120, l=10, r=10)
                 )
 
             st.plotly_chart(
