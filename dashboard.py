@@ -88,7 +88,7 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.40,
+                y=-0.10,
                 xanchor="center",
                 x=0.5,
                 traceorder="normal",
@@ -96,7 +96,7 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
                 itemwidth=30,
                 title_text="",
             ),
-            margin=dict(t=40, b=80, l=10, r=10),
+            margin=dict(t=50, b=80, l=10, r=10),
         )
     else:
         fig.update_layout(
