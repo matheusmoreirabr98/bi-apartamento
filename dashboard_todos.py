@@ -780,7 +780,7 @@ def render_dashboard_todos(parcelas):
                     traceorder="normal",
                     font=dict(size=15),
                 ),
-                margin=dict(t=5, b=50, l=10, r=10),
+                margin=dict(t=5, b=140, l=10, r=10),
             )
 
             st.plotly_chart(
@@ -886,7 +886,7 @@ def render_dashboard_todos(parcelas):
                 yaxis=dict(
                     fixedrange=True,
                 ),
-                margin=dict(t=35, b=40, l=10, r=10),
+                margin=dict(t=35, b=10, l=10, r=10),
             )
 
             st.plotly_chart(
