@@ -769,7 +769,7 @@ def render_dashboard_todos(parcelas):
                     x=0.5,
                     traceorder="normal",
                 ),
-                margin=dict(b=140),
+                margin=dict(t=5, b=140, l=10, r=10),  # 👈 DIMINUIR ESSE T
             )
 
             st.plotly_chart(
@@ -855,6 +855,7 @@ def render_dashboard_todos(parcelas):
                 yaxis_title="Valor Pago",
                 showlegend=False,
                 hovermode="x unified",
+                margin=dict(t=5, b=40, l=10, r=10),
             )
 
             st.plotly_chart(
@@ -945,7 +946,7 @@ def render_dashboard_todos(parcelas):
                 font=dict(size=9),
                 itemwidth=70,
             ),
-            margin=dict(b=190),
+            margin=dict(t=5, b=190, l=10, r=10),
         )
 
         st.plotly_chart(fig_pizza, use_container_width=True)
