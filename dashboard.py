@@ -61,12 +61,16 @@ MAPA_MESES = {
 def _titulo_centralizado(texto, nivel=3):
     st.markdown(
         f"""
-        <h{nivel} style="
-            text-align:center;
-            width:100%;
-            display:block;
-            margin: 0.8rem 0 1rem 0;
-        ">{texto}</h{nivel}>
+        <div style="
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 25px 0 12px 0;
+            width: 100%;
+            display: block;
+        ">
+            {texto}
+        </div>
         """,
         unsafe_allow_html=True,
     )
