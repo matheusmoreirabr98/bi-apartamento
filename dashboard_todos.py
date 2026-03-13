@@ -748,9 +748,12 @@ def render_dashboard_todos(parcelas):
                     )
                 )
 
+            valor_max = float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000
+            valor_max = min(valor_max, 3000)
+
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
+                valor_max,
                 1000,
             )
 
@@ -764,7 +767,7 @@ def render_dashboard_todos(parcelas):
                 legend=dict(
                     orientation="h",
                     yanchor="top",
-                    y=-0.10,
+                    y=-0.40,
                     xanchor="center",
                     x=0.5,
                     traceorder="normal",
