@@ -85,6 +85,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     colunas_existentes = [col for col in colunas_show if col in parc_f.columns]
     parc_show = parc_f[colunas_existentes].copy()
 
+    # formatacoes
     if "data_vencimento" in parc_show.columns:
         parc_show["data_vencimento"] = pd.to_datetime(
             parc_show["data_vencimento"], errors="coerce"
@@ -109,6 +110,18 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         parc_show["valor_pago"] = parc_show["valor_pago"].apply(
             lambda x: brl(x) if pd.notnull(x) else "-"
         )
+
+    # renomear colunas
+    parc_show = parc_show.rename(columns={
+        "descricao_parcela": "Descrição da Parcela",
+        "numero_parcela": "Parcela",
+        "total_parcelas": "Total",
+        "data_vencimento": "Vencimento",
+        "data_pagamento": "Pagamento",
+        "valor_principal": "Valor Principal",
+        "valor_total": "Valor Total",
+        "valor_pago": "Valor Pago",
+    })
 
     st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
