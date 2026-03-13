@@ -162,21 +162,23 @@ if not parcelas.empty and "contrato" in parcelas.columns:
 
     opcoes_contrato.extend(contratos_restantes)
 
-# contrato padrão: Todos os Contratos
+# contrato padrão: Diferença
 contrato_padrao = (
-    CONTRATO_TODOS
-    if CONTRATO_TODOS in opcoes_contrato
-    else (opcoes_contrato[0] if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else "Sem dados")
-)
-
-indice_padrao = 0
-if contrato_padrao in opcoes_contrato:
-    indice_padrao = opcoes_contrato.index(contrato_padrao)
-
-contrato_selecionado = st.selectbox(
-    "Selecione o contrato",
-    options=opcoes_contrato,
-    index=indice_padrao if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else 0,
+    "Todos os Contratos"
+    if "Todos os Contratos" in opcoes_contrato
+    else (
+        "Todos os Contratos"
+        if "Todos os Contratos" in opcoes_contrato
+        else (
+            CONTRATO_DIRECIONAL
+            if CONTRATO_DIRECIONAL in opcoes_contrato
+            else (
+                CONTRATO_TAXAS
+                if CONTRATO_TAXAS in opcoes_contrato
+                else (opcoes_contrato[0] if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else "Sem dados")
+            )
+        )
+    )
 )
 
 indice_padrao = 0
