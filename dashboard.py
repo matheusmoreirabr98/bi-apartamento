@@ -114,29 +114,8 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
         )
 
 
-def _render_barra_progresso_custom(progresso_pct, cor=None):
+def _render_barra_progresso_custom(progresso_pct):
     progresso_pct = max(0.0, min(float(progresso_pct or 0), 100.0))
-
-    if cor is None:
-        cor = "#23d400"
-        if progresso_pct < 10:
-            cor = "#e51313"
-        elif progresso_pct < 20:
-            cor = "#d400a2"
-        elif progresso_pct < 30:
-            cor = "#c200d4"
-        elif progresso_pct < 40:
-            cor = "#7500d4"
-        elif progresso_pct < 50:
-            cor = "#0700d4"
-        elif progresso_pct < 60:
-            cor = "#00b8d4"
-        elif progresso_pct < 70:
-            cor = "#d4b800"
-        elif progresso_pct < 80:
-            cor = "#cdd400"
-        elif progresso_pct < 99:
-            cor = "#6dd400"
 
     texto_interno = f"{progresso_pct:.2f}%"
 
