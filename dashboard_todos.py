@@ -955,11 +955,23 @@ def render_dashboard_todos(parcelas):
     else:
         pizza_df = pizza_df.sort_values("ordem").reset_index(drop=True)
 
+        COR_PENDENTE_PIZZA = "#d4d4d4"
+
+        color_map_pizza = {}
+
+        for contrato in ORDEM_CONTRATOS:
+            label_curto = _label_pizza(contrato)
+
+            color_map_pizza[f"{label_curto} Pago"] = CORES_CONTRATO.get(contrato, COR_TODOS)
+            color_map_pizza[f"{label_curto} Pend."] = COR_PENDENTE_PIZZA
+
         fig_pizza = px.pie(
             pizza_df,
             names="grupo",
             values="valor",
             category_orders={"grupo": pizza_df["grupo"].tolist()},
+            color="grupo",
+            color_discrete_map=color_map_pizza,
         )
 
         fig_pizza.update_traces(
