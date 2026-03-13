@@ -699,6 +699,15 @@ def render_dashboard_todos(parcelas):
                 yaxis_title="Valor Pago",
                 legend_title_text="",
                 xaxis=dict(tickangle=320),
+                legend=dict(
+                    orientation="h",
+                    yanchor="top",
+                    y=-0.28,
+                    xanchor="center",
+                    x=0.5,
+                    traceorder="normal",
+                ),
+                margin=dict(b=140),
             )
 
             st.plotly_chart(
