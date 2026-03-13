@@ -995,13 +995,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=3)
 
         render_cards_grid([
-            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
-        ], cols=1)
-
-        render_cards_grid([
             card_html("Valor Pago - Compradores", brl(total_pago_compradores), small=True),
             card_html("Valor Pago - Corretora", brl(total_pago_corretora), small=True),
         ], cols=2)
+
+        render_cards_grid([
+            card_html("Desconto Obtido", brl(total_desconto_obtido), small=True),
+        ], cols=1)
 
         render_cards_grid([
             card_html("Parcelas Pagas", str(total_pago_qtd), small=True),
@@ -1321,6 +1321,16 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     ):
         coluna_responsavel = "responsavel_pagamento"
 
+    if coluna_responsavel:
+        mensal_df = (
+            evolucao_pago.groupby(["mes_ordem", coluna_responsavel], as_index=False)
+            .agg(
+                total_pago=("valor_pago_num", "sum"),
+                qtd_parcelas=("valor_pago_num", "size"),
+            )
+            .sort_values(["mes_ordem", coluna_responsavel])
+        )
+
         ordem_meses = (
             mensal_df[["mes_ordem"]]
             .drop_duplicates()
@@ -1345,6 +1355,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 ordem_meses_resp = ordem_meses.copy()
 
             df_resp = ordem_meses_resp.merge(df_resp, on="mes_ordem", how="left")
+            df_resp["Mes"] = ordem_meses_resp["Mes"].values
+            df_resp["x_pos"] = ordem_meses_resp["x_pos"].values
             df_resp["total_pago"] = df_resp["total_pago"].fillna(0)
             df_resp["qtd_parcelas"] = df_resp["qtd_parcelas"].fillna(0)
 
@@ -1367,7 +1379,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
             ]
 
-            cor_linha = cor_contrato_atual if responsavel == "Compradores" else "#ef4444"
+            cor_linha = cor_contrato_atual if responsavel == "Compradores" else COR_PAGO_CORRETORA
 
             fig_mensal.add_trace(
                 go.Scatter(
