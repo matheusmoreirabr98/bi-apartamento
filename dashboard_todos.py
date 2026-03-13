@@ -956,7 +956,7 @@ def render_dashboard_todos(parcelas):
                 xanchor="center",
                 x=0.5,
                 traceorder="normal",
-                font=dict(size=12),
+                font=dict(size=16),
                 itemwidth=30,
             ),
             margin=dict(t=35, b=190, l=10, r=10),
