@@ -1074,8 +1074,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=1)
 
         render_cards_grid([
-            card_html("Pagamento Compradores", brl(total_pago_compradores), small=True),
-            card_html("Pagamento Corretora", brl(total_pago_corretora), small=True),
+            card_html("Pago Compradores", brl(total_pago_compradores), small=True),
+            card_html("Pago Corretora", brl(total_pago_corretora), small=True),
         ], cols=2)
 
         render_cards_grid([
