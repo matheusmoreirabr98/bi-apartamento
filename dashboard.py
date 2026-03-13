@@ -110,7 +110,7 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
                 font=dict(size=15),
                 title_text="",
             ),
-            margin=dict(t=5, b=140, l=10, r=10),
+            margin=dict(t=10, b=140, l=10, r=10),
         )
 
 
