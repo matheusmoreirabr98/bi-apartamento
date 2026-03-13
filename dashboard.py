@@ -253,7 +253,7 @@ def _cor_por_contrato(valor_contrato):
 
     return "#185bc7"
 
-COR_PENDENTE_GRAFICO = "#c2c2c2"
+COR_PENDENTE_GRAFICO = CORES_RESPONSAVEL["Pendente"]
 COR_PAGO_CORRETORA = "#ef4444"
 
 def _render_mensagem_contrato_encerrado(texto, cor):
