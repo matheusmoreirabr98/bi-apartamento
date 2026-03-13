@@ -51,6 +51,35 @@ CORES_GRAFICO = {
     "Financiamento Caixa": "#ef4444",
 }
 
+def inject_styles():
+    st.markdown("""
+    <style>
+    /* força as colunas a continuarem na mesma linha no mobile */
+    @media (max-width: 768px) {
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 0.5rem !important;
+        }
+
+        div[data-testid="column"] {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+        }
+
+        .metric-card {
+            padding: 8px !important;
+        }
+
+        .metric-card h3,
+        .metric-card p,
+        .metric-card div {
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 def _contrato_label(valor):
     nome = str(valor).strip()
