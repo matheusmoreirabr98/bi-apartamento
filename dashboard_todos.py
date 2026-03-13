@@ -496,18 +496,18 @@ def _proximas_parcelas(df):
         else:
             parcela_txt.append("-")
 
-        valores_exibicao = []
-        valores_numericos = []
+    valores_exibicao = []
+    valores_numericos = []
 
-        for _, row in proximas.iterrows():
-            valor_num = float(row.get("valor_total_calc", 0) or 0)
+    for _, row in proximas.iterrows():
+        valor_num = float(row.get("valor_total_calc", 0) or 0)
 
-            if str(row.get("contrato", "")).strip() == "Evolução de Obra" and valor_num == 0:
-                valores_exibicao.append("A definir")
-                valores_numericos.append(0.0)
-            else:
-                valores_exibicao.append(brl(valor_num))
-                valores_numericos.append(valor_num)
+        if str(row.get("contrato", "")).strip() == "Evolução de Obra" and valor_num == 0:
+            valores_exibicao.append("A definir")
+            valores_numericos.append(0.0)
+        else:
+            valores_exibicao.append(brl(valor_num))
+            valores_numericos.append(valor_num)
 
     vencimentos_exibicao = []
     for _, row in proximas.iterrows():
@@ -646,9 +646,10 @@ def render_dashboard_todos(parcelas):
                 card_html("Valor", valor_exibicao, small=True),
                 card_html("Vencimento", vencimento_exibicao, small=True),
             )
-            render_cards_grid([
-                card_html("Total Próximas Parcelas", brl(total_proximas_parcelas), small=True),
-            ], cols=1)
+
+        render_cards_grid([
+            card_html("Total Próximas Parcelas", brl(total_proximas_parcelas), small=True),
+        ], cols=1)
 
     # =========================================================
     # EVOLUÇÃO POR MÊS - POR CONTRATO
