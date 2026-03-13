@@ -52,15 +52,23 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     if eh_taxas and resp_filtro != "Todos" and "responsavel_pagamento" in parc_f.columns:
         parc_f = parc_f[parc_f["responsavel_pagamento"] == resp_filtro]
 
-    status_filtro_real = STATUS_MAP_FILTRO.get(status_filtro)
-    if status_filtro_real and "status_exibicao" in parc_f.columns:
-        parc_f = parc_f[parc_f["status_exibicao"] == status_filtro_real]
+    if "status_exibicao" in parc_f.columns:
+        parc_f["status_exibicao"] = (
+            parc_f["status_exibicao"]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+        )
 
-    colunas_ordenacao = [c for c in ["status_ordem", "data_vencimento", "numero_parcela"] if c in parc_f.columns]
-    if colunas_ordenacao:
-        parc_f = parc_f.sort_values(colunas_ordenacao).copy()
-    else:
-        parc_f = parc_f.copy()
+    st.write("Status selecionado:", status_filtro)
+    st.write("Status real:", status_filtro_real)
+    st.write("Valores únicos status_exibicao:", parc_f["status_exibicao"].unique())
+
+    status_filtro_real = STATUS_MAP_FILTRO.get(status_filtro)
+    if status_filtro != "Todos" and status_filtro_real and "status_exibicao" in parc_f.columns:
+        parc_f = parc_f[
+            parc_f["status_exibicao"] == str(status_filtro_real).strip().lower()
+        ]
 
     # =========================================================
     # TABELA
