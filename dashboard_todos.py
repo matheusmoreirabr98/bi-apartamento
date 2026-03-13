@@ -958,25 +958,25 @@ def render_dashboard_todos(parcelas):
         COR_PENDENTE_PIZZA = "#d4d4d4"
 
         color_map_pizza = {}
-
         for contrato in ORDEM_CONTRATOS:
             label_curto = _label_pizza(contrato)
-
             color_map_pizza[f"{label_curto} Pago"] = CORES_CONTRATO.get(contrato, COR_TODOS)
             color_map_pizza[f"{label_curto} Pend."] = COR_PENDENTE_PIZZA
 
-        fig_pizza = px.pie(
-            pizza_df,
-            names="grupo",
-            values="valor",
-            category_orders={"grupo": pizza_df["grupo"].tolist()},
-            color="grupo",
-            color_discrete_map=color_map_pizza,
-        )
+        pizza_df["cor"] = pizza_df["grupo"].map(color_map_pizza)
 
-        fig_pizza.update_traces(
-            hovertemplate="Valor: %{customdata}<extra></extra>",
-            customdata=[brl(v) for v in pizza_df["valor"]],
+        fig_pizza = go.Figure(
+            data=[
+                go.Pie(
+                    labels=pizza_df["grupo"],
+                    values=pizza_df["valor"],
+                    marker=dict(colors=pizza_df["cor"]),
+                    sort=False,
+                    direction="clockwise",
+                    customdata=[brl(v) for v in pizza_df["valor"]],
+                    hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
+                )
+            ]
         )
 
         fig_pizza.update_layout(
