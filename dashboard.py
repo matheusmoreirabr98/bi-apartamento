@@ -1576,7 +1576,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color="grupo",
                     color_discrete_map={
                         "Valor Pago (Compradores)": cor_contrato_atual,
-                        "Valor Pendente (Compradores)": "#bdbdbd",
+                        "Valor Pendente (Compradores)": "#1aff00",
                         "Valor Pago (Corretora)": "#ef4444",
                         "Valor Pendente (Corretora)": "#bdbdbd",
                     }
