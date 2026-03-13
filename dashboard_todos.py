@@ -849,8 +849,9 @@ def render_dashboard_todos(parcelas):
                     x=valor_mes_df["x_pos"],
                     y=valor_mes_df["valor_pago_mes"],
                     customdata=valor_mes_df["hover_resumo"],
-                    hovertemplate="<b>%{x}</b><br>%{customdata}<br><b>Total do Mês:</b> %{text}<extra></extra>",
+                    hovertemplate="<b>%{x}</b><br>%{customdata}<br><b>Total do Mês:</b> %{y:$,.2f}<extra></extra>",
                     name="Valor Pago",
+                    marker=dict(color="#f40ae4"),
                 )
             )
 
