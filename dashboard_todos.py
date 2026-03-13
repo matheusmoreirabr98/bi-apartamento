@@ -766,7 +766,7 @@ def render_dashboard_todos(parcelas):
                 xaxis=dict(
                     tickangle=320,
                     range=[-0.5, len(ordem_meses) - 0.5]
-                )
+                ),
                 legend=dict(
                     orientation="h",
                     yanchor="top",
