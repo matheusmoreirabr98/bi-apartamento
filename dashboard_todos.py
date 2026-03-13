@@ -42,6 +42,8 @@ ORDEM_PROXIMAS = [
     "Financiamento Caixa",
 ]
 
+COR_TODOS = "#f40ae4"
+
 def _titulo_centralizado(texto):
     st.markdown(
         f"""
@@ -575,7 +577,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # CARDS GERAIS
     # =========================================================
-    _render_barra_progresso_custom(conclusao_total, cor="#f40ae4")
+    _render_barra_progresso_custom(conclusao_total, cor=COR_TODOS)
 
     render_cards_grid([
         card_html("Pagamento Total", brl(pagamento_total), small=True),
@@ -842,16 +844,18 @@ def render_dashboard_todos(parcelas):
 
             valor_mes_df["hover_resumo"] = valor_mes_df["mes_ordem"].map(resumo_hover_mes)
 
+            valor_mes_df["valor_pago_fmt"] = valor_mes_df["valor_pago_mes"].apply(brl)
+
             fig_valor_mes = go.Figure()
 
             fig_valor_mes.add_trace(
                 go.Bar(
                     x=valor_mes_df["x_pos"],
                     y=valor_mes_df["valor_pago_mes"],
-                    customdata=valor_mes_df["hover_resumo"],
-                    hovertemplate="<b>%{x}</b><br>%{customdata}<br><b>Total do Mês:</b> %{y:$,.2f}<extra></extra>",
+                    customdata=list(zip(valor_mes_df["hover_resumo"], valor_mes_df["valor_pago_fmt"])),
+                    hovertemplate="<b>%{x}</b><br>%{customdata[0]}<br><b>Total do Mês:</b> %{customdata[1]}<extra></extra>",
                     name="Valor Pago",
-                    marker=dict(color="#f40ae4"),
+                    marker=dict(color=COR_TODOS),
                 )
             )
 
