@@ -500,11 +500,23 @@ def _proximas_parcelas(df):
     valores_numericos = []
 
     for _, row in proximas.iterrows():
+        contrato_nome = str(row.get("contrato", "")).strip()
         valor_num = float(row.get("valor_total_calc", 0) or 0)
 
-        if str(row.get("contrato", "")).strip() == "Evolução de Obra" and valor_num == 0:
+        if contrato_nome == "Evolução de Obra":
             valores_exibicao.append("A definir")
             valores_numericos.append(0.0)
+
+        elif contrato_nome == "Financiamento Caixa":
+            regime_iniciado = bool(row.get("regime_iniciado", False))
+
+            if regime_iniciado:
+                valores_exibicao.append(brl(valor_num))
+                valores_numericos.append(valor_num)
+            else:
+                valores_exibicao.append("A definir")
+                valores_numericos.append(0.0)
+
         else:
             valores_exibicao.append(brl(valor_num))
             valores_numericos.append(valor_num)
@@ -631,25 +643,21 @@ def render_dashboard_todos(parcelas):
         st.success("✅ Não há parcelas em aberto.")
     else:
         for _, row in proximas.iterrows():
-            if row["Contrato"] == "Evolução de Obra" and row["Valor"] == brl(0):
-                valor_exibicao = "A definir"
-            else:
-                valor_exibicao = row["Valor"]
+            valor_exibicao = row["Valor"]
+        if row["Contrato"] == "Financiamento Caixa" and str(row["Vencimento"]).strip() in ["-", "", "NaT"]:
+            vencimento_exibicao = "A definir"
+        else:
+            vencimento_exibicao = row["Vencimento"]
 
-            if row["Contrato"] == "Financiamento Caixa" and str(row["Vencimento"]).strip() in ["-", "", "NaT"]:
-                vencimento_exibicao = "A definir"
-            else:
-                vencimento_exibicao = row["Vencimento"]
+        _render_tres_cards_linha(
+            card_html(row["Contrato"], row["Parcela"], small=True),
+            card_html("Valor", valor_exibicao, small=True),
+            card_html("Vencimento", vencimento_exibicao, small=True),
+        )
 
-            _render_tres_cards_linha(
-                card_html(row["Contrato"], row["Parcela"], small=True),
-                card_html("Valor", valor_exibicao, small=True),
-                card_html("Vencimento", vencimento_exibicao, small=True),
-            )
-
-        render_cards_grid([
-            card_html("Total Próximas Parcelas", brl(total_proximas_parcelas), small=True),
-        ], cols=1)
+    render_cards_grid([
+        card_html("Total Próximas Parcelas", brl(total_proximas_parcelas), small=True),
+    ], cols=1)
 
     # =========================================================
     # EVOLUÇÃO POR MÊS - POR CONTRATO
