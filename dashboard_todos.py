@@ -55,29 +55,33 @@ def inject_styles():
     st.markdown("""
     <style>
     @media (max-width: 768px) {
-        div[data-testid="stHorizontalBlock"] {
-            display: flex !important;
-            flex-wrap: nowrap !important;
-            gap: 0.25rem !important;
+        .cards-row-3 {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
-        div[data-testid="column"] {
-            flex: 1 1 0 !important;
-            min-width: 0 !important;
-            width: 0 !important;
-            padding: 0 !important;
+        .cards-row-3 > div {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: calc((100% - 12px) / 3);
+            box-sizing: border-box;
         }
 
-        .metric-card {
-            padding: 6px !important;
-            margin: 0 !important;
+        .cards-row-3 .metric-card {
             width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 6px !important;
             box-sizing: border-box !important;
         }
 
-        .metric-card h3,
-        .metric-card p,
-        .metric-card div {
+        .cards-row-3 .metric-card h3,
+        .cards-row-3 .metric-card p,
+        .cards-row-3 .metric-card div {
             word-break: break-word !important;
             overflow-wrap: break-word !important;
         }
@@ -106,13 +110,16 @@ def _ordem_contrato(nome):
         return 999
 
 def _render_tres_cards_linha(card1, card2, card3):
-    c1, c2, c3 = st.columns([1, 1, 1], gap="small")
-    with c1:
-        st.markdown(card1, unsafe_allow_html=True)
-    with c2:
-        st.markdown(card2, unsafe_allow_html=True)
-    with c3:
-        st.markdown(card3, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="cards-row-3">
+            <div>{card1}</div>
+            <div>{card2}</div>
+            <div>{card3}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _normalizar_contrato(df):
