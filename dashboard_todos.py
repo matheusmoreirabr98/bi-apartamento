@@ -747,6 +747,7 @@ def render_dashboard_todos(parcelas):
                         text=textos,
                         textposition="top center",
                         textfont={"size": 12},
+                        cliponaxis=False,
                         line={"width": 3, **({"color": cor} if cor else {})},
                         marker={"size": 9, **({"color": cor} if cor else {})},
                         hovertemplate="%{customdata}<extra></extra>",
@@ -754,14 +755,15 @@ def render_dashboard_todos(parcelas):
                     )
                 )
 
-            valor_max = float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000
-            valor_max = min(valor_max, 3000)
+                valor_max_dados = float(mensal_df["total_pago"].max()) if not mensal_df.empty else 1000
+                valor_max_grafico = max(valor_max_dados * 1.15, 3300)
 
-            _configurar_eixo_y_valor(
-                fig_mensal,
-                valor_max,
-                1000,
-            )
+                fig_mensal.update_yaxes(
+                    range=[0, valor_max_grafico],
+                    tickmode="array",
+                    tickvals=[0, 1000, 2000, 3000],
+                    ticktext=["0", "1k", "2k", "3k"],
+                )
 
             fig_mensal.update_layout(
                 dragmode="pan",
@@ -857,12 +859,6 @@ def render_dashboard_todos(parcelas):
                     hovertemplate="<b>%{x}</b><br>%{customdata}<br><b>Total do Mês:</b> %{text}<extra></extra>",
                     name="Valor Pago",
                 )
-            )
-
-            _configurar_eixo_y_valor(
-                fig_valor_mes,
-                float(valor_mes_df["valor_pago_mes"].max()) * 1.2 if not valor_mes_df.empty else 1000,
-                1000,
             )
 
             fig_valor_mes.update_layout(
