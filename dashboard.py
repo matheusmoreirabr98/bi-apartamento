@@ -22,13 +22,13 @@ CORES_RESPONSAVEL = {
 }
 
 CORES_CONTRATO = {
-    "Sinal": "#185bc7",
-    "Sinal Ato": "#4f7df0",
-    "Diferença": "#7a5af8",
-    "Evolução de Obra": "#e59a3f",
-    "Taxas Cartoriais": "#db8181",
-    "Entrada Direcional": "#d4c300",
-    "Financiamento Caixa": "#00b8d4",
+    "Sinal": "#a855f7",
+    "Sinal Ato": "#c084fc",
+    "Diferença": "#f59e0b",
+    "Evolução de Obra": "#06b6d4",
+    "Taxas Cartoriais": "#d4c300",
+    "Entrada Direcional": "#56c718",
+    "Financiamento Caixa": "#ef4444",
 }
 
 MAPA_MESES = {
