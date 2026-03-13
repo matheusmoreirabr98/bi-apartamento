@@ -1467,9 +1467,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color="grupo",
                     color_discrete_map={
                         "Valor Pago (Compradores)": cor_contrato_atual,
-                        "Valor Pendente (Compradores)": _hex_para_rgba_simples(cor_contrato_atual, 0.35),
-                        "Valor Pago (Corretora)": cor_contrato_atual,
-                        "Valor Pendente (Corretora)": _hex_para_rgba_simples(cor_contrato_atual, 0.20),
+                        "Valor Pendente (Compradores)": "#bdbdbd",
+                        "Valor Pago (Corretora)": "#ef4444",
+                        "Valor Pendente (Corretora)": "#bdbdbd",
                     }
                 )
 
@@ -1526,8 +1526,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     values="valor",
                     color="grupo",
                     color_discrete_map={
-                        "Pago": CORES_RESPONSAVEL["Pago"],
-                        "Pendente": CORES_RESPONSAVEL["Pendente"],
+                        "Pago": cor_contrato_atual,
+                        "Pendente": "#bdbdbd",
                     },
                 )
 
