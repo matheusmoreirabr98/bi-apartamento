@@ -21,6 +21,9 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     parc_f = parcelas_contrato.copy()
 
+    st.write("Total recebido:", len(parcelas_contrato))
+    st.write("Total após copy:", len(parc_f))
+
     # =========================================================
     # FILTROS
     # =========================================================
@@ -49,6 +52,8 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         if "responsavel_pagamento" in parc_f.columns:
             parc_f = parc_f[parc_f["responsavel_pagamento"] == "Compradores"]
 
+        st.write("Total após filtro direcional/taxas:", len(parc_f))
+
     if eh_taxas and resp_filtro != "Todos" and "responsavel_pagamento" in parc_f.columns:
         parc_f = parc_f[parc_f["responsavel_pagamento"] == resp_filtro]
 
@@ -61,9 +66,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         )
 
     status_filtro_real = STATUS_MAP_FILTRO.get(status_filtro)
-
-    if status_filtro != "Todos" and "status_exibicao" in parc_f.columns:
-        parc_f = parc_f[parc_f["status_exibicao"] == status_filtro_real]
 
     if status_filtro != "Todos" and status_filtro_real and "status_exibicao" in parc_f.columns:
         parc_f = parc_f[
@@ -219,8 +221,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
                 resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
             else:
                 resumo_base = parc_f.copy()
-                
-        st.write("Total de parcelas recebidas:", len(parcelas_contrato))
 
     if not resumo_base.empty and {"status_exibicao", "id", "valor_total"}.issubset(resumo_base.columns):
         st.markdown(
