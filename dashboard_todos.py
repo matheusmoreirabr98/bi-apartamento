@@ -496,12 +496,18 @@ def _proximas_parcelas(df):
         else:
             parcela_txt.append("-")
 
-    valores_exibicao = []
-    for _, row in proximas.iterrows():
-        if str(row.get("contrato", "")).strip() == "Evolução de Obra" and float(row.get("valor_total_calc", 0) or 0) == 0:
-            valores_exibicao.append("A definir")
-        else:
-            valores_exibicao.append(brl(row.get("valor_total_calc", 0)))
+        valores_exibicao = []
+        valores_numericos = []
+
+        for _, row in proximas.iterrows():
+            valor_num = float(row.get("valor_total_calc", 0) or 0)
+
+            if str(row.get("contrato", "")).strip() == "Evolução de Obra" and valor_num == 0:
+                valores_exibicao.append("A definir")
+                valores_numericos.append(0.0)
+            else:
+                valores_exibicao.append(brl(valor_num))
+                valores_numericos.append(valor_num)
 
     vencimentos_exibicao = []
     for _, row in proximas.iterrows():
@@ -517,6 +523,7 @@ def _proximas_parcelas(df):
         "Contrato": proximas["contrato"].astype(str),
         "Parcela": parcela_txt,
         "Valor": valores_exibicao,
+        "Valor_num": valores_numericos,
         "Vencimento": vencimentos_exibicao,
         "vencimento_ordem": venc,
     })
@@ -618,6 +625,7 @@ def render_dashboard_todos(parcelas):
     _titulo_centralizado("Próximas Parcelas")
 
     proximas = _proximas_parcelas(base_regras)
+    total_proximas_parcelas = float(proximas["Valor_num"].sum()) if not proximas.empty else 0.0
 
     if proximas.empty:
         st.success("✅ Não há parcelas em aberto.")
@@ -638,6 +646,9 @@ def render_dashboard_todos(parcelas):
                 card_html("Valor", valor_exibicao, small=True),
                 card_html("Vencimento", vencimento_exibicao, small=True),
             )
+            render_cards_grid([
+                card_html("Total Próximas Parcelas", brl(total_proximas_parcelas), small=True),
+            ], cols=1)
 
     # =========================================================
     # EVOLUÇÃO POR MÊS - POR CONTRATO
