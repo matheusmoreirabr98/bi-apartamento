@@ -48,6 +48,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 USUARIOS = {
     st.secrets["PASSWORD_ANA"]: "Ana Luiza",
     st.secrets["PASSWORD_MATHEUS"]: "Matheus Moreira",
+    st.secrets["PASSWORD_LEO"]: "Leo",
 }
 
 # =========================================================
