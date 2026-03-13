@@ -58,7 +58,7 @@ def _titulo_centralizado(texto):
             text-align: center;
             font-size: 20px;
             font-weight: 700;
-            margin: 12px 0 20px 0;
+            margin: 30px 0 20px 0;
             width: 100%;
             display: block;
         ">
@@ -605,7 +605,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # RESUMO POR CONTRATO
     # =========================================================
-    _titulo_centralizado("###Resumo por Contrato")
+    _titulo_centralizado("Resumo por Contrato")
 
     for _, row in resumo.iterrows():
         if row["contrato"] == "Evolução de Obra":
