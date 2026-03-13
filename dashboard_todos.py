@@ -713,12 +713,12 @@ def render_dashboard_todos(parcelas):
 
                 nome_legenda = {
                     "Sinal": "Sinal",
-                    "Sinal Ato": "S. Ato",
-                    "Diferença": "Dif.",
-                    "Evolução de Obra": "Evol.",
-                    "Taxas Cartoriais": "Taxas",
-                    "Entrada Direcional": "Entr. Dir.",
-                    "Financiamento Caixa": "Fin. Caixa",
+                    "Sinal Ato": "Sinal Ato",
+                    "Diferença": "Diferença",
+                    "Evolução de Obra": "Evol. Obra",
+                    "Taxas Cartoriais": "Taxas Cart.",
+                    "Entrada Direcional": "Entrada Dir.",
+                    "Financiamento Caixa": "Financ. Caixa",
                 }.get(contrato, contrato)
 
                 primeiro_mes = df_contrato["mes_ordem"].min()
