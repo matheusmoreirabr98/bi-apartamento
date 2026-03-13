@@ -1492,14 +1492,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # GRÁFICOS DE PIZZA
     # =========================================================
     if not eh_evolucao_obra:
-        _titulo_centralizado("Distribuição dos Valores Pagos")
+        _titulo_centralizado("Distribuição dos Valores")
 
         if eh_taxas_cartorio:
             base_pizza = _filtrar_base_taxas_cartorio(parcelas_contrato, somente_compradores=False)
             base_pizza = _aplicar_regra_taxas_cartorio(base_pizza)
 
-            grupos_pago = []
-            grupos_pendente = []
+            grupos = []
 
             valor_pago_compradores = _to_numeric_brl(base_pizza.loc[
                 (base_pizza["responsavel_calc"] == "Compradores")
@@ -1526,241 +1525,96 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             ]).sum()
 
             if valor_pago_compradores > 0:
-                grupos_pago.append({
-                    "grupo": "Compradores",
+                grupos.append({
+                    "grupo": "Pago - Compradores",
                     "valor": valor_pago_compradores,
                     "cor": cor_contrato_atual,
                 })
 
+            if valor_pendente_compradores > 0:
+                grupos.append({
+                    "grupo": "Pendente - Compradores",
+                    "valor": valor_pendente_compradores,
+                    "cor": "#9bdc8d",
+                })
+
             if valor_pago_corretora > 0:
-                grupos_pago.append({
-                    "grupo": "Corretora",
+                grupos.append({
+                    "grupo": "Pago - Corretora",
                     "valor": valor_pago_corretora,
                     "cor": COR_PAGO_CORRETORA,
                 })
 
-            if valor_pendente_compradores > 0:
-                grupos_pendente.append({
-                    "grupo": "Compradores",
-                    "valor": valor_pendente_compradores,
-                    "cor": cor_contrato_atual,
-                })
-
             if valor_pendente_corretora > 0:
-                grupos_pendente.append({
-                    "grupo": "Corretora",
+                grupos.append({
+                    "grupo": "Pendente - Corretora",
                     "valor": valor_pendente_corretora,
-                    "cor": COR_PAGO_CORRETORA,
+                    "cor": "#f5a3a3",
                 })
 
-            pago_df = pd.DataFrame(grupos_pago)
-            pendente_df = pd.DataFrame(grupos_pendente)
-
-            if not pago_df.empty:
-                fig_pago = go.Figure(
-                    data=[
-                        go.Pie(
-                            labels=pago_df["grupo"],
-                            values=pago_df["valor"],
-                            marker=dict(colors=pago_df["cor"]),
-                            sort=False,
-                            direction="clockwise",
-                            customdata=[brl(v) for v in pago_df["valor"]],
-                            hovertemplate="%{label}<br>Valor Pago: %{customdata}<extra></extra>",
-                        )
-                    ]
-                )
-
-                _aplicar_estilo_legenda_abaixo(fig_pago, tipo="pizza")
-                fig_pago.update_layout(height=320)
-
-                st.plotly_chart(
-                    fig_pago,
-                    use_container_width=True,
-                    config={
-                        "displayModeBar": True,
-                        "displaylogo": False,
-                        "scrollZoom": False,
-                        "doubleClick": False,
-                        "modeBarButtonsToRemove": [
-                            "zoom2d",
-                            "pan2d",
-                            "select2d",
-                            "lasso2d",
-                            "autoScale2d",
-                            "toggleSpikelines",
-                            "zoomIn2d",
-                            "zoomOut2d",
-                            "resetScale2d",
-                            "hoverClosestCartesian",
-                            "hoverCompareCartesian",
-                        ],
-                        "modeBarButtonsToAdd": [
-                            "fullscreen",
-                            "toImage"
-                        ],
-                    }
-                )
-
-            _titulo_centralizado("Distribuição dos Valores Pendentes")
-
-            if not pendente_df.empty:
-                fig_pendente = go.Figure(
-                    data=[
-                        go.Pie(
-                            labels=pendente_df["grupo"],
-                            values=pendente_df["valor"],
-                            marker=dict(colors=pendente_df["cor"]),
-                            sort=False,
-                            direction="clockwise",
-                            customdata=[brl(v) for v in pendente_df["valor"]],
-                            hovertemplate="%{label}<br>Valor Pendente: %{customdata}<extra></extra>",
-                        )
-                    ]
-                )
-
-                _aplicar_estilo_legenda_abaixo(fig_pendente, tipo="pizza")
-                fig_pendente.update_layout(height=320)
-
-                st.plotly_chart(
-                    fig_pendente,
-                    use_container_width=True,
-                    config={
-                        "displayModeBar": True,
-                        "displaylogo": False,
-                        "scrollZoom": False,
-                        "doubleClick": False,
-                        "modeBarButtonsToRemove": [
-                            "zoom2d",
-                            "pan2d",
-                            "select2d",
-                            "lasso2d",
-                            "autoScale2d",
-                            "toggleSpikelines",
-                            "zoomIn2d",
-                            "zoomOut2d",
-                            "resetScale2d",
-                            "hoverClosestCartesian",
-                            "hoverCompareCartesian",
-                        ],
-                        "modeBarButtonsToAdd": [
-                            "fullscreen",
-                            "toImage"
-                        ],
-                    }
-                )
+            pizza_df = pd.DataFrame(grupos)
 
         else:
-            grupos_pago = []
-            grupos_pendente = []
+            grupos = []
 
             if total_pago_geral > 0:
-                grupos_pago.append({
+                grupos.append({
                     "grupo": "Pago",
                     "valor": total_pago_geral,
                     "cor": cor_contrato_atual,
                 })
 
             if total_restante > 0:
-                grupos_pendente.append({
+                grupos.append({
                     "grupo": "Pendente",
                     "valor": total_restante,
-                    "cor": cor_contrato_atual,
+                    "cor": COR_PENDENTE_GRAFICO,
                 })
 
-            pago_df = pd.DataFrame(grupos_pago)
-            pendente_df = pd.DataFrame(grupos_pendente)
+            pizza_df = pd.DataFrame(grupos)
 
-            if not pago_df.empty:
-                fig_pago = go.Figure(
-                    data=[
-                        go.Pie(
-                            labels=pago_df["grupo"],
-                            values=pago_df["valor"],
-                            marker=dict(colors=pago_df["cor"]),
-                            sort=False,
-                            direction="clockwise",
-                            customdata=[brl(v) for v in pago_df["valor"]],
-                            hovertemplate="%{label}<br>Valor Pago: %{customdata}<extra></extra>",
-                        )
-                    ]
-                )
+        if not pizza_df.empty:
+            fig_pizza = go.Figure(
+                data=[
+                    go.Pie(
+                        labels=pizza_df["grupo"],
+                        values=pizza_df["valor"],
+                        marker=dict(colors=pizza_df["cor"]),
+                        sort=False,
+                        direction="clockwise",
+                        customdata=[brl(v) for v in pizza_df["valor"]],
+                        hovertemplate="%{label}<br>Valor: %{customdata}<extra></extra>",
+                    )
+                ]
+            )
 
-                _aplicar_estilo_legenda_abaixo(fig_pago, tipo="pizza")
-                fig_pago.update_layout(height=320)
+            _aplicar_estilo_legenda_abaixo(fig_pizza, tipo="pizza")
+            fig_pizza.update_layout(height=320)
 
-                st.plotly_chart(
-                    fig_pago,
-                    use_container_width=True,
-                    config={
-                        "displayModeBar": True,
-                        "displaylogo": False,
-                        "scrollZoom": False,
-                        "doubleClick": False,
-                        "modeBarButtonsToRemove": [
-                            "zoom2d",
-                            "pan2d",
-                            "select2d",
-                            "lasso2d",
-                            "autoScale2d",
-                            "toggleSpikelines",
-                            "zoomIn2d",
-                            "zoomOut2d",
-                            "resetScale2d",
-                            "hoverClosestCartesian",
-                            "hoverCompareCartesian",
-                        ],
-                        "modeBarButtonsToAdd": [
-                            "fullscreen",
-                            "toImage"
-                        ],
-                    }
-                )
-
-            _titulo_centralizado("Distribuição dos Valores Pendentes")
-
-            if not pendente_df.empty:
-                fig_pendente = go.Figure(
-                    data=[
-                        go.Pie(
-                            labels=pendente_df["grupo"],
-                            values=pendente_df["valor"],
-                            marker=dict(colors=pendente_df["cor"]),
-                            sort=False,
-                            direction="clockwise",
-                            customdata=[brl(v) for v in pendente_df["valor"]],
-                            hovertemplate="%{label}<br>Valor Pendente: %{customdata}<extra></extra>",
-                        )
-                    ]
-                )
-
-                _aplicar_estilo_legenda_abaixo(fig_pendente, tipo="pizza")
-                fig_pendente.update_layout(height=320)
-
-                st.plotly_chart(
-                    fig_pendente,
-                    use_container_width=True,
-                    config={
-                        "displayModeBar": True,
-                        "displaylogo": False,
-                        "scrollZoom": False,
-                        "doubleClick": False,
-                        "modeBarButtonsToRemove": [
-                            "zoom2d",
-                            "pan2d",
-                            "select2d",
-                            "lasso2d",
-                            "autoScale2d",
-                            "toggleSpikelines",
-                            "zoomIn2d",
-                            "zoomOut2d",
-                            "resetScale2d",
-                            "hoverClosestCartesian",
-                            "hoverCompareCartesian",
-                        ],
-                        "modeBarButtonsToAdd": [
-                            "fullscreen",
-                            "toImage"
-                        ],
-                    }
-                )
+            st.plotly_chart(
+                fig_pizza,
+                use_container_width=True,
+                config={
+                    "displayModeBar": True,
+                    "displaylogo": False,
+                    "scrollZoom": False,
+                    "doubleClick": False,
+                    "modeBarButtonsToRemove": [
+                        "zoom2d",
+                        "pan2d",
+                        "select2d",
+                        "lasso2d",
+                        "autoScale2d",
+                        "toggleSpikelines",
+                        "zoomIn2d",
+                        "zoomOut2d",
+                        "resetScale2d",
+                        "hoverClosestCartesian",
+                        "hoverCompareCartesian",
+                    ],
+                    "modeBarButtonsToAdd": [
+                        "fullscreen",
+                        "toImage"
+                    ],
+                }
+            )
