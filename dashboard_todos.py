@@ -686,6 +686,10 @@ def render_dashboard_todos(parcelas):
                 .sort_values("mes_ordem")
             )
 
+            ordem_meses = ordem_meses.reset_index(drop=True)
+            ordem_meses["x_pos"] = range(len(ordem_meses))
+            mapa_x = dict(zip(ordem_meses["Mes"], ordem_meses["x_pos"]))
+
             fig_mensal = go.Figure()
 
             for contrato in ORDEM_CONTRATOS:
@@ -732,9 +736,11 @@ def render_dashboard_todos(parcelas):
 
                 cor = CORES_GRAFICO.get(contrato, None)
 
+                df_contrato["x_pos"] = df_contrato["Mes"].map(mapa_x)
+
                 fig_mensal.add_trace(
                     go.Scatter(
-                        x=df_contrato["Mes"],
+                        x=df_contrato["x_pos"],
                         y=df_contrato["total_pago"],
                         mode="lines+markers+text",
                         name=contrato,
@@ -765,7 +771,10 @@ def render_dashboard_todos(parcelas):
                 legend_title_text="",
                 xaxis=dict(
                     tickangle=320,
-                    range=[-0.5, len(ordem_meses)],
+                    tickmode="array",
+                    tickvals=ordem_meses["x_pos"].tolist(),
+                    ticktext=ordem_meses["Mes"].tolist(),
+                    range=[-0.8, len(ordem_meses) - 0.2],
                 ),
                 legend=dict(
                     orientation="h",
