@@ -125,15 +125,14 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         )
 
     # renomear colunas
-    parc_show = parc_show.rename(columns={
-        "descricao_parcela_formatada": "Parcela",
-        "total_parcelas": "Total",
-        "data_vencimento": "Vencimento",
-        "data_pagamento": "Pagamento",
-        "valor_principal": "Valor Principal",
-        "valor_total": "Valor Total",
-        "valor_pago": "Valor Pago",
-    })
+    parc_show.columns = [
+        "Parcela",
+        "Vencimento",
+        "Pagamento",
+        "Valor Principal",
+        "Valor Total",
+        "Valor Pago",
+    ]
 
     st.dataframe(parc_show, use_container_width=True, hide_index=True)
 
