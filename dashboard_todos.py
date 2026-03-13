@@ -108,16 +108,9 @@ def inject_styles():
         left: 50% !important;
         transform: translateX(-50%) !important;
         right: auto !important;
-        top: -8px !important; /* sobe os ícones */
-    }
-
-    /* reduz espaço entre ícones e gráfico */
-    .js-plotly-plot {
-        padding-top: 0 !important;
     }
 
     .stPlotlyChart {
-        margin-top: -10px !important;
         margin-bottom: 0 !important;
     }
 
