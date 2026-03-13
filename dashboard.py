@@ -1383,9 +1383,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         _aplicar_estilo_legenda_abaixo(fig_mensal, tipo="linha")
 
+        if eh_sinal_ato or contrato_selecionado.strip().lower() == "sinal":
+            faixa_max = 1000
+        else:
+            faixa_max = mensal_df["total_pago"].max() if not mensal_df.empty else 1000
+
         _configurar_eixo_y_valor(
             fig_mensal,
-            float(faixa_max) * 1.2 if faixa_max else 1000,
+            float(faixa_max) * 1.2,
             1000,
         )
 
