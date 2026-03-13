@@ -253,6 +253,9 @@ def _cor_por_contrato(valor_contrato):
 
     return "#185bc7"
 
+COR_PENDENTE_GRAFICO = "#c2c2c2"
+COR_PAGO_CORRETORA = "#ef4444"
+
 def _render_mensagem_contrato_encerrado(texto, cor):
     st.markdown(
         f"""
@@ -271,13 +274,6 @@ def _render_mensagem_contrato_encerrado(texto, cor):
         """,
         unsafe_allow_html=True,
     )
-
-def _hex_para_rgba_simples(hex_color, alpha=0.35):
-    hex_color = hex_color.lstrip("#")
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
-    return f"rgba({r}, {g}, {b}, {alpha})"
 
 def _formatar_mes_pt(coluna_mes_ordem):
     datas_mes = pd.to_datetime(coluna_mes_ordem, format="%Y-%m", errors="coerce")
@@ -1563,9 +1559,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color="grupo",
                     color_discrete_map={
                         "Valor Pago (Compradores)": cor_contrato_atual,
-                        "Valor Pendente (Compradores)": "#bdbdbd",
-                        "Valor Pago (Corretora)": "#ef4444",
-                        "Valor Pendente (Corretora)": "#bdbdbd",
+                        "Valor Pendente (Compradores)": COR_PENDENTE_GRAFICO,
+                        "Valor Pago (Corretora)": COR_PAGO_CORRETORA,
+                        "Valor Pendente (Corretora)": COR_PENDENTE_GRAFICO,
                     }
                 )
 
@@ -1623,7 +1619,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color="grupo",
                     color_discrete_map={
                         "Pago": cor_contrato_atual,
-                        "Pendente": "#ff0000",
+                        "Pendente": COR_PENDENTE_GRAFICO,
                     },
                 )
 
