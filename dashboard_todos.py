@@ -116,6 +116,11 @@ def inject_styles():
         padding-top: 0 !important;
     }
 
+    /* SOMENTE o último gráfico (pizza) */
+    .stPlotlyChart:last-of-type .js-plotly-plot .plotly .modebar {
+        top: 10px !important;
+    }
+
     .stPlotlyChart {
         margin-top: -10px !important;
         margin-bottom: 0 !important;
