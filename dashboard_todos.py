@@ -116,11 +116,6 @@ def inject_styles():
         padding-top: 0 !important;
     }
 
-    /* SOMENTE o último gráfico (pizza) */
-    .stPlotlyChart:last-of-type .js-plotly-plot .plotly .modebar {
-        top: 10px !important;
-    }
-
     .stPlotlyChart {
         margin-top: -10px !important;
         margin-bottom: 0 !important;
@@ -964,7 +959,7 @@ def render_dashboard_todos(parcelas):
                 font=dict(size=16),
                 itemwidth=30,
             ),
-            margin=dict(t=35, b=190, l=10, r=10),
+            margin=dict(t=50, b=190, l=10, r=10),
         )
 
         st.plotly_chart(fig_pizza, use_container_width=True)
