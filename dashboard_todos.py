@@ -509,12 +509,11 @@ def _proximas_parcelas(df):
 
         elif contrato_nome == "Financiamento Caixa":
             regime_iniciado = bool(row.get("regime_iniciado", False))
+            valores_exibicao.append(brl(valor_num))
 
             if regime_iniciado:
-                valores_exibicao.append(brl(valor_num))
                 valores_numericos.append(valor_num)
             else:
-                valores_exibicao.append("A definir")
                 valores_numericos.append(0.0)
 
         else:
