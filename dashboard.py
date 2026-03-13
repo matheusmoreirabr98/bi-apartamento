@@ -1491,14 +1491,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             "displaylogo": False,
             "scrollZoom": False,
             "doubleClick": False,
-            "modeBarButtons": [[
-                "toImage",
+            "modeBarButtonsToRemove": [
+                "zoom2d",
+                "pan2d",
+                "select2d",
+                "lasso2d",
+                "autoScale2d",
+                "toggleSpikelines",
+                "zoomIn2d",
+                "zoomOut2d",
+                "resetScale2d",
+                "hoverClosestCartesian",
+                "hoverCompareCartesian",
+                "resetViews",
+                "orbitRotation",
+                "tableRotation",
+            ],
+            "modeBarButtonsToAdd": [
                 "fullscreen",
-            ]],
-            "modeBarButtons": [[
-            "toImage",
-            "fullscreen",
-        ]]
+                "toImage",
+            ],
         }
     )
 
