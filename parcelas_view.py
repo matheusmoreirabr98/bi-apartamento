@@ -219,6 +219,8 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
                 resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
             else:
                 resumo_base = parc_f.copy()
+                
+        st.write("Total de parcelas recebidas:", len(parcelas_contrato))
 
     if not resumo_base.empty and {"status_exibicao", "id", "valor_total"}.issubset(resumo_base.columns):
         st.markdown(
