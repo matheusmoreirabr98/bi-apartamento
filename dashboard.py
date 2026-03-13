@@ -1195,24 +1195,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # ENTRADA DIRECIONAL
     # ---------------------------------------------------------
     if eh_entrada_direcional:
-
-        evolucao_pago = _filtrar_base_entrada_direcional(evolucao_df)
-        evolucao_pago = _aplicar_regra_direcional(evolucao_pago)
-
+        evolucao_pago = _filtrar_base_entrada_direcional(evolucao_df).copy()
         evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
         evolucao_pago["valor_pago_num"] = _to_numeric_brl(evolucao_pago["valor_pago"])
 
-        if eh_entrada_direcional:
-
-            evolucao_pago = _filtrar_base_entrada_direcional(evolucao_df).copy()
-
-            evolucao_pago["data_pagamento_ref"] = _to_datetime_br(evolucao_pago["data_pagamento"])
-            evolucao_pago["valor_pago_num"] = _to_numeric_brl(evolucao_pago["valor_pago"])
-
-            evolucao_pago = evolucao_pago[
-                (evolucao_pago["data_pagamento_ref"].notna())
-                & (evolucao_pago["valor_pago_num"] > 0)
-            ].copy()
+        evolucao_pago = evolucao_pago[
+            evolucao_pago["data_pagamento_ref"].notna()
+            & (evolucao_pago["valor_pago_num"] > 0)
+        ].copy()
 
 
     # ---------------------------------------------------------
@@ -1326,20 +1316,17 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     evolucao_pago["mes_ordem"] = evolucao_pago["mes_ref"].astype(str)
 
     coluna_responsavel = None
-    if "responsavel_calc" in evolucao_pago.columns:
-        coluna_responsavel = "responsavel_calc"
-    elif "responsavel_pagamento" in evolucao_pago.columns:
-        coluna_responsavel = "responsavel_pagamento"
 
-    if coluna_responsavel:
-        mensal_df = (
-            evolucao_pago.groupby(["mes_ordem", coluna_responsavel], as_index=False)
-            .agg(
-                total_pago=("valor_pago_num", "sum"),
-                qtd_parcelas=("valor_pago_num", "size"),
-            )
-            .sort_values(["mes_ordem", coluna_responsavel])
-        )
+    if eh_taxas_cartorio:
+        coluna_responsavel = "responsavel_calc"
+    elif (
+        not eh_entrada_direcional
+        and not eh_direcional
+        and not eh_financiamento_caixa
+        and not eh_evolucao_obra
+        and "responsavel_pagamento" in evolucao_pago.columns
+    ):
+        coluna_responsavel = "responsavel_pagamento"
 
         ordem_meses = (
             mensal_df[["mes_ordem"]]
@@ -1576,7 +1563,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color="grupo",
                     color_discrete_map={
                         "Valor Pago (Compradores)": cor_contrato_atual,
-                        "Valor Pendente (Compradores)": "#1aff00",
+                        "Valor Pendente (Compradores)": "#bdbdbd",
                         "Valor Pago (Corretora)": "#ef4444",
                         "Valor Pendente (Corretora)": "#bdbdbd",
                     }
