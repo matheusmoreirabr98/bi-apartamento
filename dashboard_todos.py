@@ -58,7 +58,7 @@ def _titulo_centralizado(texto):
             text-align: center;
             font-size: 20px;
             font-weight: 700;
-            margin: 10px 0 0px 0;
+            margin: 12px 0 10px 0;
             width: 100%;
             display: block;
         ">
