@@ -130,7 +130,17 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         "Valor Pago",
     ]
 
-    st.dataframe(parc_show, use_container_width=True, hide_index=True)
+    st.dataframe(
+        parc_show.style
+        .set_table_styles([
+            {"selector": "th", "props": [("text-align", "center")]},
+        ])
+        .set_properties(subset=["Parcela"], **{"text-align": "left"})
+        .set_properties(subset=["Vencimento","Pagamento"], **{"text-align": "center"})
+        .set_properties(subset=["Valor Principal","Valor Total","Valor Pago"], **{"text-align": "right"}),
+        use_container_width=True,
+        hide_index=True
+    )
 
     # =========================================================
     # RESUMO POR STATUS
