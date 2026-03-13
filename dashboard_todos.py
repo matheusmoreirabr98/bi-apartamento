@@ -772,14 +772,9 @@ def render_dashboard_todos(parcelas):
                     tickmode="array",
                     tickvals=ordem_meses["x_pos"].tolist(),
                     ticktext=ordem_meses["Mes"].tolist(),
-                    range=[
-                        max(-0.5, len(ordem_meses) - 12.5),
-                        len(ordem_meses) - 0.5
-                    ],
-                    minallowed=-0.5,
-                    maxallowed=len(ordem_meses) - 0.5,
+                    range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
                     fixedrange=False,
-),
+                ),
                 yaxis=dict(
                     fixedrange=True,
                 ),
@@ -871,16 +866,16 @@ def render_dashboard_todos(parcelas):
             )
 
             fig_valor_mes.update_layout(
+                xaxis_title="Mês do Pagamento",
+                yaxis_title="Valor Pago",
+                showlegend=False,
+                hovermode="x unified",
+                dragmode="pan",
                 xaxis=dict(
                     tickmode="array",
                     tickvals=valor_mes_df["x_pos"].tolist(),
                     ticktext=valor_mes_df["Mes"].tolist(),
-                    range=[
-                        max(-0.5, len(valor_mes_df) - 12.5),
-                        len(valor_mes_df) - 0.5
-                    ],
-                    minallowed=-0.5,
-                    maxallowed=len(valor_mes_df) - 0.5,
+                    range=[-0.5, min(11.5, len(valor_mes_df) - 0.5)],
                     fixedrange=False,
                     tickangle=320,
                 ),
