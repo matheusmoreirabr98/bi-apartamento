@@ -952,7 +952,7 @@ def render_dashboard_todos(parcelas):
             legend=dict(
                 orientation="h",
                 yanchor="top",
-                y=-0.50,
+                y=-0.10,
                 xanchor="center",
                 x=0.5,
                 traceorder="normal",
