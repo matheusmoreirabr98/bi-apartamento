@@ -7,6 +7,7 @@ import streamlit as st
 
 from utils import brl, card_html, render_cards_grid, CONTRATO_TODOS
 from dashboard import (
+    CORES_CONTRATO,
     _is_entrada_direcional,
     _is_direcional,
     _is_financiamento_caixa,
@@ -40,16 +41,6 @@ ORDEM_PROXIMAS = [
     "Entrada Direcional",
     "Financiamento Caixa",
 ]
-
-CORES_GRAFICO = {
-    "Sinal": "#a855f7",
-    "Sinal Ato": "#c084fc",
-    "Diferença": "#f59e0b",
-    "Evolução de Obra": "#06b6d4",
-    "Entrada Direcional": "#d4c300",
-    "Taxas Cartoriais": "#56c718",
-    "Financiamento Caixa": "#ef4444",
-}
 
 def _titulo_centralizado(texto):
     st.markdown(
@@ -584,7 +575,7 @@ def render_dashboard_todos(parcelas):
     # =========================================================
     # CARDS GERAIS
     # =========================================================
-    _render_barra_progresso_custom(conclusao_total)
+    _render_barra_progresso_custom(conclusao_total, cor="#f40ae4")
 
     render_cards_grid([
         card_html("Pagamento Total", brl(pagamento_total), small=True),
@@ -734,7 +725,7 @@ def render_dashboard_todos(parcelas):
                     for qtd in df_contrato["qtd_parcelas"]
                 ]
 
-                cor = CORES_GRAFICO.get(contrato, None)
+                cor = CORES_CONTRATO.get(contrato, None)
 
                 df_contrato["x_pos"] = df_contrato["Mes"].map(mapa_x)
 
