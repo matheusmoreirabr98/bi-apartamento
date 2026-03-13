@@ -1623,7 +1623,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     color="grupo",
                     color_discrete_map={
                         "Pago": cor_contrato_atual,
-                        "Pendente": "#bdbdbd",
+                        "Pendente": "#ff0000",
                     },
                 )
 
