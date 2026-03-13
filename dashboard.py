@@ -114,7 +114,7 @@ def _aplicar_estilo_legenda_abaixo(fig, tipo="linha"):
         )
 
 
-def _render_barra_progresso_custom(progresso_pct, cor="#23d400"):
+def _render_barra_progresso_custom(progresso_pct):
     progresso_pct = max(0.0, min(float(progresso_pct or 0), 100.0))
 
     texto_interno = f"{progresso_pct:.2f}%"
