@@ -775,8 +775,13 @@ def render_dashboard_todos(parcelas):
                     range=[-0.8, len(ordem_meses) - 0.2],
                     fixedrange=False,
                 ),
-                yaxis=dict(
-                    fixedrange=True,
+                xaxis=dict(
+                    tickangle=320,
+                    tickmode="array",
+                    tickvals=ordem_meses["x_pos"].tolist(),
+                    ticktext=ordem_meses["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(ordem_meses) - 0.5)],
+                    fixedrange=False,
                 ),
                 legend=dict(
                     orientation="h",
@@ -828,6 +833,9 @@ def render_dashboard_todos(parcelas):
 
             valor_mes_df["Mes"] = _formatar_mes_pt(valor_mes_df["mes_ordem"])
 
+            valor_mes_df = valor_mes_df.reset_index(drop=True)
+            valor_mes_df["x_pos"] = range(len(valor_mes_df))
+
             detalhes_mes = (
                 evolucao.groupby(["mes_ordem", "contrato"], as_index=False)
                 .agg(
@@ -852,7 +860,7 @@ def render_dashboard_todos(parcelas):
 
             fig_valor_mes.add_trace(
                 go.Bar(
-                    x=valor_mes_df["Mes"],
+                    x=valor_mes_df["x_pos"],
                     y=valor_mes_df["valor_pago_mes"],
                     text=[brl(v) for v in valor_mes_df["valor_pago_mes"]],
                     textposition="outside",
@@ -867,7 +875,18 @@ def render_dashboard_todos(parcelas):
                 yaxis_title="Valor Pago",
                 showlegend=False,
                 hovermode="x unified",
-                dragmode=False,
+                dragmode="pan",
+                xaxis=dict(
+                    tickmode="array",
+                    tickvals=valor_mes_df["x_pos"].tolist(),
+                    ticktext=valor_mes_df["Mes"].tolist(),
+                    range=[-0.5, min(11.5, len(valor_mes_df) - 0.5)],
+                    fixedrange=False,
+                    tickangle=320,
+                ),
+                yaxis=dict(
+                    fixedrange=True,
+                ),
                 margin=dict(t=35, b=40, l=10, r=10),
             )
 
