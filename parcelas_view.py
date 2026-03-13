@@ -96,29 +96,22 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     # formatacoes
     if "data_vencimento" in parc_show.columns:
-        parc_show["data_vencimento"] = pd.to_datetime(
-            parc_show["data_vencimento"], errors="coerce"
-        ).dt.date
 
-    if "data_pagamento" in parc_show.columns:
-        parc_show["data_pagamento"] = pd.to_datetime(
-            parc_show["data_pagamento"], errors="coerce"
-        ).dt.date
 
-    if "valor_principal" in parc_show.columns:
-        parc_show["valor_principal"] = parc_show["valor_principal"].apply(
-            lambda x: brl(x) if pd.notnull(x) else "-"
-        )
+        if "valor_principal" in parc_show.columns:
+            parc_show["valor_principal"] = parc_show["valor_principal"].apply(
+                lambda x: brl(x) if pd.notnull(x) else "-"
+            )
 
-    if "valor_total" in parc_show.columns:
-        parc_show["valor_total"] = parc_show["valor_total"].apply(
-            lambda x: brl(x) if pd.notnull(x) else "-"
-        )
+        if "valor_total" in parc_show.columns:
+            parc_show["valor_total"] = parc_show["valor_total"].apply(
+                lambda x: brl(x) if pd.notnull(x) else "-"
+            )
 
-    if "valor_pago" in parc_show.columns:
-        parc_show["valor_pago"] = parc_show["valor_pago"].apply(
-            lambda x: brl(x) if pd.notnull(x) else "-"
-        )
+        if "valor_pago" in parc_show.columns:
+            parc_show["valor_pago"] = parc_show["valor_pago"].apply(
+                lambda x: brl(x) if pd.notnull(x) else "-"
+            )
 
     # renomear colunas
     parc_show.columns = [
@@ -142,8 +135,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     .parcelas-tabela th,
     .parcelas-tabela td {
-        padding: 10px 12px;
-        border: 1px solid #ddd;
+        text-align: center;
     }
 
     .parcelas-tabela th {
@@ -151,10 +143,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         font-weight: 600;
     }
 
-    .parcelas-tabela td:nth-child(1) {
-        text-align: left;
-    }
-
+    .parcelas-tabela td:nth-child(1),
     .parcelas-tabela td:nth-child(2),
     .parcelas-tabela td:nth-child(3) {
         text-align: center;
@@ -163,7 +152,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     .parcelas-tabela td:nth-child(4),
     .parcelas-tabela td:nth-child(5),
     .parcelas-tabela td:nth-child(6) {
-        text-align: right;
+        text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
