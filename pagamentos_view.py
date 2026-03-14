@@ -65,7 +65,9 @@ div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
 }
 
 /* BOTÃO RETOMAR EVOLUÇÃO DE OBRA */
-.st-key-btn_retomar_evolucao button {
+.st-key-btn_retomar_evolucao button,
+.st-key-btn_retomar_evolucao button[data-testid="stBaseButton-secondary"],
+.st-key-btn_retomar_evolucao button[data-testid="stBaseButton-primary"] {
     background: rgba(234, 179, 8, 0.22) !important;
     border: 1px solid rgba(234, 179, 8, 0.38) !important;
     color: #8a6a00 !important;
@@ -74,13 +76,16 @@ div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
     box-shadow: none !important;
 }
 
-.st-key-btn_retomar_evolucao button:hover {
+.st-key-btn_retomar_evolucao button:hover,
+.st-key-btn_retomar_evolucao button[data-testid="stBaseButton-secondary"]:hover,
+.st-key-btn_retomar_evolucao button[data-testid="stBaseButton-primary"]:hover {
     background: rgba(234, 179, 8, 0.30) !important;
     border: 1px solid rgba(234, 179, 8, 0.48) !important;
     color: #735800 !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # =========================================================
 # HELPERS
@@ -211,7 +216,9 @@ def _garantir_parcelas_evolucao_obra(supabase, parcelas: pd.DataFrame):
     if parcelas["data_vencimento"].dropna().empty:
         return False
 
-    ultima_data_existente = pd.to_datetime(parcelas["data_vencimento"], errors="coerce").dropna().max().date()
+    ultima_data_existente = pd.to_datetime(
+        parcelas["data_vencimento"], errors="coerce"
+    ).dropna().max().date()
     ano_cursor, mes_cursor = _proximo_mes(ultima_data_existente.year, ultima_data_existente.month)
 
     inserts = []
@@ -255,7 +262,7 @@ def _build_label_pendente(row, eh_todos=False):
     data_venc_str = data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-"
     contrato = str(row.get("contrato", "")).strip()
     parcela_txt = _texto_parcela(row)
-    return f"{contrato} | {parcela_txt} |  {data_venc_str}"
+    return f"{contrato} | {parcela_txt} | {data_venc_str}"
 
 
 def _build_label_pago(row, eh_todos=False):
@@ -264,6 +271,53 @@ def _build_label_pago(row, eh_todos=False):
     contrato = str(row.get("contrato", "")).strip()
     parcela_txt = _texto_parcela(row)
     return f"{contrato} | {parcela_txt} | {data_venc_str}"
+
+
+def _get_contrato_evolucao_no_dataframe(parcelas: pd.DataFrame):
+    if parcelas.empty or "contrato" not in parcelas.columns:
+        return None
+
+    contratos_evolucao = (
+        parcelas["contrato"]
+        .dropna()
+        .astype(str)
+        .map(str.strip)
+        .loc[parcelas["contrato"].astype(str).map(_is_evolucao_obra)]
+        .unique()
+        .tolist()
+    )
+
+    if contratos_evolucao:
+        return contratos_evolucao[0]
+
+    return None
+
+
+def _filtrar_pendentes_para_registro(parcelas: pd.DataFrame, contrato_selecionado: str) -> pd.DataFrame:
+    """
+    No modo 'Todos os contratos', se Evolução de Obra estiver encerrada,
+    as parcelas pendentes dela não devem bloquear/excluir a visualização
+    das outras pendentes.
+    """
+    if parcelas.empty:
+        return parcelas.copy()
+
+    df = parcelas.copy()
+    df = df[df["status"] != "pago"].copy()
+
+    if df.empty:
+        return df
+
+    eh_todos = contrato_selecionado == CONTRATO_TODOS
+
+    if eh_todos and "contrato_encerrado" in df.columns and "contrato" in df.columns:
+        mask_evolucao_encerrada = (
+            df["contrato"].astype(str).map(_is_evolucao_obra)
+            & df["contrato_encerrado"].fillna(False).astype(bool)
+        )
+        df = df[~mask_evolucao_encerrada].copy()
+
+    return df
 
 
 def registrar_pagamento(
@@ -393,6 +447,8 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             st.rerun()
             return
 
+    # Exibe o aviso de contrato encerrado apenas quando o contrato selecionado
+    # for a própria Evolução de Obra
     if contrato_eh_evolucao and "contrato_encerrado" in parcelas.columns:
         contrato_encerrado = parcelas["contrato_encerrado"].fillna(False).astype(bool).any()
 
@@ -422,9 +478,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                 )
 
             with c2:
-                if st.button("Retomar Evolução de Obra", key="btn_retomar_evolucao"):
+                if st.button("Retomar Evolução de Obra", key="btn_retomar_evolucao", use_container_width=True):
                     try:
-                        _update_contrato_encerrado(supabase, "Evolução de Obra", False)
+                        contrato_real_evolucao = _get_contrato_evolucao_no_dataframe(parcelas) or "Evolução de Obra"
+                        _update_contrato_encerrado(supabase, contrato_real_evolucao, False)
                         st.success("✅ Evolução de Obra retomada com sucesso!")
                         st.rerun()
                     except Exception as e:
@@ -459,21 +516,26 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         unsafe_allow_html=True
     )
 
-    pendentes = parcelas[parcelas["status"] != "pago"].copy()
+    pendentes = _filtrar_pendentes_para_registro(parcelas, contrato_selecionado)
 
     if pendentes.empty:
         st.success("✅ Todas as parcelas desse contrato já estão pagas.")
     else:
         pendentes = pendentes.sort_values(["data_vencimento", "numero_parcela"]).copy()
-        pendentes["label"] = pendentes.apply(lambda row: _build_label_pendente(row, eh_todos=eh_todos), axis=1)
+        pendentes["label"] = pendentes.apply(
+            lambda row: _build_label_pendente(row, eh_todos=eh_todos),
+            axis=1
+        )
+
+        labels_pendentes = pendentes["label"].drop_duplicates().tolist()
 
         parcela_label = st.selectbox(
             "Selecione a parcela",
-            pendentes["label"].tolist(),
+            labels_pendentes,
             index=0,
             key="tab3_selecao_pendente",
         )
-        
+
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
         parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
@@ -859,6 +921,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             except Exception as e:
                 st.error(f"Erro ao desfazer pagamento: {e}")
 
+
 # =========================================================
 # TAB: ATUALIZAR PARCELAS
 # =========================================================
@@ -967,10 +1030,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
     indice_resp = opcoes_responsavel.index(responsavel_atual) if responsavel_atual in opcoes_responsavel else 0
 
     with st.form("form_atualizar_parcela"):
-        if exibir_responsavel:
-            col1, col2 = st.columns(2)
-        else:
-            col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
         with col1:
             nova_descricao = st.text_input(
