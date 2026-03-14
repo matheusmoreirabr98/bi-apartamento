@@ -82,15 +82,22 @@ st.caption(f"Usuário logado: **{usuario_logado}**")
 
 st.markdown("""
 <style>
-div[data-testid="stButton"] > button[kind="secondary"] {
+/* PADRÃO PARA TODOS OS BOTÕES (Entrar e Sair ficam iguais) */
+div[data-testid="stButton"] > button {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+/* BOTÃO SAIR */
+button[kind="secondary"] {
     background-color: rgba(220, 53, 69, 0.8) !important;
     color: white !important;
     border: 1px solid #dc3545 !important;
 }
 
-div[data-testid="stButton"] > button[kind="secondary"]:hover {
+button[kind="secondary"]:hover {
     background-color: #b02a37 !important;
-    color: white !important;
     border: 1px solid #b02a37 !important;
 }
 /* reduz espaço abaixo do usuário logado */
