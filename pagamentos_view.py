@@ -415,7 +415,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             index=0,
             key="tab3_selecao_pendente",
         )
-        
+
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
         parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
@@ -873,6 +873,8 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         parcelas["label_parcela"].tolist(),
         key="atualizar_parcela_select",
     )
+
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     parcela_escolhida = parcelas[parcelas["label_parcela"] == parcela_label].iloc[0]
     parcela_escolhida_eh_evolucao = _is_evolucao_obra(parcela_escolhida.get("contrato"))
