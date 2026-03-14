@@ -28,29 +28,24 @@ h1 {
     text-align: center;
 }
 
-/* botão ocupar largura total */
-div[data-testid="stButton"] > button {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-}
-/* botão padrão ocupa largura total */
+/* largura padrão dos botões */
 div[data-testid="stButton"] > button {
     width: 100%;
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
 }
 
-/* BOTÃO SAIR */
-button[kind="secondary"][data-testid="baseButton-btn_sair_topo"] {
+/* todos os botões secondary ficam vermelhos */
+div[data-testid="stButton"] > button[kind="secondary"] {
     background-color: #dc3545 !important;
     color: white !important;
     border: 1px solid #dc3545 !important;
 }
 
-button[kind="secondary"][data-testid="baseButton-btn_sair_topo"]:hover {
+div[data-testid="stButton"] > button[kind="secondary"]:hover {
     background-color: #b02a37 !important;
     border: 1px solid #b02a37 !important;
+    color: white !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -86,7 +81,7 @@ if "user_name" not in st.session_state:
 if not st.session_state.logged_in:
     senha = st.text_input("Senha", type="password")
 
-    if st.button("Entrar", use_container_width=True):
+    if st.button("Entrar", use_container_width=True, type="primary"):
         user = USUARIOS.get(senha)
         if user:
             st.session_state.logged_in = True
