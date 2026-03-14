@@ -146,21 +146,61 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         "Valor Pago",
     ]
 
-    html_tabela = parc_show.to_html(index=False, classes="parcelas-tabela")
+    html_tabela = parc_show.to_html(index=False, classes="parcelas-tabela-scrollavel")
 
     st.markdown("""
     <style>
-    .parcelas-tabela {
+    /* =========================
+       TABELA DE PARCELAS
+    ========================= */
+    .parcelas-wrapper-scroll {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid #ddd;
+        border-radius: 8px;
         width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
     }
 
-    .tabela-scroll {
+    .parcelas-tabela-scrollavel {
+        border-collapse: collapse;
+        font-size: 14px;
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .parcelas-tabela-scrollavel th,
+    .parcelas-tabela-scrollavel td {
+        text-align: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+        white-space: nowrap;
+    }
+
+    .parcelas-tabela-scrollavel th {
+        text-align: center;
+        font-weight: 600;
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    /* =========================
+       TABELA DE RESUMO
+       (permanece como estava)
+    ========================= */
+    .resumo-wrapper {
         max-height: 400px;
         overflow-y: auto;
         border: 1px solid #ddd;
         border-radius: 8px;
+    }
+
+    .parcelas-tabela {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
     }
 
     .parcelas-tabela th,
@@ -202,7 +242,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     st.markdown(
         f"""
-        <div class="tabela-scroll">
+        <div class="parcelas-wrapper-scroll">
             {html_tabela}
         </div>
         """,
@@ -260,7 +300,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
             st.markdown(
                 f"""
-                <div class="tabela-scroll">
+                <div class="resumo-wrapper">
                     {html_resumo}
                 </div>
                 """,
