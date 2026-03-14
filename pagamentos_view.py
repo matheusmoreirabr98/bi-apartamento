@@ -357,10 +357,15 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                         color: #155724;
                         padding: 0.75rem 1rem;
                         border-radius: 0.5rem;
-                        text-align: center;
                         font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.5rem;
+                        text-align: center;
                     ">
-                        ✅ Evolução de Obra está marcada como concluída.
+                        <span style="display:flex; align-items:center; justify-content:center;">✅</span>
+                        <span>Evolução de Obra está marcada como concluída.</span>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -373,10 +378,15 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                         color: #0c5460;
                         padding: 0.75rem 1rem;
                         border-radius: 0.5rem;
-                        text-align: center;
                         font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.5rem;
+                        text-align: center;
                     ">
-                        ℹ️ Evolução de Obra está em andamento.
+                        <span style="display:flex; align-items:center; justify-content:center;">ℹ️</span>
+                        <span>Evolução de Obra está em andamento.</span>
                     </div>
                     """,
                     unsafe_allow_html=True,
