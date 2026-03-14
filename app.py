@@ -38,8 +38,16 @@ if st.button("Sair", key="btn_sair_topo", use_container_width=True):
     st.rerun()
 
 # =========================================================
-# CARGA DE DADOS
+# CONFIG
 # =========================================================
+
+inject_styles()
+st.markdown("<h1 style='text-align: center;'>🏠 Apartamento</h1>", unsafe_allow_html=True)
+
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 parcelas = load_parcelas(supabase)
 parcelas = normalizar_status(parcelas)
