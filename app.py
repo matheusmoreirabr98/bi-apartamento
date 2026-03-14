@@ -95,7 +95,7 @@ div[data-testid="stButton"] > button[kind="secondary"]:hover {
 }
 /* reduz espaço abaixo do usuário logado */
 div[data-testid="stCaption"] {
-    margin-bottom: -30px;
+    margin-bottom: 100px;
 }
 /* reduz espaço do bloco de colunas (onde está o botão sair) */
 div[data-testid="stHorizontalBlock"] {
