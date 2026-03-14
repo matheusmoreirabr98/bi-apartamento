@@ -30,44 +30,38 @@ div[data-testid="stWidgetLabel"] {
     margin-bottom: 10px !important;
 }
 
-/* espaço geral dos botões */
 div.stButton {
     margin-top: 0 !important;
 }
 
-/* botão primário */
 div.stButton > button[data-testid="stBaseButton-primary"] {
-    background: rgba(34, 197, 94, 0.45) !important;
-    border: 1px solid rgba(34, 197, 94, 0.55) !important;
+    background: rgba(34, 197, 94, 0.65) !important;
+    border: 1px solid rgba(34, 197, 94, 0.75) !important;
     color: white !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
     box-shadow: none !important;
 }
 
-/* hover botão primário */
 div.stButton > button[data-testid="stBaseButton-primary"]:hover {
-    background: rgba(34, 197, 94, 0.45) !important;
-    border: 1px solid rgba(34, 197, 94, 0.55) !important;
+    background: rgba(34, 197, 94, 0.75) !important;
+    border: 1px solid rgba(34, 197, 94, 0.85) !important;
     color: white !important;
 }
 
-/* botão secundário */
 div.stButton > button[data-testid="stBaseButton-secondary"] {
     background: rgba(239, 68, 68, 0.10) !important;
     border: 1px solid rgba(239, 68, 68, 0.18) !important;
     color: #a33a3a !important;
-    color: #8b1e1e !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
     box-shadow: none !important;
 }
 
-/* hover botão secundário */
 div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
-    background: rgba(239, 68, 68, 0.24) !important;
-    border: 1px solid rgba(239, 68, 68, 0.34) !important;
-    color: #7a1616 !important;
+    background: rgba(239, 68, 68, 0.16) !important;
+    border: 1px solid rgba(239, 68, 68, 0.24) !important;
+    color: #922f2f !important;
 }
 </style>
 """, unsafe_allow_html=True)
