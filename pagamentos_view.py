@@ -789,6 +789,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     b1, b2 = st.columns(2, gap="small")
 
     with b1:
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         if st.button("Salvar Edição", type="primary", key="btn_salvar_edicao_pagamento", use_container_width=True):
             try:
                 dados_atualizados = atualizar_pagamento_existente(
@@ -813,6 +814,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                 st.error(f"Erro ao atualizar pagamento: {e}")
 
     with b2:
+        st.markdown("<div style='height: 26px;'></div>", unsafe_allow_html=True)
         if st.button("Desfazer Pagamento", key="btn_desfazer_pagamento", use_container_width=True):
             try:
                 dados_atualizados = desfazer_pagamento(
