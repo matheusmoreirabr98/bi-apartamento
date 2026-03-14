@@ -784,14 +784,14 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
         ultima_parcela_edit = False
 
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
     b1, b2 = st.columns(2)
 
     with b1:
         _, centro_b1, _ = st.columns([1, 3, 1])
         with centro_b1:
-            st.markdown("<div style='height: 26px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             if st.button("Salvar Edição", type="primary", key="btn_salvar_edicao_pagamento", use_container_width=True):
                 try:
                     dados_atualizados = atualizar_pagamento_existente(
