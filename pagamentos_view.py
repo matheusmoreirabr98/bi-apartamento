@@ -380,10 +380,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     if contrato_eh_evolucao and "contrato_encerrado" in parcelas.columns:
         contrato_encerrado = parcelas["contrato_encerrado"].fillna(False).astype(bool).any()
 
-        c1, c2 = st.columns([2, 1])
+        if contrato_encerrado:
+            c1, c2 = st.columns([2, 1])
 
-        with c1:
-            if contrato_encerrado:
+            with c1:
                 st.markdown(
                     """
                     <div style="
@@ -404,36 +404,37 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                     """,
                     unsafe_allow_html=True,
                 )
-            else:
-                st.markdown(
-                    """
-                    <div style="
-                        background-color: rgba(23, 162, 184, 0.12);
-                        color: #0c5460;
-                        padding: 0.75rem 1rem;
-                        border-radius: 0.5rem;
-                        font-weight: 500;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 0.5rem;
-                        text-align: center;
-                    ">
-                        <span style="display:flex; align-items:center; justify-content:center;">ℹ️</span>
-                        <span>Evolução de Obra está em andamento.</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
 
-        with c2:
-            if st.button("Retomar Evolução de Obra", key="btn_retomar_evolucao"):
-                try:
-                    _update_contrato_encerrado(supabase, "Evolução de Obra", False)
-                    st.success("✅ Evolução de Obra retomada com sucesso!")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Erro ao retomar Evolução de Obra: {e}")
+            with c2:
+                if st.button("Retomar Evolução de Obra", key="btn_retomar_evolucao"):
+                    try:
+                        _update_contrato_encerrado(supabase, "Evolução de Obra", False)
+                        st.success("✅ Evolução de Obra retomada com sucesso!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Erro ao retomar Evolução de Obra: {e}")
+
+        else:
+            st.markdown(
+                """
+                <div style="
+                    background-color: rgba(23, 162, 184, 0.12);
+                    color: #0c5460;
+                    padding: 0.75rem 1rem;
+                    border-radius: 0.5rem;
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5rem;
+                    text-align: center;
+                ">
+                    <span style="display:flex; align-items:center; justify-content:center;">ℹ️</span>
+                    <span>Evolução de Obra está em andamento.</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         st.markdown("---")
 
