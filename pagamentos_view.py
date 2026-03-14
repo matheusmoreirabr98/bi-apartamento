@@ -47,15 +47,16 @@ div.stButton > button[data-testid="stBaseButton-primary"] {
 
 /* hover botão primário */
 div.stButton > button[data-testid="stBaseButton-primary"]:hover {
-    background: rgba(34, 197, 94, 0.58) !important;
-    border: 1px solid rgba(34, 197, 94, 0.68) !important;
+    background: rgba(34, 197, 94, 0.45) !important;
+    border: 1px solid rgba(34, 197, 94, 0.55) !important;
     color: white !important;
 }
 
 /* botão secundário */
 div.stButton > button[data-testid="stBaseButton-secondary"] {
-    background: rgba(239, 68, 68, 0.16) !important;
-    border: 1px solid rgba(239, 68, 68, 0.26) !important;
+    background: rgba(239, 68, 68, 0.10) !important;
+    border: 1px solid rgba(239, 68, 68, 0.18) !important;
+    color: #a33a3a !important;
     color: #8b1e1e !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
