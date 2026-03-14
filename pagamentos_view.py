@@ -24,6 +24,50 @@ MAPA_MESES = {
     12: "Dezembro",
 }
 
+st.markdown("""
+<style>
+div[data-testid="stWidgetLabel"] {
+    margin-bottom: 10px !important;
+}
+
+/* dá um respiro melhor pros botões */
+div.stButton {
+    margin-top: 8px !important;
+}
+
+/* botões primários = verde translúcido */
+div.stButton > button[kind="primary"] {
+    background: rgba(34, 197, 94, 0.55) !important;
+    border: 1px solid rgba(34, 197, 94, 0.65) !important;
+    color: white !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+
+/* hover do verde */
+div.stButton > button[kind="primary"]:hover {
+    background: rgba(34, 197, 94, 0.70) !important;
+    border: 1px solid rgba(34, 197, 94, 0.80) !important;
+    color: white !important;
+}
+
+/* botões secundários = vermelho mais translúcido */
+div.stButton > button[kind="secondary"] {
+    background: rgba(239, 68, 68, 0.22) !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+    color: #7f1d1d !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+
+/* hover do vermelho */
+div.stButton > button[kind="secondary"]:hover {
+    background: rgba(239, 68, 68, 0.30) !important;
+    border: 1px solid rgba(239, 68, 68, 0.45) !important;
+    color: #7f1d1d !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================================================
 # HELPERS
@@ -738,12 +782,14 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
         ultima_parcela_edit = False
 
+    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+
     b1, b2 = st.columns(2)
 
     with b1:
         _, centro_b1, _ = st.columns([1, 3, 1])
         with centro_b1:
-            if st.button("Salvar Edição", key="btn_salvar_edicao_pagamento", use_container_width=True):
+            if st.button("Salvar Edição", type="primary", key="btn_salvar_edicao_pagamento", use_container_width=True):
                 try:
                     dados_atualizados = atualizar_pagamento_existente(
                         supabase=supabase,
