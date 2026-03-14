@@ -304,15 +304,8 @@ def desfazer_pagamento(
 def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
     st.markdown("""
     <style>
-    div[data-testid="stNumberInput"] button,
-    div[data-testid="stNumberInputStepUp"],
-    div[data-testid="stNumberInputStepDown"] {
-        display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
+    div[data-testid="stWidgetLabel"] {
+        margin-bottom: 10px !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -437,7 +430,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             data_pag_fixa = _to_date_or_none(parcela_sel.get("data_vencimento")) or date.today()
 
             if exibir_responsavel:
-                c1, c2, c3 = st.columns(3)
+                c1, c2, c3 = st.columns(3, gap="large")
 
                 with c1:
                     st.text_input(
@@ -558,7 +551,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             ultima_parcela = False
 
             _, col_btn_centro, _ = st.columns([1, 3, 1])
-            
+
             with col_btn_centro:
                 if st.button("Registrar Pagamento", type="primary", key="btn_registrar_pagamento", use_container_width=True):
                     try:
