@@ -1,5 +1,3 @@
-#app.py
-
 import streamlit as st
 from supabase import create_client
 
@@ -29,13 +27,15 @@ st.markdown("""
 h1 {
     text-align: center;
 }
+
+/* botão ocupar largura total */
+div[data-testid="stButton"] > button {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
 </style>
 """, unsafe_allow_html=True)
-
-if st.button("Sair", key="btn_sair_topo", use_container_width=True):
-    st.session_state.logged_in = False
-    st.session_state.user_name = None
-    st.rerun()
 
 # =========================================================
 # CONFIG
@@ -48,6 +48,50 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+USUARIOS = {
+    st.secrets["PASSWORD_ANA"]: "Ana Luiza",
+    st.secrets["PASSWORD_MATHEUS"]: "Matheus Moreira",
+    st.secrets["PASSWORD_LEO"]: "Leo",
+}
+
+# =========================================================
+# LOGIN
+# =========================================================
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "user_name" not in st.session_state:
+    st.session_state.user_name = None
+
+if not st.session_state.logged_in:
+    senha = st.text_input("Senha", type="password")
+
+    if st.button("Entrar", use_container_width=True):
+        user = USUARIOS.get(senha)
+        if user:
+            st.session_state.logged_in = True
+            st.session_state.user_name = user
+            st.rerun()
+        else:
+            st.error("Senha incorreta")
+
+    st.stop()
+
+usuario_logado = st.session_state.user_name
+pode_editar = usuario_logado == USUARIO_PODE_EDITAR
+
+st.caption(f"Usuário logado: **{usuario_logado}**")
+
+if st.button("Sair", key="btn_sair_topo", use_container_width=True):
+    st.session_state.logged_in = False
+    st.session_state.user_name = None
+    st.rerun()
+
+# =========================================================
+# CARGA DE DADOS
+# =========================================================
 
 parcelas = load_parcelas(supabase)
 parcelas = normalizar_status(parcelas)
@@ -118,21 +162,16 @@ if not parcelas.empty and "contrato" in parcelas.columns:
 
     opcoes_contrato.extend(contratos_restantes)
 
-# contrato padrão: Todos os Contratos
 contrato_padrao = (
     "Todos os Contratos"
     if "Todos os Contratos" in opcoes_contrato
     else (
-        "Todos os Contratos"
-        if "Todos os Contratos" in opcoes_contrato
+        CONTRATO_DIRECIONAL
+        if CONTRATO_DIRECIONAL in opcoes_contrato
         else (
-            CONTRATO_DIRECIONAL
-            if CONTRATO_DIRECIONAL in opcoes_contrato
-            else (
-                CONTRATO_TAXAS
-                if CONTRATO_TAXAS in opcoes_contrato
-                else (opcoes_contrato[0] if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else "Sem dados")
-            )
+            CONTRATO_TAXAS
+            if CONTRATO_TAXAS in opcoes_contrato
+            else (opcoes_contrato[0] if opcoes_contrato and opcoes_contrato[0] != "Sem dados" else "Sem dados")
         )
     )
 )
@@ -169,10 +208,7 @@ with tab1:
     contrato_normalizado = str(contrato_selecionado).strip().lower()
     contrato_todos_normalizado = str(CONTRATO_TODOS).strip().lower()
 
-    if (
-        contrato_normalizado == contrato_todos_normalizado
-        or "todos" in contrato_normalizado
-    ):
+    if contrato_normalizado == contrato_todos_normalizado or "todos" in contrato_normalizado:
         render_dashboard_todos(parcelas)
     else:
         render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
