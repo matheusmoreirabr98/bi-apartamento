@@ -83,6 +83,13 @@ top_c1, top_c2, top_c3 = st.columns([2, 1, 2])
 with top_c1:
     st.caption(f"Usuário logado: **{usuario_logado}**")
 
+    esq, meio, dir = st.columns([2, 1, 2])
+    with meio:
+        if st.button("Sair", use_container_width=True):
+            st.session_state.logged_in = False
+            st.session_state.user_name = None
+            st.rerun()
+
 with top_c2:
     st.markdown("<div style='display:flex; justify-content:center;'>", unsafe_allow_html=True)
     if st.button("Sair", use_container_width=True):
