@@ -333,8 +333,6 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     eh_todos = contrato_selecionado == CONTRATO_TODOS
     contrato_eh_evolucao = _is_evolucao_obra(contrato_selecionado)
 
-    st.subheader({contrato_selecionado})
-
     if not pode_editar:
         st.info("Somente Matheus Moreira pode editar pagamentos.")
         return
