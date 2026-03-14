@@ -598,7 +598,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
             ultima_parcela = False
 
-            st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
 
             _, col_btn_centro, _ = st.columns([1, 3, 1])
 
