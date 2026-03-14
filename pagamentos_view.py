@@ -814,7 +814,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                 st.error(f"Erro ao atualizar pagamento: {e}")
 
     with b2:
-        st.markdown("<div style='height: 26px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         if st.button("Desfazer Pagamento", key="btn_desfazer_pagamento", use_container_width=True):
             try:
                 dados_atualizados = desfazer_pagamento(
