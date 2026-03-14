@@ -83,7 +83,7 @@ st.caption(f"Usuário logado: **{usuario_logado}**")
 st.markdown("""
 <style>
 div[data-testid="stButton"] > button[kind="secondary"] {
-    background-color: rgba(220, 53, 69, 0.6) !important;
+    background-color: rgba(220, 53, 69, 0.8) !important;
     color: white !important;
     border: 1px solid #dc3545 !important;
 }
