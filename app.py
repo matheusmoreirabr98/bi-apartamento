@@ -105,13 +105,13 @@ with col_meio:
 
 st.markdown("""
 <style>
-div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button {
+div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button {
     background-color: #dc3545 !important;
     color: white !important;
     border: 1px solid #dc3545 !important;
 }
 
-div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button:hover {
+div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button:hover {
     background-color: #b02a37 !important;
     color: white !important;
     border: 1px solid #b02a37 !important;
