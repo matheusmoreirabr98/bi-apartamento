@@ -594,33 +594,38 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
             ultima_parcela = False
 
-            st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
 
-            _, col_btn_centro, _ = st.columns([1, 3, 1])
+        _, col_btn_centro, _ = st.columns([1, 3, 1])
 
-            with col_btn_centro:
-                if st.button("Registrar Pagamento", type="primary", key="btn_registrar_pagamento", use_container_width=True):
-                    try:
-                        dados_atualizados = registrar_pagamento(
-                            supabase=supabase,
-                            parcela_id=parcela_sel["id"],
-                            data_pagamento=data_pagamento,
-                            valor_pago=valor_pago,
-                            responsavel_pagamento=responsavel_pagamento,
-                            contrato=str(parcela_sel.get("contrato", "")),
-                            numero_parcela=int(parcela_sel["numero_parcela"]) if pd.notnull(parcela_sel.get("numero_parcela")) else 0,
-                            eh_evolucao_obra=parcela_eh_evolucao,
-                            ultima_parcela=ultima_parcela,
-                        )
+        with col_btn_centro:
+            if st.button(
+                "Registrar Pagamento",
+                type="primary",
+                key="btn_registrar_pagamento",
+                use_container_width=True
+            ):
+                try:
+                    dados_atualizados = registrar_pagamento(
+                        supabase=supabase,
+                        parcela_id=parcela_sel["id"],
+                        data_pagamento=data_pagamento,
+                        valor_pago=valor_pago,
+                        responsavel_pagamento=responsavel_pagamento,
+                        contrato=str(parcela_sel.get("contrato", "")),
+                        numero_parcela=int(parcela_sel["numero_parcela"]) if pd.notnull(parcela_sel.get("numero_parcela")) else 0,
+                        eh_evolucao_obra=parcela_eh_evolucao,
+                        ultima_parcela=ultima_parcela,
+                    )
 
-                        if not dados_atualizados:
-                            st.error("O banco não retornou a parcela atualizada.")
-                        else:
-                            st.success("✅ Pagamento registrado com sucesso!")
-                            st.rerun()
+                    if not dados_atualizados:
+                        st.error("O banco não retornou a parcela atualizada.")
+                    else:
+                        st.success("✅ Pagamento registrado com sucesso!")
+                        st.rerun()
 
-                    except Exception as e:
-                        st.error(f"Erro ao registrar pagamento: {e}")
+                except Exception as e:
+                    st.error(f"Erro ao registrar pagamento: {e}")
 
     st.markdown("---")
     st.markdown(
