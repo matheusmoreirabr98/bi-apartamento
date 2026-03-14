@@ -42,14 +42,16 @@ st.title("🏠 Apartamento")
 
 st.markdown("""
 <style>
-.logout-button button {
+button[kind="secondary"][id*="btn_sair_topo"] {
     background-color: #dc3545 !important;
     color: white !important;
-    border: none !important;
+    border: 1px solid #dc3545 !important;
 }
 
-.logout-button button:hover {
+button[kind="secondary"][id*="btn_sair_topo"]:hover {
     background-color: #b02a37 !important;
+    color: white !important;
+    border: 1px solid #b02a37 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -96,8 +98,6 @@ st.caption(f"Usuário logado: **{usuario_logado}**")
 
 col_esq, col_meio, col_dir = st.columns([2, 1, 2])
 with col_meio:
-    st.markdown('<div class="logout-button">', unsafe_allow_html=True)
-
     if st.button("Sair", key="btn_sair_topo", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.user_name = None
