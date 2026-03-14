@@ -304,7 +304,7 @@ def desfazer_pagamento(
 def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
     st.markdown("""
     <style>
-    div[data-baseweb="input"] button {
+    div[data-testid="stNumberInput"] button {
         display: none !important;
     }
     </style>
