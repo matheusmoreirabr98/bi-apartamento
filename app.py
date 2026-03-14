@@ -95,7 +95,7 @@ div[data-testid="stButton"] > button[kind="secondary"]:hover {
 }
 /* reduz espaço abaixo do usuário logado */
 div[data-testid="stCaption"] {
-    margin-bottom: -100px;
+    margin-bottom: -10px;
 }
 /* reduz espaço do bloco de colunas (onde está o botão sair) */
 div[data-testid="stHorizontalBlock"] {
@@ -106,6 +106,15 @@ div[data-testid="stHorizontalBlock"] {
 /* reduz espaço antes do selectbox */
 div[data-testid="stSelectbox"] {
     margin-top: -10px;
+}
+/* remove espaço entre caption e o próximo elemento */
+div[data-testid="stCaption"] {
+    margin-bottom: 0px !important;
+}
+
+/* reduz espaço antes das colunas (onde está o botão sair) */
+div[data-testid="stHorizontalBlock"] {
+    margin-top: -20px !important;
 }
 </style>
 """, unsafe_allow_html=True)
