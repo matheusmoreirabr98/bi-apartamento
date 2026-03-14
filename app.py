@@ -24,21 +24,20 @@ st.set_page_config(
     layout="centered",
 )
 
-st.markdown(
-    """
-    <link rel="apple-touch-icon" href="app/static/icone_apartamento.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Apartamento">
-    """,
-    unsafe_allow_html=True,
-)
+st.markdown("""
+<style>
+h1 {
+    text-align: center;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================================================
 # CONFIG
 # =========================================================
 
 inject_styles()
-st.title("🏠 Apartamento")
+st.markdown("<h1 style='text-align: center;'>🏠 Apartamento</h1>", unsafe_allow_html=True)
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
