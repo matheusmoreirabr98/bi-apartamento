@@ -198,7 +198,7 @@ def _build_label_pendente(row, eh_todos=False):
     data_venc_str = data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-"
     contrato = str(row.get("contrato", "")).strip()
     parcela_txt = _texto_parcela(row)
-    return f"{contrato} | {parcela_txt} | vence {data_venc_str}"
+    return f"{contrato} | {parcela_txt} |  {data_venc_str}"
 
 
 def _build_label_pago(row, eh_todos=False):
@@ -206,7 +206,7 @@ def _build_label_pago(row, eh_todos=False):
     data_venc_str = data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-"
     contrato = str(row.get("contrato", "")).strip()
     parcela_txt = _texto_parcela(row)
-    return f"{contrato} | {parcela_txt} | vence {data_venc_str}"
+    return f"{contrato} | {parcela_txt} | {data_venc_str}"
 
 
 def registrar_pagamento(
