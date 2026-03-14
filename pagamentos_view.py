@@ -789,29 +789,31 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     b1, b2 = st.columns(2, gap="small")
 
     with b1:
-        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-        if st.button("Salvar Edição", type="primary", key="btn_salvar_edicao_pagamento", use_container_width=True):
-            try:
-                dados_atualizados = atualizar_pagamento_existente(
-                    supabase=supabase,
-                    parcela_id=parcela_paga["id"],
-                    data_pagamento=nova_data_pagamento,
-                    valor_pago=novo_valor_pago,
-                    responsavel_pagamento=novo_responsavel,
-                    contrato=str(parcela_paga.get("contrato", "")),
-                    numero_parcela=int(parcela_paga["numero_parcela"]) if pd.notnull(parcela_paga.get("numero_parcela")) else 0,
-                    eh_evolucao_obra=parcela_paga_eh_evolucao,
-                    ultima_parcela=ultima_parcela_edit,
-                )
+        _, centro_b1, _ = st.columns([1, 3, 1])
+        with centro_b1:
+            st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+            if st.button("Salvar Edição", type="primary", key="btn_salvar_edicao_pagamento", use_container_width=True):
+                try:
+                    dados_atualizados = atualizar_pagamento_existente(
+                        supabase=supabase,
+                        parcela_id=parcela_paga["id"],
+                        data_pagamento=nova_data_pagamento,
+                        valor_pago=novo_valor_pago,
+                        responsavel_pagamento=novo_responsavel,
+                        contrato=str(parcela_paga.get("contrato", "")),
+                        numero_parcela=int(parcela_paga["numero_parcela"]) if pd.notnull(parcela_paga.get("numero_parcela")) else 0,
+                        eh_evolucao_obra=parcela_paga_eh_evolucao,
+                        ultima_parcela=ultima_parcela_edit,
+                    )
 
-                if not dados_atualizados:
-                    st.error("O banco não retornou a parcela atualizada.")
-                else:
-                    st.success("✅ Pagamento atualizado com sucesso!")
-                    st.rerun()
+                    if not dados_atualizados:
+                        st.error("O banco não retornou a parcela atualizada.")
+                    else:
+                        st.success("✅ Pagamento atualizado com sucesso!")
+                        st.rerun()
 
-            except Exception as e:
-                st.error(f"Erro ao atualizar pagamento: {e}")
+                except Exception as e:
+                    st.error(f"Erro ao atualizar pagamento: {e}")
 
     with b2:
         _, centro_b2, _ = st.columns([1, 3, 1])
