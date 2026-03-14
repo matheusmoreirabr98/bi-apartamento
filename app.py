@@ -93,6 +93,20 @@ div[data-testid="stButton"] > button[kind="secondary"]:hover {
     color: white !important;
     border: 1px solid #b02a37 !important;
 }
+/* reduz espaço abaixo do usuário logado */
+div[data-testid="stCaption"] {
+    margin-bottom: -10px;
+}
+/* reduz espaço do bloco de colunas (onde está o botão sair) */
+div[data-testid="stHorizontalBlock"] {
+    margin-top: -10px;
+    margin-bottom: -10px;
+}
+
+/* reduz espaço antes do selectbox */
+div[data-testid="stSelectbox"] {
+    margin-top: -10px;
+}
 </style>
 """, unsafe_allow_html=True)
 
