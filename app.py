@@ -109,12 +109,12 @@ div[data-testid="stSelectbox"] {
 }
 /* remove espaço entre caption e o próximo elemento */
 div[data-testid="stCaption"] {
-    margin-bottom: 100px !important;
+    margin-bottom: 0px !important;
 }
 
 /* reduz espaço antes das colunas (onde está o botão sair) */
 div[data-testid="stHorizontalBlock"] {
-    margin-top: -20px !important;
+    margin-top: -200px !important;
 }
 </style>
 """, unsafe_allow_html=True)
