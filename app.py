@@ -42,13 +42,13 @@ st.title("🏠 Apartamento")
 
 st.markdown("""
 <style>
-button[kind="secondary"][id*="btn_sair_topo"] {
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button {
     background-color: #dc3545 !important;
     color: white !important;
     border: 1px solid #dc3545 !important;
 }
 
-button[kind="secondary"][id*="btn_sair_topo"]:hover {
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button:hover {
     background-color: #b02a37 !important;
     color: white !important;
     border: 1px solid #b02a37 !important;
@@ -96,6 +96,22 @@ pode_editar = usuario_logado == USUARIO_PODE_EDITAR
 
 st.caption(f"Usuário logado: **{usuario_logado}**")
 
+st.markdown("""
+<style>
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: 1px solid #dc3545 !important;
+}
+
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button:hover {
+    background-color: #b02a37 !important;
+    color: white !important;
+    border: 1px solid #b02a37 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 col_esq, col_meio, col_dir = st.columns([2, 1, 2])
 with col_meio:
     if st.button("Sair", key="btn_sair_topo", use_container_width=True):
@@ -103,21 +119,12 @@ with col_meio:
         st.session_state.user_name = None
         st.rerun()
 
-st.markdown("""
-<style>
-button[id*="btn_sair_topo"] {
-    background-color: #dc3545 !important;
-    color: white !important;
-    border: 1px solid #dc3545 !important;
-}
-
-button[id*="btn_sair_topo"]:hover {
-    background-color: #b02a37 !important;
-    color: white !important;
-    border: 1px solid #b02a37 !important;
-}
-</style>
-""", unsafe_allow_html=True)
+col_esq, col_meio, col_dir = st.columns([2, 1, 2])
+with col_meio:
+    if st.button("Sair", key="btn_sair_topo", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.user_name = None
+        st.rerun()
 
 # =========================================================
 # CARGA DE DADOS
