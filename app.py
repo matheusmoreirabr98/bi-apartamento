@@ -114,7 +114,7 @@ div[data-testid="stCaption"] {
 
 /* reduz espaço antes das colunas (onde está o botão sair) */
 div[data-testid="stHorizontalBlock"] {
-    margin-top: -200px !important;
+    margin-top: -30px !important;
 }
 </style>
 """, unsafe_allow_html=True)
