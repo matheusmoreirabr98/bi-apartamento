@@ -65,7 +65,7 @@ div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
 }
 
 /* BOTÃO RETOMAR EVOLUÇÃO DE OBRA */
-button[data-testid="baseButton-btn_retomar_evolucao"] {
+.st-key-btn_retomar_evolucao button {
     background: rgba(234, 179, 8, 0.22) !important;
     border: 1px solid rgba(234, 179, 8, 0.38) !important;
     color: #8a6a00 !important;
@@ -74,7 +74,7 @@ button[data-testid="baseButton-btn_retomar_evolucao"] {
     box-shadow: none !important;
 }
 
-button[data-testid="baseButton-btn_retomar_evolucao"]:hover {
+.st-key-btn_retomar_evolucao button:hover {
     background: rgba(234, 179, 8, 0.30) !important;
     border: 1px solid rgba(234, 179, 8, 0.48) !important;
     color: #735800 !important;
