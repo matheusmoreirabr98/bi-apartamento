@@ -302,6 +302,14 @@ def desfazer_pagamento(
 # TAB: REGISTRAR / EDITAR PAGAMENTO
 # =========================================================
 def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
+    st.markdown("""
+    <style>
+    div[data-baseweb="input"] button {
+        display: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     eh_todos = contrato_selecionado == CONTRATO_TODOS
     contrato_eh_evolucao = _is_evolucao_obra(contrato_selecionado)
     exibir_responsavel = contrato_selecionado == CONTRATO_TAXAS
