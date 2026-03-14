@@ -841,7 +841,6 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 # TAB: ATUALIZAR PARCELAS
 # =========================================================
 def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
-    st.subheader({contrato_selecionado})
 
     if parcelas_contrato.empty:
         st.info("Sem parcelas cadastradas.")
