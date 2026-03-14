@@ -63,6 +63,22 @@ div.stButton > button[data-testid="stBaseButton-secondary"]:hover {
     border: 1px solid rgba(239, 68, 68, 0.24) !important;
     color: #922f2f !important;
 }
+
+/* BOTÃO RETOMAR EVOLUÇÃO DE OBRA */
+button[data-testid="baseButton-btn_retomar_evolucao"] {
+    background: rgba(234, 179, 8, 0.22) !important;
+    border: 1px solid rgba(234, 179, 8, 0.38) !important;
+    color: #8a6a00 !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+}
+
+button[data-testid="baseButton-btn_retomar_evolucao"]:hover {
+    background: rgba(234, 179, 8, 0.30) !important;
+    border: 1px solid rgba(234, 179, 8, 0.48) !important;
+    color: #735800 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
