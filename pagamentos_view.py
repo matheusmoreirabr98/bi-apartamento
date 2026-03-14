@@ -383,7 +383,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     # =========================================================
     # REGISTRAR PAGAMENTO - PARCELAS PENDENTES
     # =========================================================
-    st.markdown("### Marcar parcela como paga")
+    st.markdown(
+        "<h3 style='text-align: center;'>Marcar parcela como paga</h3>",
+        unsafe_allow_html=True
+    )
 
     pendentes = parcelas[parcelas["status"] != "pago"].copy()
 
@@ -529,7 +532,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                 st.error(f"Erro ao registrar pagamento: {e}")
 
     st.markdown("---")
-    st.markdown("### Editar parcela já paga")
+    st.markdown(
+        "<h3 style='text-align: center;'>Editar parcela já paga</h3>",
+        unsafe_allow_html=True
+    )
 
     # =========================================================
     # EDITAR PAGAMENTO JÁ FEITO
