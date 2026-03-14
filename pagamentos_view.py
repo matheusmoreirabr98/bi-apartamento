@@ -404,7 +404,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         st.markdown("---")
 
     st.markdown(
-        "<h3 style='text-align: center;'>Marcar parcela como paga</h3>",
+        "<h3 style='text-align: center;'>Registrar Pagamento</h3>",
         unsafe_allow_html=True
     )
 
@@ -560,7 +560,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         col_btn_esq, col_btn_centro, col_btn_dir = st.columns([1, 1, 1])
 
         with col_btn_centro:
-            if st.button("Registrar pagamento", type="primary", key="btn_registrar_pagamento", use_container_width=True):
+            if st.button("Registrar Pagamento", type="primary", key="btn_registrar_pagamento", use_container_width=True):
                 try:
                     dados_atualizados = registrar_pagamento(
                         supabase=supabase,
@@ -585,7 +585,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
     st.markdown("---")
     st.markdown(
-        "<h3 style='text-align: center;'>Editar parcela já paga</h3>",
+        "<h3 style='text-align: center;'>Editar Parcela</h3>",
         unsafe_allow_html=True
     )
 
@@ -772,7 +772,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     with b2:
         _, centro_b2, _ = st.columns([1, 3, 1])
         with centro_b2:
-            if st.button("Desfazer pagamento", key="btn_desfazer_pagamento", use_container_width=True):
+            if st.button("Desfazer Pagamento", key="btn_desfazer_pagamento", use_container_width=True):
                 try:
                     dados_atualizados = desfazer_pagamento(
                         supabase=supabase,

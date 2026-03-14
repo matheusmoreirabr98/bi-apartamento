@@ -40,6 +40,20 @@ st.markdown(
 inject_styles()
 st.title("🏠 Apartamento")
 
+st.markdown("""
+<style>
+.logout-button button {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: none !important;
+}
+
+.logout-button button:hover {
+    background-color: #b02a37 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
 
@@ -82,10 +96,14 @@ st.caption(f"Usuário logado: **{usuario_logado}**")
 
 col_esq, col_meio, col_dir = st.columns([2, 1, 2])
 with col_meio:
+    st.markdown('<div class="logout-button">', unsafe_allow_html=True)
+
     if st.button("Sair", key="btn_sair_topo", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.user_name = None
         st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================
 # CARGA DE DADOS
