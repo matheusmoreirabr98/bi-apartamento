@@ -34,6 +34,24 @@ div[data-testid="stButton"] > button {
     padding: 0.5rem 0.75rem;
     border-radius: 8px;
 }
+/* botão padrão ocupa largura total */
+div[data-testid="stButton"] > button {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+/* BOTÃO SAIR */
+button[kind="secondary"][data-testid="baseButton-btn_sair_topo"] {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: 1px solid #dc3545 !important;
+}
+
+button[kind="secondary"][data-testid="baseButton-btn_sair_topo"]:hover {
+    background-color: #b02a37 !important;
+    border: 1px solid #b02a37 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
