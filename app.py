@@ -64,7 +64,7 @@ if "user_name" not in st.session_state:
 if not st.session_state.logged_in:
     senha = st.text_input("Senha", type="password")
 
-    if st.button("Entrar"):
+    if st.button("Entrar", use_container_width=True):
         user = USUARIOS.get(senha)
         if user:
             st.session_state.logged_in = True
