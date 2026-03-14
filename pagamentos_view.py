@@ -786,10 +786,10 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
-    b1, b2 = st.columns(2)
+    b1, b2 = st.columns(2, gap="small")
 
     with b1:
-        _, centro_b1, _ = st.columns([1, 3, 1])
+        _, centro_b1, _ = st.columns([1, 1])
         with centro_b1:
             st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             if st.button("Salvar Edição", type="primary", key="btn_salvar_edicao_pagamento", use_container_width=True):
