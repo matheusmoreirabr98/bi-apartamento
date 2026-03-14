@@ -818,7 +818,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     with b2:
         _, centro_b2, _ = st.columns([1, 3, 1])
         with centro_b2:
-            st.markdown("<div style='height: 26px;'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 50px;'></div>", unsafe_allow_html=True)
             if st.button("Desfazer Pagamento", key="btn_desfazer_pagamento", use_container_width=True):
                 try:
                     dados_atualizados = desfazer_pagamento(
