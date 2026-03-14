@@ -348,11 +348,39 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
         c1, c2 = st.columns([2, 1])
 
-        with c1:
-            if contrato_encerrado:
-                st.success("✅ Evolução de Obra está marcada como concluída.")
-            else:
-                st.info("ℹ️ Evolução de Obra está em andamento.")
+    with c1:
+        if contrato_encerrado:
+            st.markdown(
+                """
+                <div style="
+                    background-color: rgba(40, 167, 69, 0.12);
+                    color: #155724;
+                    padding: 0.75rem 1rem;
+                    border-radius: 0.5rem;
+                    text-align: center;
+                    font-weight: 500;
+                ">
+                    ✅ Evolução de Obra está marcada como concluída.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                """
+                <div style="
+                    background-color: rgba(23, 162, 184, 0.12);
+                    color: #0c5460;
+                    padding: 0.75rem 1rem;
+                    border-radius: 0.5rem;
+                    text-align: center;
+                    font-weight: 500;
+                ">
+                    ℹ️ Evolução de Obra está em andamento.
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         with c2:
             if st.button("Retomar Evolução de Obra", key="btn_retomar_evolucao"):
