@@ -103,7 +103,21 @@ with col_meio:
         st.session_state.user_name = None
         st.rerun()
 
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("""
+<style>
+button[id*="btn_sair_topo"] {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: 1px solid #dc3545 !important;
+}
+
+button[id*="btn_sair_topo"]:hover {
+    background-color: #b02a37 !important;
+    color: white !important;
+    border: 1px solid #b02a37 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # =========================================================
 # CARGA DE DADOS
