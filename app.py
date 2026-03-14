@@ -78,25 +78,14 @@ if not st.session_state.logged_in:
 usuario_logado = st.session_state.user_name
 pode_editar = usuario_logado == USUARIO_PODE_EDITAR
 
-top_c1, top_c2, top_c3 = st.columns([2, 1, 2])
+st.caption(f"Usuário logado: **{usuario_logado}**")
 
-with top_c1:
-    st.caption(f"Usuário logado: **{usuario_logado}**")
-
-    esq, meio, dir = st.columns([2, 1, 2])
-    with meio:
-        if st.button("Sair", use_container_width=True):
-            st.session_state.logged_in = False
-            st.session_state.user_name = None
-            st.rerun()
-
-with top_c2:
-    st.markdown("<div style='display:flex; justify-content:center;'>", unsafe_allow_html=True)
-    if st.button("Sair", use_container_width=True):
+col_esq, col_meio, col_dir = st.columns([2, 1, 2])
+with col_meio:
+    if st.button("Sair", key="btn_sair_topo", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.user_name = None
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # =========================================================
 # CARGA DE DADOS
