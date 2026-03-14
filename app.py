@@ -96,6 +96,13 @@ pode_editar = usuario_logado == USUARIO_PODE_EDITAR
 
 st.caption(f"Usuário logado: **{usuario_logado}**")
 
+col_esq, col_meio, col_dir = st.columns([2, 1, 2])
+with col_meio:
+    if st.button("Sair", key="btn_sair_topo", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.user_name = None
+        st.rerun()
+
 st.markdown("""
 <style>
 div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button {
@@ -111,13 +118,6 @@ div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button:ho
 }
 </style>
 """, unsafe_allow_html=True)
-
-col_esq, col_meio, col_dir = st.columns([2, 1, 2])
-with col_meio:
-    if st.button("Sair", key="btn_sair_topo", use_container_width=True):
-        st.session_state.logged_in = False
-        st.session_state.user_name = None
-        st.rerun()
 
 col_esq, col_meio, col_dir = st.columns([2, 1, 2])
 with col_meio:
