@@ -40,22 +40,6 @@ st.markdown(
 inject_styles()
 st.title("🏠 Apartamento")
 
-st.markdown("""
-<style>
-div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button {
-    background-color: #dc3545 !important;
-    color: white !important;
-    border: 1px solid #dc3545 !important;
-}
-
-div[data-testid="column"]:nth-of-type(2) div[data-testid="stButton"] > button:hover {
-    background-color: #b02a37 !important;
-    color: white !important;
-    border: 1px solid #b02a37 !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
 
@@ -98,13 +82,13 @@ st.caption(f"Usuário logado: **{usuario_logado}**")
 
 st.markdown("""
 <style>
-div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button {
+div[data-testid="stButton"] > button[kind="secondary"] {
     background-color: #dc3545 !important;
     color: white !important;
     border: 1px solid #dc3545 !important;
 }
 
-div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(2) button:hover {
+div[data-testid="stButton"] > button[kind="secondary"]:hover {
     background-color: #b02a37 !important;
     color: white !important;
     border: 1px solid #b02a37 !important;

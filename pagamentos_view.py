@@ -557,8 +557,6 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
             ultima_parcela = False
 
-        col_btn_esq, col_btn_centro, col_btn_dir = st.columns([1, 1, 1])
-
         with col_btn_centro:
             if st.button("Registrar Pagamento", type="primary", key="btn_registrar_pagamento", use_container_width=True):
                 try:
