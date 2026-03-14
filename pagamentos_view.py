@@ -645,7 +645,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         key="edit_pago",
     )
 
-    st.markdown("<div style='height: 35px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
 
     parcela_paga = pagas[pagas["label"] == parcela_paga_label].iloc[0]
     parcela_paga_eh_evolucao = _is_evolucao_obra(parcela_paga.get("contrato"))
