@@ -814,24 +814,26 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                 st.error(f"Erro ao atualizar pagamento: {e}")
 
     with b2:
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        if st.button("Desfazer Pagamento", key="btn_desfazer_pagamento", use_container_width=True):
-            try:
-                dados_atualizados = desfazer_pagamento(
-                    supabase=supabase,
-                    parcela_id=parcela_paga["id"],
-                    contrato=str(parcela_paga.get("contrato", "")),
-                    eh_evolucao_obra=parcela_paga_eh_evolucao,
-                )
+        _, centro_b2, _ = st.columns([1, 3, 1])
+        with centro_b2:
+            st.markdown("<div style='height: 26px;'></div>", unsafe_allow_html=True)
+            if st.button("Desfazer Pagamento", key="btn_desfazer_pagamento", use_container_width=True):
+                try:
+                    dados_atualizados = desfazer_pagamento(
+                        supabase=supabase,
+                        parcela_id=parcela_paga["id"],
+                        contrato=str(parcela_paga.get("contrato", "")),
+                        eh_evolucao_obra=parcela_paga_eh_evolucao,
+                    )
 
-                if not dados_atualizados:
-                    st.error("O banco não retornou a parcela atualizada.")
-                else:
-                    st.success("✅ Pagamento desfeito com sucesso!")
-                    st.rerun()
+                    if not dados_atualizados:
+                        st.error("O banco não retornou a parcela atualizada.")
+                    else:
+                        st.success("✅ Pagamento desfeito com sucesso!")
+                        st.rerun()
 
-            except Exception as e:
-                st.error(f"Erro ao desfazer pagamento: {e}")
+                except Exception as e:
+                    st.error(f"Erro ao desfazer pagamento: {e}")
 
 
 # =========================================================
