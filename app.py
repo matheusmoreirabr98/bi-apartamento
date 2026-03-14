@@ -125,12 +125,10 @@ div[data-testid="stHorizontalBlock"] {
 </style>
 """, unsafe_allow_html=True)
 
-col_esq, col_meio, col_dir = st.columns([2, 1, 2])
-with col_meio:
-    if st.button("Sair", key="btn_sair_topo", use_container_width=True):
-        st.session_state.logged_in = False
-        st.session_state.user_name = None
-        st.rerun()
+if st.button("Sair", key="btn_sair_topo", use_container_width=True):
+    st.session_state.logged_in = False
+    st.session_state.user_name = None
+    st.rerun()
 
 # =========================================================
 # CARGA DE DADOS
