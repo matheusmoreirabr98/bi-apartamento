@@ -891,17 +891,55 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         else 0
     )
 
+    def _render_card(titulo, valor):
+        st.markdown(
+            f"""
+            <div style="
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 16px;
+                padding: 18px 20px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+                min-height: 110px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                margin-bottom: 8px;
+            ">
+                <div style="
+                    font-size: 14px;
+                    color: #6b7280;
+                    font-weight: 600;
+                    margin-bottom: 10px;
+                ">
+                    {titulo}
+                </div>
+                <div style="
+                    font-size: 28px;
+                    color: #111827;
+                    font-weight: 700;
+                    line-height: 1.2;
+                ">
+                    {valor}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
     # LINHA DE CIMA
-    render_cards_grid([
-        card_html("Parcelas Pagas", str(qtd_pagas), small=True),
-        card_html("Valor Total Pago", brl(total_pago), small=True),
-    ], cols=2)
+    col1, col2 = st.columns(2)
+    with col1:
+        _render_card("Parcelas Pagas", str(qtd_pagas))
+    with col2:
+        _render_card("Valor Total Pago", brl(total_pago))
 
     # LINHA DE BAIXO
-    render_cards_grid([
-        card_html("Parcelas Pendentes", str(qtd_pendentes), small=True),
-        card_html("Valor Total Pendente", brl(total_pendente), small=True),
-    ], cols=2)
+    col3, col4 = st.columns(2)
+    with col3:
+        _render_card("Parcelas Pendentes", str(qtd_pendentes))
+    with col4:
+        _render_card("Valor Total Pendente", brl(total_pendente))
 
     st.markdown("### Edição das Parcelas")
 
