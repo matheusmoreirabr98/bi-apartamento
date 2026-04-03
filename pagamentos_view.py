@@ -967,15 +967,12 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 value=data_venc_inicial or pd.Timestamp.today().date(),
             )
 
-            if exibir_responsavel:
-                novo_responsavel = st.selectbox(
-                    "Responsável",
-                    opcoes_responsavel,
-                    index=indice_resp,
-                    disabled=parcela_escolhida_eh_evolucao,
-                )
-            else:
-                novo_responsavel = "Compradores"
+            # 👇 CONTRATO AGORA AQUI
+            st.text_input(
+                "Contrato",
+                value=str(parcela_escolhida.get("contrato", "-")),
+                disabled=True,
+            )
 
         with col2:
             novo_valor_principal = st.number_input(
@@ -994,11 +991,16 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 format="%.2f",
             )
 
-            st.text_input(
-                "Contrato",
-                value=str(parcela_escolhida.get("contrato", "-")),
-                disabled=True,
-            )
+            # 👇 RESPONSÁVEL AGORA AQUI
+            if exibir_responsavel:
+                novo_responsavel = st.selectbox(
+                    "Responsável",
+                    opcoes_responsavel,
+                    index=indice_resp,
+                    disabled=parcela_escolhida_eh_evolucao,
+                )
+            else:
+                novo_responsavel = "Compradores"
 
         st.markdown("<br>", unsafe_allow_html=True)
 
