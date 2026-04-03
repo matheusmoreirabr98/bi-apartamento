@@ -878,6 +878,23 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         st.info("Sem parcelas disponíveis.")
         return
 
+    def _titulo_centralizado(texto):
+        st.markdown(
+            f"""
+            <div style="
+                text-align: center;
+                font-size: 22px;
+                font-weight: 700;
+                margin: 20px 0 10px 0;
+            ">
+                {texto}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+    _titulo_centralizado("Resumo")
+
     qtd_pagas = int((parcelas["status"] == "pago").sum()) if "status" in parcelas.columns else 0
     total_pago = (
         parcelas.loc[parcelas["status"] == "pago", "valor_pago"].fillna(0).sum()
@@ -902,7 +919,22 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         card_html("Valor Total Pendente", brl(total_pendente), small=True),
     ], cols=2)
 
-    st.markdown("### Edição das Parcelas")
+    def _titulo_centralizado(texto):
+        st.markdown(
+            f"""
+            <div style="
+                text-align: center;
+                font-size: 22px;
+                font-weight: 700;
+                margin: 20px 0 10px 0;
+            ">
+                {texto}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    _titulo_centralizado("Atualizar Parcelas")
 
     parcelas = parcelas.sort_values(
         ["data_vencimento", "numero_parcela"],
