@@ -612,15 +612,14 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
         st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
 
-        _, col_btn_centro, _ = st.columns([1, 3, 1])
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
 
-        with col_btn_centro:
-            if st.button(
-                "Registrar Pagamento",
-                type="primary",
-                key="btn_registrar_pagamento",
-                use_container_width=True
-            ):
+        if st.button(
+            "Registrar Pagamento",
+            type="primary",
+            key="btn_registrar_pagamento",
+            use_container_width=True
+        ):
                 try:
                     dados_atualizados = registrar_pagamento(
                         supabase=supabase,
