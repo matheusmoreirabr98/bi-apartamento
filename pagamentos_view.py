@@ -882,12 +882,15 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         st.markdown(
             f"""
             <div style="
+                width: 100%;
                 text-align: center;
-                font-size: 22px;
+                font-size: 20px;
                 font-weight: 700;
-                margin: 20px 0 10px 0;
+                margin: 25px 0 10px 0;
+                display: flex;
+                justify-content: center;
             ">
-                {texto}
+                <span>{texto}</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -923,12 +926,15 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         st.markdown(
             f"""
             <div style="
+                width: 100%;
                 text-align: center;
-                font-size: 22px;
+                font-size: 20px;
                 font-weight: 700;
-                margin: 20px 0 10px 0;
+                margin: 25px 0 10px 0;
+                display: flex;
+                justify-content: center;
             ">
-                {texto}
+                <span>{texto}</span>
             </div>
             """,
             unsafe_allow_html=True,
