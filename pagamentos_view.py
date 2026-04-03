@@ -1000,10 +1000,8 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 disabled=True,
             )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
 
-
-    with col_btn_centro:
         submitted = st.form_submit_button(
             "Salvar Atualização",
             type="primary",
