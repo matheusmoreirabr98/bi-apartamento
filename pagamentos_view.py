@@ -1000,27 +1000,33 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 disabled=True,
             )
 
-        submitted = st.form_submit_button("Salvar alterações", use_container_width=True)
+        with col_btn_centro:
+            if st.button(
+                "Salvar Atualização",
+                type="primary",
+                key="btn_salvar_atualizacao",
+                use_container_width=True
+            ):
 
-    if submitted:
-        try:
-            parcela_id = parcela_escolhida["id"]
+                if submitted:
+                    try:
+                        parcela_id = parcela_escolhida["id"]
 
-            payload = {
-                "descricao_parcela": nova_descricao,
-                "data_vencimento": _date_to_iso(nova_data_vencimento),
-                "valor_principal": float(novo_valor_principal),
-                "valor_total": float(novo_valor_total),
-                "responsavel_pagamento": "Compradores" if (parcela_escolhida_eh_evolucao or not exibir_responsavel) else novo_responsavel,
-            }
+                        payload = {
+                            "descricao_parcela": nova_descricao,
+                            "data_vencimento": _date_to_iso(nova_data_vencimento),
+                            "valor_principal": float(novo_valor_principal),
+                            "valor_total": float(novo_valor_total),
+                            "responsavel_pagamento": "Compradores" if (parcela_escolhida_eh_evolucao or not exibir_responsavel) else novo_responsavel,
+                        }
 
-            if parcela_escolhida_eh_evolucao and pd.notnull(parcela_escolhida.get("numero_parcela")):
-                payload["total_parcelas"] = int(parcela_escolhida["numero_parcela"])
+                        if parcela_escolhida_eh_evolucao and pd.notnull(parcela_escolhida.get("numero_parcela")):
+                            payload["total_parcelas"] = int(parcela_escolhida["numero_parcela"])
 
-            _update_parcela(supabase, parcela_id, payload)
+                        _update_parcela(supabase, parcela_id, payload)
 
-            st.success("Parcela atualizada com sucesso.")
-            st.rerun()
+                        st.success("Parcela atualizada com sucesso.")
+                        st.rerun()
 
-        except Exception as e:
-            st.error(f"Erro ao atualizar parcela: {e}")
+                    except Exception as e:
+                        st.error(f"Erro ao atualizar parcela: {e}")
