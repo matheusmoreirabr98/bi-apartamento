@@ -1002,12 +1002,12 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
 
         col_btn_esq, col_btn_centro, col_btn_dir = st.columns([1, 2, 1])
 
-        with col_btn_centro:
-            submitted = st.form_submit_button(
-                "Salvar Atualização",
-                type="primary",
-                use_container_width=True
-            )
+    with col_btn_centro:
+        submitted = st.form_submit_button(
+            "Salvar Atualização",
+            type="primary",
+            use_container_width=True
+        )
 
     if submitted:
         try:
