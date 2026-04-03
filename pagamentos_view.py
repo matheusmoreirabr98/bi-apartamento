@@ -614,7 +614,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             """
             <style>
             div[data-testid="stCheckbox"] {
-                margin-bottom: -8px !important;
+                margin-bottom: -50px !important;
             }
             </style>
             """,
