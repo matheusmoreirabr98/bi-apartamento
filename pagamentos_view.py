@@ -905,6 +905,11 @@ def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
             lambda x: brl(x) if pd.notnull(x) else "-"
         )
 
+    if "responsavel_pagamento" in tabela.columns:
+        tabela["responsavel_pagamento"] = tabela["responsavel_pagamento"].apply(
+            lambda x: "-" if pd.isnull(x) or str(x).lower() == "none" else x
+        )
+
     tabela = tabela.rename(columns={
         "descricao_parcela": "Descrição da Parcela",
         "valor_principal": "Valor Principal",
