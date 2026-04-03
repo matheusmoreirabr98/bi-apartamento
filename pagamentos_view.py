@@ -1000,7 +1000,8 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 disabled=True,
             )
 
-        col_btn_esq, col_btn_centro, col_btn_dir = st.columns([1, 2, 1])
+    st.markdown("<br>", unsafe_allow_html=True)
+
 
     with col_btn_centro:
         submitted = st.form_submit_button(
