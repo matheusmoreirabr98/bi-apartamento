@@ -881,7 +881,6 @@ def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
 
     colunas_show = [
         col for col in [
-            "contrato",
             "descricao_parcela",
             "valor_principal",
             "valor_total",
