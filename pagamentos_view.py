@@ -907,7 +907,6 @@ def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
         )
 
     tabela = tabela.rename(columns={
-        "contrato": "Contrato",
         "descricao_parcela": "Descrição da Parcela",
         "valor_principal": "Valor Principal",
         "valor_total": "Valor Total",
@@ -1134,7 +1133,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
 
         except Exception as e:
             st.error(f"Erro ao atualizar parcela: {e}")
-            
+
     tabela_parcelas = parcelas.copy()
 
     if contrato_selecionado != CONTRATO_TODOS and "contrato" in tabela_parcelas.columns:
