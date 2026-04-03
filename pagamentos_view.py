@@ -360,97 +360,6 @@ def desfazer_pagamento(
 # =========================================================
 # TAB: REGISTRAR / EDITAR PAGAMENTO
 # =========================================================
-
-def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
-    if parcelas_tabela.empty:
-        st.info("Sem parcelas para exibir.")
-        return
-
-    tabela = parcelas_tabela.copy()
-
-    colunas_show = [
-        col for col in [
-            "contrato",
-            "descricao_parcela",
-            "valor_principal",
-            "valor_total",
-            "responsavel_pagamento",
-        ]
-        if col in tabela.columns
-    ]
-
-    tabela = tabela[colunas_show].copy()
-
-    if tabela.empty:
-        st.info("Sem parcelas para exibir.")
-        return
-
-    if "valor_principal" in tabela.columns:
-        tabela["valor_principal"] = tabela["valor_principal"].apply(
-            lambda x: brl(x) if pd.notnull(x) else "-"
-        )
-
-    if "valor_total" in tabela.columns:
-        tabela["valor_total"] = tabela["valor_total"].apply(
-            lambda x: brl(x) if pd.notnull(x) else "-"
-        )
-
-    tabela = tabela.rename(columns={
-        "contrato": "Contrato",
-        "descricao_parcela": "Descrição da Parcela",
-        "valor_principal": "Valor Principal",
-        "valor_total": "Valor Total",
-        "responsavel_pagamento": "Responsável",
-    })
-
-    html_tabela = tabela.to_html(index=False, classes="parcelas-tabela-scrollavel")
-
-    st.markdown("""
-    <style>
-    .parcelas-wrapper-scroll {
-        max-height: 400px;
-        overflow-y: auto;
-        overflow-x: auto;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        width: 100%;
-    }
-
-    .parcelas-tabela-scrollavel {
-        border-collapse: collapse;
-        font-size: 14px;
-        width: max-content;
-        min-width: 100%;
-    }
-
-    .parcelas-tabela-scrollavel th,
-    .parcelas-tabela-scrollavel td {
-        text-align: center;
-        padding: 10px 12px;
-        border-bottom: 1px solid #eee;
-        white-space: nowrap;
-    }
-
-    .parcelas-tabela-scrollavel th {
-        text-align: center;
-        font-weight: 600;
-        background-color: #f8f9fa;
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown(
-        f"""
-        <div class="parcelas-wrapper-scroll">
-            {html_tabela}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
 def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
     st.markdown("""
     <style>
@@ -480,17 +389,6 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     if parcelas.empty:
         st.info("Sem parcelas disponíveis.")
         return
-    
-    tabela_parcelas = parcelas.copy()
-
-    if contrato_selecionado != CONTRATO_TODOS and "contrato" in tabela_parcelas.columns:
-        tabela_parcelas = tabela_parcelas[
-            tabela_parcelas["contrato"].astype(str).str.strip() == str(contrato_selecionado).strip()
-        ].copy()
-
-    _render_tabela_pagamentos(tabela_parcelas)
-
-    st.markdown("---")
 
     if contrato_eh_evolucao:
         if _garantir_parcelas_evolucao_obra(supabase, parcelas):
@@ -974,6 +872,96 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 # =========================================================
 # TAB: ATUALIZAR PARCELAS
 # =========================================================
+def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
+    if parcelas_tabela.empty:
+        st.info("Sem parcelas para exibir.")
+        return
+
+    tabela = parcelas_tabela.copy()
+
+    colunas_show = [
+        col for col in [
+            "contrato",
+            "descricao_parcela",
+            "valor_principal",
+            "valor_total",
+            "responsavel_pagamento",
+        ]
+        if col in tabela.columns
+    ]
+
+    tabela = tabela[colunas_show].copy()
+
+    if tabela.empty:
+        st.info("Sem parcelas para exibir.")
+        return
+
+    if "valor_principal" in tabela.columns:
+        tabela["valor_principal"] = tabela["valor_principal"].apply(
+            lambda x: brl(x) if pd.notnull(x) else "-"
+        )
+
+    if "valor_total" in tabela.columns:
+        tabela["valor_total"] = tabela["valor_total"].apply(
+            lambda x: brl(x) if pd.notnull(x) else "-"
+        )
+
+    tabela = tabela.rename(columns={
+        "contrato": "Contrato",
+        "descricao_parcela": "Descrição da Parcela",
+        "valor_principal": "Valor Principal",
+        "valor_total": "Valor Total",
+        "responsavel_pagamento": "Responsável",
+    })
+
+    html_tabela = tabela.to_html(index=False, classes="parcelas-tabela-scrollavel")
+
+    st.markdown("""
+    <style>
+    .parcelas-wrapper-scroll {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        width: 100%;
+    }
+
+    .parcelas-tabela-scrollavel {
+        border-collapse: collapse;
+        font-size: 14px;
+        width: max-content;
+        min-width: 100%;
+    }
+
+    .parcelas-tabela-scrollavel th,
+    .parcelas-tabela-scrollavel td {
+        text-align: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+        white-space: nowrap;
+    }
+
+    .parcelas-tabela-scrollavel th {
+        text-align: center;
+        font-weight: 600;
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <div class="parcelas-wrapper-scroll">
+            {html_tabela}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supabase, pode_editar):
     from utils import brl, card_html, render_cards_grid
 
@@ -1146,3 +1134,14 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
 
         except Exception as e:
             st.error(f"Erro ao atualizar parcela: {e}")
+            
+    tabela_parcelas = parcelas.copy()
+
+    if contrato_selecionado != CONTRATO_TODOS and "contrato" in tabela_parcelas.columns:
+        tabela_parcelas = tabela_parcelas[
+            tabela_parcelas["contrato"].astype(str).str.strip() == str(contrato_selecionado).strip()
+        ].copy()
+
+    _render_tabela_pagamentos(tabela_parcelas)
+
+    st.markdown("---")
