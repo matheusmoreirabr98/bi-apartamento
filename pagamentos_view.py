@@ -920,11 +920,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         if col in parcelas.columns
     ]
 
-    parcelas_show = _formatar_dataframe_pagamentos(parcelas[colunas_show])
-    st.dataframe(parcelas_show, use_container_width=True, hide_index=True)
-
-    st.markdown("### Editar Parcela")
-
     parcelas = parcelas.sort_values(
         ["data_vencimento", "numero_parcela"],
         ascending=[True, True],
