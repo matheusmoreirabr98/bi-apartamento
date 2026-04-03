@@ -891,17 +891,17 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         else 0
     )
 
-    linha1 = st.columns(2)
-    with linha1[0]:
-        st.metric("Parcelas pagas", qtd_pagas)
-    with linha1[1]:
-        st.metric("Valor total pago", brl(total_pago))
+    # LINHA DE CIMA
+    render_cards_grid([
+        card_html("Parcelas Pagas", str(qtd_pagas), small=True),
+        card_html("Valor Total Pago", brl(total_pago), small=True),
+    ], cols=2)
 
-    linha2 = st.columns(2)
-    with linha2[0]:
-        st.metric("Parcelas pendentes", qtd_pendentes)
-    with linha2[1]:
-        st.metric("Valor total pendente", brl(total_pendente))
+    # LINHA DE BAIXO
+    render_cards_grid([
+        card_html("Parcelas Pendentes", str(qtd_pendentes), small=True),
+        card_html("Valor Total Pendente", brl(total_pendente), small=True),
+    ], cols=2)
 
     st.markdown("### Edição das Parcelas")
 
