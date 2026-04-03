@@ -1,6 +1,7 @@
 import streamlit as st
 from supabase import create_client
 
+
 from database import load_parcelas
 from dashboard import render_dashboard
 from dashboard_todos import render_dashboard_todos
