@@ -877,26 +877,31 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         st.info("Sem parcelas disponíveis.")
         return
 
-    resumo_cols = st.columns(4)
+    qtd_pagas = int((parcelas["status"] == "pago").sum()) if "status" in parcelas.columns else 0
+    total_pago = (
+        parcelas.loc[parcelas["status"] == "pago", "valor_pago"].fillna(0).sum()
+        if "status" in parcelas.columns and "valor_pago" in parcelas.columns
+        else 0
+    )
 
-    with resumo_cols[0]:
-        st.metric("Total de parcelas", len(parcelas))
+    qtd_pendentes = int((parcelas["status"] != "pago").sum()) if "status" in parcelas.columns else 0
+    total_pendente = (
+        parcelas.loc[parcelas["status"] != "pago", "valor_total"].fillna(0).sum()
+        if "status" in parcelas.columns and "valor_total" in parcelas.columns
+        else 0
+    )
 
-    with resumo_cols[1]:
-        qtd_pagas = int((parcelas["status"] == "pago").sum()) if "status" in parcelas.columns else 0
-        st.metric("Pagas", qtd_pagas)
+    linha1 = st.columns(2)
+    with linha1[0]:
+        st.metric("Parcelas pagas", qtd_pagas)
+    with linha1[1]:
+        st.metric("Valor total pago", brl(total_pago))
 
-    with resumo_cols[2]:
-        qtd_abertas = int((parcelas["status"] != "pago").sum()) if "status" in parcelas.columns else 0
-        st.metric("Em aberto", qtd_abertas)
-
-    with resumo_cols[3]:
-        total_em_aberto = (
-            parcelas.loc[parcelas["status"] != "pago", "valor_total"].fillna(0).sum()
-            if "status" in parcelas.columns and "valor_total" in parcelas.columns
-            else 0
-        )
-        st.metric("Total em aberto", brl(total_em_aberto))
+    linha2 = st.columns(2)
+    with linha2[0]:
+        st.metric("Parcelas pendentes", qtd_pendentes)
+    with linha2[1]:
+        st.metric("Valor total pendente", brl(total_pendente))
 
     st.markdown("### Edição das Parcelas")
 
