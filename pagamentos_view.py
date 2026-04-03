@@ -907,6 +907,8 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         card_html("Valor Total Pendente", brl(total_pendente), small=True),
     ], cols=2)
 
+    st.markdown("---")
+
     st.markdown(
         "<h3 style='text-align: center;'>Atualizar Parcela</h3>",
         unsafe_allow_html=True
