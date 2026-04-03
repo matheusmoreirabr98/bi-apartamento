@@ -878,25 +878,10 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         st.info("Sem parcelas disponíveis.")
         return
 
-    def _titulo_centralizado(texto):
-        st.markdown(
-            f"""
-            <div style="
-                width: 100%;
-                text-align: center;
-                font-size: 20px;
-                font-weight: 700;
-                margin: 25px 0 10px 0;
-                display: flex;
-                justify-content: center;
-            ">
-                <span>{texto}</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        
-    _titulo_centralizado("Resumo")
+    st.markdown(
+        "<h3 style='text-align: center;'>Resumo</h3>",
+        unsafe_allow_html=True
+    )
 
     qtd_pagas = int((parcelas["status"] == "pago").sum()) if "status" in parcelas.columns else 0
     total_pago = (
@@ -922,25 +907,10 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         card_html("Valor Total Pendente", brl(total_pendente), small=True),
     ], cols=2)
 
-    def _titulo_centralizado(texto):
-        st.markdown(
-            f"""
-            <div style="
-                width: 100%;
-                text-align: center;
-                font-size: 20px;
-                font-weight: 700;
-                margin: 25px 0 10px 0;
-                display: flex;
-                justify-content: center;
-            ">
-                <span>{texto}</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    _titulo_centralizado("Atualizar Parcelas")
+    st.markdown(
+        "<h3 style='text-align: center;'>Atualizar Parcela</h3>",
+        unsafe_allow_html=True
+    )
 
     parcelas = parcelas.sort_values(
         ["data_vencimento", "numero_parcela"],
