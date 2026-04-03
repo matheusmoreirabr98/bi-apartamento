@@ -610,7 +610,18 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
             ultima_parcela = False
 
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <style>
+            div[data-testid="stCheckbox"] {
+                margin-bottom: -8px !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
 
         if st.button(
             "Registrar Pagamento",
