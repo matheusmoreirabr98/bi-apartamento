@@ -474,7 +474,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             key="tab3_selecao_pendente",
         )
         
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
         parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
         parcela_eh_evolucao = _is_evolucao_obra(parcela_sel.get("contrato"))
@@ -800,7 +800,7 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
         ultima_parcela_edit = False
 
-    st.markdown("<div style='height: 35px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
     b1, b2 = st.columns([1, 1], gap="small")
 
