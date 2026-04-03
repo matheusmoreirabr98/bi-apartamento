@@ -898,27 +898,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         )
         st.metric("Total em aberto", brl(total_em_aberto))
 
-    st.markdown("### Visualização das Parcelas")
-
-    colunas_show = [
-        col for col in [
-            "contrato",
-            "origem",
-            "categoria",
-            "descricao_parcela",
-            "numero_parcela",
-            "total_parcelas",
-            "data_vencimento",
-            "data_pagamento",
-            "valor_principal",
-            "valor_total",
-            "valor_pago",
-            "status_exibicao",
-            "responsavel_pagamento",
-            "contrato_encerrado",
-        ]
-        if col in parcelas.columns
-    ]
+    st.markdown("### Edição das Parcelas")
 
     parcelas = parcelas.sort_values(
         ["data_vencimento", "numero_parcela"],
