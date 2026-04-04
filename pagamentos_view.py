@@ -163,7 +163,12 @@ def _date_to_iso(valor):
 
 
 def _update_parcela(supabase, parcela_id, payload: dict):
-    return supabase.table("parcelas").update(payload).eq("id", parcela_id).execute()
+    return (
+        supabase.table("parcelas_v2")
+        .update(payload)
+        .eq("parcela_legacy_id", int(parcela_id))
+        .execute()
+    )
 
 
 def _update_contrato_encerrado(supabase, contrato: str, encerrado: bool):
@@ -284,6 +289,7 @@ def registrar_pagamento(
         "valor_pago": float(valor_pago),
         "responsavel_pagamento": responsavel_pagamento,
         "status": "pago",
+        "updated_by": st.session_state.user_name,
     }
 
     if eh_evolucao_obra:
@@ -316,6 +322,7 @@ def atualizar_pagamento_existente(
         "valor_pago": float(valor_pago),
         "responsavel_pagamento": responsavel_pagamento,
         "status": "pago",
+        "updated_by": st.session_state.user_name,
     }
 
     if eh_evolucao_obra:
@@ -342,6 +349,7 @@ def desfazer_pagamento(
         "data_pagamento": None,
         "valor_pago": None,
         "status": "pendente",
+        "updated_by": st.session_state.user_name,
     }
 
     if eh_evolucao_obra:
@@ -1125,6 +1133,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 "valor_principal": float(novo_valor_principal),
                 "valor_total": float(novo_valor_total),
                 "responsavel_pagamento": "Compradores" if (parcela_escolhida_eh_evolucao or not exibir_responsavel) else novo_responsavel,
+                "updated_by": st.session_state.user_name,
             }
 
             if parcela_escolhida_eh_evolucao and pd.notnull(parcela_escolhida.get("numero_parcela")):
