@@ -938,7 +938,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     _render_barra_progresso_custom(progresso_pct, cor=cor_contrato_atual)
 
-    if eh_sinal_ato:
+    if eh_sinal_ato or contrato_selecionado.strip().lower() == "sinal":
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
             card_html("Valor Pendente", brl(total_restante), small=True),
