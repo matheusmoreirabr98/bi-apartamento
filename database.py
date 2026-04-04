@@ -57,7 +57,7 @@ def load_parcelas(supabase):
 
 
 def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
-    supabase.table("parcelas").update(
+    supabase.table("parcelas_v2").update(
         {
             "status": "pago",
             "data_pagamento": str(data_pagamento),
@@ -65,12 +65,12 @@ def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, respon
             "responsavel_pagamento": responsavel_pagamento,
             "updated_by": st.session_state.user_name,
         }
-    ).eq("id", int(parcela_id)).execute()
+    ).eq("parcela_legacy_id", int(parcela_id)).execute()
 
     res_check = (
         supabase.table("parcelas")
         .select("id,status,data_pagamento,valor_pago,responsavel_pagamento")
-        .eq("id", int(parcela_id))
+        .eq("parcela_legacy_id", int(parcela_id))
         .execute()
     )
 
