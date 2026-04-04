@@ -63,6 +63,7 @@ def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, respon
             "data_pagamento": str(data_pagamento),
             "valor_pago": float(valor_pago),
             "responsavel_pagamento": responsavel_pagamento,
+            "updated_by": st.session_state.user_name,
         }
     ).eq("id", int(parcela_id)).execute()
 
@@ -82,6 +83,7 @@ def atualizar_pagamento_existente(supabase, parcela_id, data_pagamento, valor_pa
             "data_pagamento": str(data_pagamento),
             "valor_pago": float(valor_pago),
             "responsavel_pagamento": responsavel_pagamento,
+            "updated_by": st.session_state.user_name,
         }
     ).eq("id", int(parcela_id)).execute()
 
@@ -101,6 +103,7 @@ def desfazer_pagamento(supabase, parcela_id):
             "status": "pendente",
             "data_pagamento": None,
             "valor_pago": None,
+            "updated_by": st.session_state.user_name,
         }
     ).eq("id", int(parcela_id)).execute()
 
