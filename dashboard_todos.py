@@ -669,7 +669,18 @@ def render_dashboard_todos(parcelas):
     if "data_pagamento" not in evolucao.columns:
         st.warning("A coluna 'data_pagamento' não foi encontrada para montar a evolução mensal.")
     else:
-        evolucao["data_pagamento_ref"] = _to_datetime_br(evolucao["data_pagamento"])
+        evolucao["data_pagamento_ref"] = pd.to_datetime(
+            evolucao["data_pagamento"],
+            errors="coerce",
+            dayfirst=True
+        )
+
+        # fallback para datas em formato BR que não tenham sido convertidas
+        mask_data_invalida = evolucao["data_pagamento_ref"].isna()
+        if mask_data_invalida.any():
+            evolucao.loc[mask_data_invalida, "data_pagamento_ref"] = _to_datetime_br(
+                evolucao.loc[mask_data_invalida, "data_pagamento"]
+            )
         evolucao = evolucao[
             (evolucao["pago_calc"])
             & (evolucao["data_pagamento_ref"].notna())
