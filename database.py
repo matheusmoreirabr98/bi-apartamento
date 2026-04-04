@@ -68,8 +68,8 @@ def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, respon
     ).eq("parcela_legacy_id", int(parcela_id)).execute()
 
     res_check = (
-        supabase.table("parcelas")
-        .select("id,status,data_pagamento,valor_pago,responsavel_pagamento")
+        supabase.table("parcelas_v2")
+        .select("parcela_legacy_id,status,data_pagamento,valor_pago,responsavel_pagamento,updated_by")
         .eq("parcela_legacy_id", int(parcela_id))
         .execute()
     )
@@ -78,19 +78,19 @@ def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, respon
 
 
 def atualizar_pagamento_existente(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
-    supabase.table("parcelas").update(
+    supabase.table("parcelas_v2").update(
         {
             "data_pagamento": str(data_pagamento),
             "valor_pago": float(valor_pago),
             "responsavel_pagamento": responsavel_pagamento,
             "updated_by": st.session_state.user_name,
         }
-    ).eq("id", int(parcela_id)).execute()
+    ).eq("parcela_legacy_id", int(parcela_id)).execute()
 
     res_check = (
-        supabase.table("parcelas")
-        .select("id,status,data_pagamento,valor_pago,responsavel_pagamento")
-        .eq("id", int(parcela_id))
+        supabase.table("parcelas_v2")
+        .select("parcela_legacy_id,status,data_pagamento,valor_pago,responsavel_pagamento,updated_by")
+        .eq("parcela_legacy_id", int(parcela_id))
         .execute()
     )
 
@@ -98,19 +98,19 @@ def atualizar_pagamento_existente(supabase, parcela_id, data_pagamento, valor_pa
 
 
 def desfazer_pagamento(supabase, parcela_id):
-    supabase.table("parcelas").update(
+    supabase.table("parcelas_v2").update(
         {
             "status": "pendente",
             "data_pagamento": None,
             "valor_pago": None,
             "updated_by": st.session_state.user_name,
         }
-    ).eq("id", int(parcela_id)).execute()
+    ).eq("parcela_legacy_id", int(parcela_id)).execute()
 
     res_check = (
-        supabase.table("parcelas")
-        .select("id,status,data_pagamento,valor_pago")
-        .eq("id", int(parcela_id))
+        supabase.table("parcelas_v2")
+        .select("parcela_legacy_id,status,data_pagamento,valor_pago,updated_by")
+        .eq("parcela_legacy_id", int(parcela_id))
         .execute()
     )
 
