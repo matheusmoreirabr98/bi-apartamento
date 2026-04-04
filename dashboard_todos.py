@@ -268,9 +268,35 @@ def _aplicar_regras_por_contrato(df):
 
         else:
             status = _status_norm(parte["status"]) if "status" in parte.columns else pd.Series("", index=parte.index)
+            hoje = pd.Timestamp.today().normalize()
+
+            if "data_vencimento" in parte.columns:
+                vencimento_calc = pd.to_datetime(parte["data_vencimento"], errors="coerce", dayfirst=True)
+
+                mask_venc_invalido = vencimento_calc.isna()
+                if mask_venc_invalido.any():
+                    vencimento_calc.loc[mask_venc_invalido] = _to_datetime_br(
+                        parte.loc[mask_venc_invalido, "data_vencimento"]
+                    )
+
+                parte["data_vencimento_calc"] = vencimento_calc
+            else:
+                parte["data_vencimento_calc"] = pd.NaT
+
             parte["pago_calc"] = status.eq("pago")
-            parte["pendente_calc"] = status.ne("pago")
-            parte["atrasado_calc"] = False
+
+            parte["atrasado_calc"] = (
+                (~parte["pago_calc"]) &
+                (
+                    status.eq("atrasado") |
+                    (
+                        parte["data_vencimento_calc"].notna() &
+                        (parte["data_vencimento_calc"] < hoje)
+                    )
+                )
+            )
+
+            parte["pendente_calc"] = (~parte["pago_calc"]) & (~parte["atrasado_calc"])
 
         if "valor_total" in parte.columns:
             parte["valor_total_calc"] = _to_numeric_brl(parte["valor_total"])
