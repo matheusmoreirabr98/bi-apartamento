@@ -698,7 +698,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     eh_entrada_direcional = _is_entrada_direcional(contrato_selecionado)
     eh_direcional = _is_direcional(contrato_selecionado)
-    eh_sinal_ato = _is_sinal_ato(contrato_selecionado)
+    eh_sinal_ato = _is_sinal_ato(contrato_selecionado) or str(contrato_selecionado).strip().lower() == "sinal"
     eh_financiamento_caixa = _is_financiamento_caixa(contrato_selecionado)
     eh_taxas_cartorio = _is_taxas_cartorio(contrato_selecionado)
     eh_taxas = eh_sinal_ato or eh_financiamento_caixa or eh_taxas_cartorio
@@ -938,7 +938,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     _render_barra_progresso_custom(progresso_pct, cor=cor_contrato_atual)
 
-    if eh_sinal_ato or contrato_selecionado.strip().lower() == "sinal":
+    if eh_sinal_ato
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
             card_html("Valor Pendente", brl(total_restante), small=True),
