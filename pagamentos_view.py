@@ -166,7 +166,7 @@ def _update_parcela(supabase, parcela_id, payload: dict):
     return (
         supabase.table("parcelas_v2")
         .update(payload)
-        .eq("id", int(parcela_id))
+        .eq("parcela_legacy_id", int(parcela_id))
         .execute()
     )
 
