@@ -274,7 +274,7 @@ def _garantir_parcelas_evolucao_obra(supabase, parcelas: pd.DataFrame):
         ano_cursor, mes_cursor = _proximo_mes(ano_cursor, mes_cursor)
 
     if inserts:
-        supabase.table("parcelas_v2").insert(inserts).execute()
+        supabase.table("parcelas").insert(inserts).execute()
         return True
 
     return False
