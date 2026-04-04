@@ -8,7 +8,7 @@ from utils import normalizar_categoria, normalizar_status_banco
 
 def load_parcelas(supabase):
     try:
-        res = supabase.table("parcelas").select("*").order("numero_parcela").execute()
+        res = supabase.table("vw_parcelas").select("*").order("numero_parcela").execute()
         df = pd.DataFrame(res.data)
 
         if df.empty:
