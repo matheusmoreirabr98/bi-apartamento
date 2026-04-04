@@ -164,7 +164,7 @@ def _date_to_iso(valor):
 
 def _update_parcela(supabase, parcela_id, payload: dict):
     return (
-        supabase.table("parcelas_v2")
+        supabase.table("parcelas")
         .update(payload)
         .eq("parcela_legacy_id", int(parcela_id))
         .execute()
@@ -173,7 +173,7 @@ def _update_parcela(supabase, parcela_id, payload: dict):
 
 def _update_contrato_encerrado(supabase, contrato: str, encerrado: bool):
     return (
-        supabase.table("parcelas_v2")
+        supabase.table("parcelas")
         .update(
             {
                 "contrato_encerrado": encerrado,
