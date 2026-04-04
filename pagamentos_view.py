@@ -166,16 +166,21 @@ def _update_parcela(supabase, parcela_id, payload: dict):
     return (
         supabase.table("parcelas_v2")
         .update(payload)
-        .eq("parcela_legacy_id", int(parcela_id))
+        .eq("id", int(parcela_id))
         .execute()
     )
 
 
 def _update_contrato_encerrado(supabase, contrato: str, encerrado: bool):
     return (
-        supabase.table("parcelas")
-        .update({"contrato_encerrado": encerrado})
-        .eq("contrato", contrato)
+        supabase.table("parcelas_v2")
+        .update(
+            {
+                "contrato_encerrado": encerrado,
+                "updated_by": st.session_state.user_name,
+            }
+        )
+        .eq("contrato_nome", contrato)
         .execute()
     )
 
@@ -192,6 +197,19 @@ def _garantir_parcelas_evolucao_obra(supabase, parcelas: pd.DataFrame):
             return False
 
     contrato_real = str(parcelas["contrato"].iloc[0]).strip()
+
+    res_contrato = (
+        supabase.table("contratos")
+        .select("id")
+        .eq("nome", contrato_real)
+        .limit(1)
+        .execute()
+    )
+
+    if not res_contrato.data:
+        return False
+
+    contrato_id = res_contrato.data[0]["id"]
 
     hoje = date.today()
     limite_final = date(2027, 2, 24)
@@ -234,24 +252,29 @@ def _garantir_parcelas_evolucao_obra(supabase, parcelas: pd.DataFrame):
             referencia = f"{MAPA_MESES[mes_cursor]}/{ano_cursor}"
 
             inserts.append({
-                "contrato": contrato_real,
+                "contrato_id": contrato_id,
+                "contrato_nome": contrato_real,
+                "tipo_parcela": contrato_real,
                 "descricao_parcela": f"Evolução de Obra - {referencia}",
                 "numero_parcela": ultimo_numero,
                 "total_parcelas": ultimo_numero,
                 "data_vencimento": _date_to_iso(data_venc),
                 "data_pagamento": None,
+                "referencia_mes": referencia,
                 "valor_principal": 0.0,
                 "valor_total": 0.0,
                 "valor_pago": None,
                 "status": "pendente",
                 "responsavel_pagamento": "Compradores",
                 "contrato_encerrado": False,
+                "created_by": st.session_state.user_name,
+                "updated_by": st.session_state.user_name,
             })
 
         ano_cursor, mes_cursor = _proximo_mes(ano_cursor, mes_cursor)
 
     if inserts:
-        supabase.table("parcelas").insert(inserts).execute()
+        supabase.table("parcelas_v2").insert(inserts).execute()
         return True
 
     return False
