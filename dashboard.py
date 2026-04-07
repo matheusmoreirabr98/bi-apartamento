@@ -232,24 +232,40 @@ COR_PENDENTE_GRAFICO = CORES_RESPONSAVEL["Pendente"]
 COR_PAGO_CORRETORA = "#ef4444"
 
 def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor3, atrasado=False):
+    card_1 = card_html(titulo1, valor1, small=True)
+    card_2 = card_html(titulo2, valor2, small=True)
+    card_3 = card_html(titulo3, valor3, small=True)
 
-    def _card_html_custom(titulo, valor):
-        estilo_extra = ""
-        if atrasado:
-            estilo_extra = "background:#ffeaea; border:1px solid #f3b6b6;"
+    classe_linha = "linha-proxima-atrasada" if atrasado else "linha-proxima-normal"
 
-        return f"""
-        <div class="metric-card" style="{estilo_extra}">
-            <div class="metric-label">{titulo}</div>
-            <div class="metric-value small">{valor}</div>
+    st.markdown(
+        f"""
+        <style>
+        .{classe_linha} {{
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }}
+
+        .{classe_linha} > div {{
+            min-width: 0;
+        }}
+
+        .linha-proxima-atrasada .metric-card {{
+            background: #ffeaea !important;
+            border: 1px solid #f3b6b6 !important;
+        }}
+        </style>
+
+        <div class="{classe_linha}">
+            <div>{card_1}</div>
+            <div>{card_2}</div>
+            <div>{card_3}</div>
         </div>
-        """
-
-    render_cards_grid([
-        _card_html_custom(titulo1, valor1),
-        _card_html_custom(titulo2, valor2),
-        _card_html_custom(titulo3, valor3),
-    ], cols=3)
+        """,
+        unsafe_allow_html=True,
+    )
 
 def _render_mensagem_contrato_encerrado(texto, cor):
     st.markdown(
