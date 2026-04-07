@@ -251,7 +251,7 @@ def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor
     label_style = "font-size:14px; color:#5f6b7a; margin-bottom:8px;"
     value_style = "font-size:18px; font-weight:700; color:#0f172a;"
 
-    c1, c2, c3 = st.columns(3, gap="small")
+    c1, c2, c3 = st.columns([1, 1, 1], gap="small")
 
     with c1:
         st.markdown(
