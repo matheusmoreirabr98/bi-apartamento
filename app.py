@@ -19,7 +19,7 @@ from utils import (
 )
 
 st.set_page_config(
-    page_title="ALICE",
+    page_title="Apartamento",
     page_icon="imagens/icone_apartamento.png",
     layout="centered",
 )
@@ -57,7 +57,7 @@ div[data-testid="stButton"] > button[kind="secondary"]:hover {
 # =========================================================
 
 inject_styles()
-st.markdown("<h1 style='text-align: center;'>🏠 Apartamento</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🏠 ALICE</h1>", unsafe_allow_html=True)
 
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_SERVICE_ROLE_KEY"]
