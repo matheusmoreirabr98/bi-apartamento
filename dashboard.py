@@ -1163,16 +1163,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     ])
 
             render_cards_grid(cards_proximas, cols=3)
-            else:
-                render_cards_grid([
-                    card_html("Parcela", _texto_parcela(prox), small=True),
-                    card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
-                    card_html(
-                        "Vencimento",
-                        data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                        small=True,
-                    ),
-                ], cols=3)
 
     # =========================================================
     # EVOLUÇÃO POR MÊS
