@@ -239,10 +239,10 @@ def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor
         background:{bg};
         border:1px solid {border};
         border-radius:16px;
-        padding:20px 16px;
+        padding:16px 12px;
         text-align:center;
         box-shadow:0 1px 2px rgba(0,0,0,0.04);
-        min-height:110px;
+        min-height:95px;
         display:flex;
         flex-direction:column;
         justify-content:center;
