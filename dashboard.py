@@ -231,6 +231,20 @@ CORES_RESPONSAVEL = {
 COR_PENDENTE_GRAFICO = CORES_RESPONSAVEL["Pendente"]
 COR_PAGO_CORRETORA = "#ef4444"
 
+def card_html_atrasado(titulo, valor, small=True):
+    return f"""
+    <div style="
+        background-color: #ffe5e5;
+        border: 1px solid #ffb3b3;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+    ">
+        <div style="font-size: 12px; color: #a33a3a;">{titulo}</div>
+        <div style="font-size: 16px; font-weight: 600; color: #7a1f1f;">{valor}</div>
+    </div>
+    """
+
 def _render_mensagem_contrato_encerrado(texto, cor):
     st.markdown(
         f"""
@@ -1179,11 +1193,15 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 for _, prox in proximas_parcelas.iterrows():
                     data_venc = pd.to_datetime(prox["data_ref_ordem"], errors="coerce")
 
+                    is_atrasada = bool(prox.get("atrasada_exibicao", False))
+
+                    card_fn = card_html_atrasado if is_atrasada else card_html
+
                     if eh_evolucao_obra:
                         cards_proximas.extend([
-                            card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
-                            card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
-                            card_html(
+                            card_fn("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
+                            card_fn("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
+                            card_fn(
                                 "Vencimento",
                                 data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                                 small=True,
@@ -1191,9 +1209,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         ])
                     else:
                         cards_proximas.extend([
-                            card_html("Parcela", _texto_parcela(prox), small=True),
-                            card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
-                            card_html(
+                            card_fn("Parcela", _texto_parcela(prox), small=True),
+                            card_fn("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
+                            card_fn(
                                 "Vencimento",
                                 data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                                 small=True,
