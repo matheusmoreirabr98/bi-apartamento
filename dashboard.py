@@ -1123,13 +1123,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     abertas["data_vencimento_calc"],
                     errors="coerce"
                 )
-                if "numero_parcela_num" not in abertas.columns:
+                if "numero_parcela_num" in abertas.columns:
+                    abertas["numero_parcela_ord"] = abertas["numero_parcela_num"]
+                else:
                     abertas["numero_parcela_ord"] = pd.to_numeric(
                         abertas["numero_parcela"],
                         errors="coerce"
                     )
-                else:
-                    abertas["numero_parcela_ord"] = abertas["numero_parcela_num"]
             else:
                 abertas["data_ref_ordem"] = _to_datetime_br(abertas["data_vencimento"])
                 abertas["numero_parcela_ord"] = pd.to_numeric(
@@ -1158,10 +1158,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 .copy()
             )
 
-            proximas_parcelas = pd.concat(
-                [parcela_atrasada, parcela_pendente],
-                ignore_index=True
-            )
+            if not parcela_atrasada.empty and not parcela_pendente.empty:
+                proximas_parcelas = pd.concat([parcela_atrasada, parcela_pendente], ignore_index=True)
+            elif not parcela_atrasada.empty:
+                proximas_parcelas = parcela_atrasada.copy()
+            elif not parcela_pendente.empty:
+                proximas_parcelas = parcela_pendente.copy()
+            else:
+                proximas_parcelas = pd.DataFrame()
 
             if proximas_parcelas.empty:
                 if not eh_financiamento_caixa:
