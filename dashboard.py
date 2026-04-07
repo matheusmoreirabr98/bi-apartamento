@@ -235,48 +235,56 @@ def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor
     bg = "#ffeaea" if atrasado else "white"
     border = "#f3b6b6" if atrasado else "#d9dfe8"
 
-    st.markdown(
-        f"""
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
-            <div style="
-                background:{bg};
-                border:1px solid {border};
-                border-radius:16px;
-                padding:20px 16px;
-                text-align:center;
-                box-shadow:0 1px 2px rgba(0,0,0,0.04);
-            ">
-                <div style="font-size:14px; color:#5f6b7a; margin-bottom:8px;">{titulo1}</div>
-                <div style="font-size:18px; font-weight:700; color:#0f172a;">{valor1}</div>
-            </div>
+    card_style = f"""
+        background:{bg};
+        border:1px solid {border};
+        border-radius:16px;
+        padding:20px 16px;
+        text-align:center;
+        box-shadow:0 1px 2px rgba(0,0,0,0.04);
+        min-height:110px;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+    """
 
-            <div style="
-                background:{bg};
-                border:1px solid {border};
-                border-radius:16px;
-                padding:20px 16px;
-                text-align:center;
-                box-shadow:0 1px 2px rgba(0,0,0,0.04);
-            ">
-                <div style="font-size:14px; color:#5f6b7a; margin-bottom:8px;">{titulo2}</div>
-                <div style="font-size:18px; font-weight:700; color:#0f172a;">{valor2}</div>
-            </div>
+    label_style = "font-size:14px; color:#5f6b7a; margin-bottom:8px;"
+    value_style = "font-size:18px; font-weight:700; color:#0f172a;"
 
-            <div style="
-                background:{bg};
-                border:1px solid {border};
-                border-radius:16px;
-                padding:20px 16px;
-                text-align:center;
-                box-shadow:0 1px 2px rgba(0,0,0,0.04);
-            ">
-                <div style="font-size:14px; color:#5f6b7a; margin-bottom:8px;">{titulo3}</div>
-                <div style="font-size:18px; font-weight:700; color:#0f172a;">{valor3}</div>
+    c1, c2, c3 = st.columns(3, gap="large")
+
+    with c1:
+        st.markdown(
+            f"""
+            <div style="{card_style}">
+                <div style="{label_style}">{titulo1}</div>
+                <div style="{value_style}">{valor1}</div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with c2:
+        st.markdown(
+            f"""
+            <div style="{card_style}">
+                <div style="{label_style}">{titulo2}</div>
+                <div style="{value_style}">{valor2}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with c3:
+        st.markdown(
+            f"""
+            <div style="{card_style}">
+                <div style="{label_style}">{titulo3}</div>
+                <div style="{value_style}">{valor3}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 def _render_mensagem_contrato_encerrado(texto, cor):
     st.markdown(
@@ -1120,9 +1128,6 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             card_html("Total Restante", brl(total_restante), small=True),
         ], cols=1)
 
-    # =========================================================
-    # PRÓXIMA PARCELA
-    # =========================================================
     # =========================================================
     # PRÓXIMA PARCELA
     # =========================================================
