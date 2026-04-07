@@ -231,19 +231,52 @@ CORES_RESPONSAVEL = {
 COR_PENDENTE_GRAFICO = CORES_RESPONSAVEL["Pendente"]
 COR_PAGO_CORRETORA = "#ef4444"
 
-def card_html_atrasado(titulo, valor, small=True):
-    return f"""
-    <div style="
-        background-color: #ffe5e5;
-        border: 1px solid #ffb3b3;
-        border-radius: 12px;
-        padding: 12px;
-        text-align: center;
-    ">
-        <div style="font-size: 12px; color: #a33a3a;">{titulo}</div>
-        <div style="font-size: 16px; font-weight: 600; color: #7a1f1f;">{valor}</div>
-    </div>
-    """
+def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor3, atrasado=False):
+    bg = "#ffeaea" if atrasado else "white"
+    border = "#f3b6b6" if atrasado else "#d9dfe8"
+
+    st.markdown(
+        f"""
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; margin-bottom:14px;">
+            <div style="
+                background:{bg};
+                border:1px solid {border};
+                border-radius:16px;
+                padding:20px 16px;
+                text-align:center;
+                box-shadow:0 1px 2px rgba(0,0,0,0.04);
+            ">
+                <div style="font-size:14px; color:#5f6b7a; margin-bottom:8px;">{titulo1}</div>
+                <div style="font-size:18px; font-weight:700; color:#0f172a;">{valor1}</div>
+            </div>
+
+            <div style="
+                background:{bg};
+                border:1px solid {border};
+                border-radius:16px;
+                padding:20px 16px;
+                text-align:center;
+                box-shadow:0 1px 2px rgba(0,0,0,0.04);
+            ">
+                <div style="font-size:14px; color:#5f6b7a; margin-bottom:8px;">{titulo2}</div>
+                <div style="font-size:18px; font-weight:700; color:#0f172a;">{valor2}</div>
+            </div>
+
+            <div style="
+                background:{bg};
+                border:1px solid {border};
+                border-radius:16px;
+                padding:20px 16px;
+                text-align:center;
+                box-shadow:0 1px 2px rgba(0,0,0,0.04);
+            ">
+                <div style="font-size:14px; color:#5f6b7a; margin-bottom:8px;">{titulo3}</div>
+                <div style="font-size:18px; font-weight:700; color:#0f172a;">{valor3}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 def _render_mensagem_contrato_encerrado(texto, cor):
     st.markdown(
@@ -1090,6 +1123,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
     # =========================================================
     # PRÓXIMA PARCELA
     # =========================================================
+    # =========================================================
+    # PRÓXIMA PARCELA
+    # =========================================================
     _titulo_centralizado("Próxima Parcela")
 
     if eh_evolucao_obra and contrato_encerrado:
@@ -1173,7 +1209,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             )
 
             if not parcela_atrasada.empty and not parcela_pendente.empty:
-                proximas_parcelas = pd.concat([parcela_atrasada, parcela_pendente], ignore_index=True)
+                proximas_parcelas = pd.concat(
+                    [parcela_atrasada, parcela_pendente],
+                    ignore_index=True
+                )
             elif not parcela_atrasada.empty:
                 proximas_parcelas = parcela_atrasada.copy()
             elif not parcela_pendente.empty:
@@ -1188,37 +1227,30 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                         cor_contrato_atual
                     )
             else:
-                cards_proximas = []
-
                 for _, prox in proximas_parcelas.iterrows():
                     data_venc = pd.to_datetime(prox["data_ref_ordem"], errors="coerce")
-
                     is_atrasada = bool(prox.get("atrasada_exibicao", False))
 
-                    card_fn = card_html_atrasado if is_atrasada else card_html
-
                     if eh_evolucao_obra:
-                        cards_proximas.extend([
-                            card_fn("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
-                            card_fn("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
-                            card_fn(
-                                "Vencimento",
-                                data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                                small=True,
-                            ),
-                        ])
+                        _render_card_triplo_parcela(
+                            "Parcela",
+                            _texto_parcela(prox, somente_numero=True),
+                            "Referência",
+                            _referencia_mes_ano(prox["data_vencimento"]),
+                            "Vencimento",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
+                            atrasado=is_atrasada,
+                        )
                     else:
-                        cards_proximas.extend([
-                            card_fn("Parcela", _texto_parcela(prox), small=True),
-                            card_fn("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
-                            card_fn(
-                                "Vencimento",
-                                data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                                small=True,
-                            ),
-                        ])
-
-                render_cards_grid(cards_proximas, cols=3)
+                        _render_card_triplo_parcela(
+                            "Parcela",
+                            _texto_parcela(prox),
+                            "Valor",
+                            brl(_to_numeric_brl(prox["valor_total"])),
+                            "Vencimento",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
+                            atrasado=is_atrasada,
+                        )
 
     # =========================================================
     # EVOLUÇÃO POR MÊS
