@@ -251,8 +251,6 @@ def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor
     label_style = "font-size:14px; color:#5f6b7a; margin-bottom:8px;"
     value_style = "font-size:18px; font-weight:700; color:#0f172a;"
 
-    st.markdown("<div style='margin-bottom:6px;'></div>", unsafe_allow_html=True)
-
     c1, c2, c3 = st.columns(3, gap="large")
 
     with c1:
@@ -287,6 +285,8 @@ def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor
             """,
             unsafe_allow_html=True,
         )
+
+    st.markdown("<div style='margin-bottom:14px;'></div>", unsafe_allow_html=True)
 
 def _render_mensagem_contrato_encerrado(texto, cor):
     st.markdown(
