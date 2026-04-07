@@ -232,30 +232,33 @@ COR_PENDENTE_GRAFICO = CORES_RESPONSAVEL["Pendente"]
 COR_PAGO_CORRETORA = "#ef4444"
 
 def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor3, atrasado=False):
-    if not atrasado:
-        render_cards_grid([
-            card_html(titulo1, valor1, small=True),
-            card_html(titulo2, valor2, small=True),
-            card_html(titulo3, valor3, small=True),
-        ], cols=3)
-        return
+    bg = "#ffeaea" if atrasado else "white"
+    border = "#f3b6b6" if atrasado else "#d9dfe8"
 
-    def _card_html_atrasado(titulo, valor):
-        return f"""
-        <div class="metric-card" style="
-            background:#ffeaea;
-            border:1px solid #f3b6b6;
-        ">
-            <div class="metric-label">{titulo}</div>
-            <div class="metric-value small">{valor}</div>
-        </div>
-        """
+    cols = st.columns(3, gap="small")
 
-    render_cards_grid([
-        _card_html_atrasado(titulo1, valor1),
-        _card_html_atrasado(titulo2, valor2),
-        _card_html_atrasado(titulo3, valor3),
-    ], cols=3)
+    cards = [
+        card_html(titulo1, valor1, small=True),
+        card_html(titulo2, valor2, small=True),
+        card_html(titulo3, valor3, small=True),
+    ]
+
+    for col, card in zip(cols, cards):
+        with col:
+            st.markdown(
+                f"""
+                <div style="
+                    background:{bg};
+                    border:1px solid {border};
+                    border-radius:16px;
+                    padding:0;
+                    margin:0 0 14px 0;
+                ">
+                    {card}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 def _render_mensagem_contrato_encerrado(texto, cor):
     st.markdown(
