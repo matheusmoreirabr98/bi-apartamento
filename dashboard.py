@@ -244,8 +244,8 @@ def _render_card_triplo_parcela(titulo1, valor1, titulo2, valor2, titulo3, valor
         .{classe_linha} {{
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
         }}
 
         .{classe_linha} > div {{
