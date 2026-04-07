@@ -19,7 +19,7 @@ from utils import (
 )
 
 st.set_page_config(
-    page_title="Apartamento",
+    page_title="ALICE",
     page_icon="imagens/icone_apartamento.png",
     layout="centered",
 )
