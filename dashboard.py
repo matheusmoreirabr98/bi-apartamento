@@ -1088,13 +1088,45 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     elif eh_evolucao_obra:
         proxima_parcela_pendente_mes = "-"
+
         abertas_evolucao = contagem_base[contagem_base["status"] != "pago"].copy()
+
         if not abertas_evolucao.empty:
             abertas_evolucao["data_venc_ref"] = _to_datetime_br(abertas_evolucao["data_vencimento"])
             abertas_evolucao["numero_parcela_ord"] = pd.to_numeric(abertas_evolucao["numero_parcela"], errors="coerce")
-            abertas_evolucao = abertas_evolucao.sort_values(["data_venc_ref", "numero_parcela_ord"], na_position="last")
-            if not abertas_evolucao.empty:
-                proxima_parcela_pendente_mes = _nome_mes_por_data(abertas_evolucao.iloc[0].get("data_vencimento"))
+
+            abertas_evolucao = abertas_evolucao.sort_values(
+                ["data_venc_ref", "numero_parcela_ord"],
+                na_position="last"
+            )
+
+            hoje = pd.Timestamp.today().normalize()
+
+            abertas_evolucao["atrasada"] = (
+                abertas_evolucao["data_venc_ref"].notna()
+                & (abertas_evolucao["data_venc_ref"] < hoje)
+            )
+
+            parcela_atrasada = abertas_evolucao[abertas_evolucao["atrasada"]].head(1)
+            parcela_pendente = abertas_evolucao[~abertas_evolucao["atrasada"]].head(1)
+
+            mes_atrasada = (
+                _nome_mes_por_data(parcela_atrasada.iloc[0]["data_vencimento"])
+                if not parcela_atrasada.empty else "-"
+            )
+
+            mes_pendente = (
+                _nome_mes_por_data(parcela_pendente.iloc[0]["data_vencimento"])
+                if not parcela_pendente.empty else "-"
+            )
+
+            # 👇 AQUI O PULO DO GATO
+            if mes_atrasada != "-" and mes_pendente != "-":
+                proxima_parcela_pendente_mes = f"{mes_atrasada} e {mes_pendente}"
+            elif mes_atrasada != "-":
+                proxima_parcela_pendente_mes = mes_atrasada
+            else:
+                proxima_parcela_pendente_mes = mes_pendente
 
         render_cards_grid([
             card_html("Pagamento Total", brl(total_pago_geral), small=True),
