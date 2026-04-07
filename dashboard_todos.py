@@ -1042,15 +1042,9 @@ def _proximas_parcelas(df):
         "Valor": valores_exibicao,
         "Valor_num": valores_numericos,
         "Vencimento": vencimentos_exibicao,
-        "vencimento_ordem": venc,
-        "atrasada": proximas["atrasada_real"].fillna(False).astype(bool).values,
     })
 
-    return resultado.sort_values(
-        ["Contrato", "atrasada", "vencimento_ordem"],
-        ascending=[True, False, True],
-        na_position="last"
-    ).drop(columns="vencimento_ordem").reset_index(drop=True)
+    return resultado.reset_index(drop=True)
 
 
 def render_dashboard_todos(parcelas):
