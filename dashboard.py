@@ -1117,9 +1117,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 )
         else:
             if eh_financiamento_caixa and "data_vencimento_calc" in abertas.columns:
-                proxima_parcela = (
+                proximas_parcelas = (
                     abertas.sort_values(["data_vencimento_calc", "numero_parcela_num"], na_position="last")
-                    .head(1)
+                    .head(2)
                     .copy()
                 )
             else:
@@ -1127,29 +1127,42 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 abertas["data_venc_ref"] = _to_datetime_br(abertas["data_vencimento"])
                 abertas["numero_parcela_ord"] = pd.to_numeric(abertas["numero_parcela"], errors="coerce")
 
-                proxima_parcela = (
+                proximas_parcelas = (
                     abertas.sort_values(["data_venc_ref", "numero_parcela_ord"], na_position="last")
-                    .head(1)
+                    .head(2)
                     .copy()
                 )
 
-            prox = proxima_parcela.iloc[0]
+            cards_proximas = []
 
-            if eh_financiamento_caixa and "data_vencimento_calc" in prox.index:
-                data_venc = pd.to_datetime(prox["data_vencimento_calc"], errors="coerce")
-            else:
-                data_venc = _to_datetime_br(pd.Series([prox["data_vencimento"]])).iloc[0]
+            for _, prox in proximas_parcelas.iterrows():
+                if eh_financiamento_caixa and "data_vencimento_calc" in proximas_parcelas.columns:
+                    data_venc = pd.to_datetime(prox["data_vencimento_calc"], errors="coerce")
+                else:
+                    data_venc = pd.to_datetime(prox["data_vencimento"], errors="coerce", dayfirst=True)
 
-            if eh_evolucao_obra:
-                render_cards_grid([
-                    card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
-                    card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
-                    card_html(
-                        "Vencimento",
-                        data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
-                        small=True,
-                    ),
-                ], cols=3)
+                if eh_evolucao_obra:
+                    cards_proximas.extend([
+                        card_html("Parcela", _texto_parcela(prox, somente_numero=True), small=True),
+                        card_html("Referência", _referencia_mes_ano(prox["data_vencimento"]), small=True),
+                        card_html(
+                            "Vencimento",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
+                            small=True,
+                        ),
+                    ])
+                else:
+                    cards_proximas.extend([
+                        card_html("Parcela", _texto_parcela(prox), small=True),
+                        card_html("Valor", brl(_to_numeric_brl(prox["valor_total"])), small=True),
+                        card_html(
+                            "Vencimento",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
+                            small=True,
+                        ),
+                    ])
+
+            render_cards_grid(cards_proximas, cols=3)
             else:
                 render_cards_grid([
                     card_html("Parcela", _texto_parcela(prox), small=True),
