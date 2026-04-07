@@ -1160,7 +1160,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 abertas = contagem_base[contagem_base["aberta_calc"]].copy()
 
         elif eh_entrada_direcional or eh_direcional or eh_taxas_cartorio:
-            abertas = contagem_base[contagem_base["pendente_calc"]].copy()
+            abertas = contagem_base[
+                contagem_base["pendente_calc"] | contagem_base["atrasado_calc"]
+            ].copy()
 
         else:
             abertas = contagem_base.copy()
