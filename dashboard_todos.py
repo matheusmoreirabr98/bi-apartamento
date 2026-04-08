@@ -744,7 +744,7 @@ def render_dashboard_todos(parcelas):
             )
 
         render_cards_grid([
-            card_html("Total Próximas Parcelas (Entr. Direcional + Taxas Cartoriais)", brl(total_proximas_parcelas), small=True),
+            card_html("Total Próximas Parcelas (Entr. Direcional + Taxas Cartoriais + Parcelas Atrasadas)", brl(total_proximas_parcelas), small=True),
         ], cols=1)
 
     # =========================================================
