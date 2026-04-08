@@ -1079,8 +1079,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ], cols=3)
 
         render_cards_grid([
-            card_html("Valor Pago - Compradores", brl(total_pago_compradores), small=True),
-            card_html("Valor Pago - Corretora", brl(total_pago_corretora), small=True),
+            card_html("Valor Pago - Taxas C", brl(total_pago_compradores), small=True),
+            card_html("Valor Pago - Taxas Banco", brl(total_pago_corretora), small=True),
         ], cols=2)
 
         render_cards_grid([
