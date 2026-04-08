@@ -592,8 +592,17 @@ def _aplicar_regra_taxas_cartorio(df):
     df = df.copy()
     df["responsavel_calc"] = df.apply(_responsavel_taxas_cartorio, axis=1)
     df["pago_calc"] = df.apply(_eh_parcela_taxas_cartorio_paga, axis=1)
-    df["pendente_calc"] = ~df["pago_calc"]
-    df["atrasado_calc"] = False
+
+    df["data_vencimento_ref"] = _to_datetime_br(df["data_vencimento"]) if "data_vencimento" in df.columns else pd.NaT
+    hoje = pd.Timestamp.today().normalize()
+
+    df["atrasado_calc"] = (
+        ~df["pago_calc"]
+        & df["data_vencimento_ref"].notna()
+        & (df["data_vencimento_ref"] < hoje)
+    )
+
+    df["pendente_calc"] = ~df["pago_calc"] & ~df["atrasado_calc"]
     return df
 
 
@@ -798,8 +807,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         contagem_base = parcelas_contagem.copy()
 
     elif eh_taxas_cartorio:
-        parcelas_base = _filtrar_base_taxas_cartorio(parcelas_contrato, somente_compradores=True)
-        contagem_base = _filtrar_base_taxas_cartorio(parcelas_contagem, somente_compradores=True)
+        parcelas_base = _filtrar_base_taxas_cartorio(parcelas_contrato, somente_compradores=False)
+        contagem_base = _filtrar_base_taxas_cartorio(parcelas_contagem, somente_compradores=False)
 
     elif eh_taxas:
         if "responsavel_pagamento" in parcelas_contrato.columns:
@@ -898,6 +907,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         base_taxas_todas = _filtrar_base_taxas_cartorio(parcelas_contrato, somente_compradores=False)
         base_taxas_todas = _aplicar_regra_taxas_cartorio(base_taxas_todas)
 
+        contagem_base = _filtrar_base_taxas_cartorio(parcelas_contagem, somente_compradores=False)
         contagem_base = _aplicar_regra_taxas_cartorio(contagem_base)
 
         valor_pago_col = _to_numeric_brl(base_taxas_todas["valor_pago"])
@@ -912,11 +922,13 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         ].sum()
 
         total_restante_compradores = valor_total_col[
-            base_taxas_todas["pendente_calc"] & (base_taxas_todas["responsavel_calc"] == "Compradores")
+            (base_taxas_todas["pendente_calc"] | base_taxas_todas["atrasado_calc"])
+            & (base_taxas_todas["responsavel_calc"] == "Compradores")
         ].sum()
 
         total_restante_corretora = valor_total_col[
-            base_taxas_todas["pendente_calc"] & (base_taxas_todas["responsavel_calc"] == "Corretora")
+            (base_taxas_todas["pendente_calc"] | base_taxas_todas["atrasado_calc"])
+            & (base_taxas_todas["responsavel_calc"] == "Corretora")
         ].sum()
 
         total_pago_geral = total_pago_compradores + total_pago_corretora
@@ -925,7 +937,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
         total_pago_qtd = int(contagem_base["pago_calc"].sum())
         total_pendente_qtd = int(contagem_base["pendente_calc"].sum())
-        total_atrasado_qtd = 0
+        total_atrasado_qtd = int(contagem_base["atrasado_calc"].sum())
 
     else:
         total_pago_geral = _to_numeric_brl(parcelas_base.loc[
@@ -1272,9 +1284,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             atrasado=is_atrasada,
                         )
                     else:
+                        parcela_exibicao = _texto_parcela(prox)
+
+                        if eh_taxas_cartorio:
+                            parcela_exibicao = f"{total_pago_qtd}/{total_parcelas_calc}"
+
                         _render_card_triplo_parcela(
                             "Parcela",
-                            _texto_parcela(prox),
+                            parcela_exibicao,
                             "Valor",
                             brl(_to_numeric_brl(prox["valor_total"])),
                             "Vencimento",
