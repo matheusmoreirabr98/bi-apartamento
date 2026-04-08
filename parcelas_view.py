@@ -107,16 +107,13 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             return f"{int(numero)}"
 
         if "taxas cartoriais" in contrato:
-            ordem_global = pd.to_numeric(row.get("ordem_global"), errors="coerce")
+            if tipo_parcela == "taxas banco":
+                if pd.notnull(numero) and pd.notnull(total):
+                    return f"{int(numero)}/{int(total)}"
+                return "-"
 
-            if pd.notnull(ordem_global):
-                return f"{int(ordem_global)}"
-
-            if tipo_parcela == "taxas banco" and pd.notnull(numero):
-                return f"{int(numero) + 40}"
-
-            if pd.notnull(numero):
-                return f"{int(numero)}"
+            if pd.notnull(numero) and pd.notnull(total):
+                return f"{int(numero)}/{int(total)}"
 
             return "-"
 
