@@ -590,21 +590,33 @@ def _aplicar_regra_taxas_cartorio(df):
     mask_sem_ordem = df["ordem_global"].isna()
 
     if mask_sem_ordem.any():
-        df.loc[
-            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Registro"),
-            "ordem_global"
-        ] = pd.to_numeric(df.loc[
-            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Registro"),
-            "numero_parcela"
-        ], errors="coerce")
 
-        df.loc[
-            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Taxas Banco"),
-            "ordem_global"
-        ] = pd.to_numeric(df.loc[
-            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Taxas Banco"),
-            "numero_parcela"
-        ], errors="coerce") + 40
+        if "tipo_parcela" in df.columns:
+
+            tipo = df["tipo_parcela"].astype(str).str.strip()
+
+            df.loc[
+                mask_sem_ordem & tipo.eq("Registro"),
+                "ordem_global"
+            ] = pd.to_numeric(
+                df.loc[mask_sem_ordem & tipo.eq("Registro"), "numero_parcela"],
+                errors="coerce"
+            )
+
+            df.loc[
+                mask_sem_ordem & tipo.eq("Taxas Banco"),
+                "ordem_global"
+            ] = pd.to_numeric(
+                df.loc[mask_sem_ordem & tipo.eq("Taxas Banco"), "numero_parcela"],
+                errors="coerce"
+            ) + 40
+
+        else:
+            # fallback simples (não quebra o sistema)
+            df.loc[mask_sem_ordem, "ordem_global"] = pd.to_numeric(
+                df.loc[mask_sem_ordem, "numero_parcela"],
+                errors="coerce"
+            )
 
     df["data_vencimento_ref"] = _to_datetime_br(df["data_vencimento"]) if "data_vencimento" in df.columns else pd.NaT
     hoje = pd.Timestamp.today().normalize()
