@@ -1599,21 +1599,21 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 grupos.append({
                     "grupo": "Pendente - Taxas C",
                     "valor": valor_pendente_taxas_c,
-                    "cor": "#9bdc8d",
+                    "cor": "#d4c300",
                 })
 
             if valor_pago_taxas_banco > 0:
                 grupos.append({
                     "grupo": "Pago - Taxas Banco",
                     "valor": valor_pago_taxas_banco,
-                    "cor": COR_TAXAS_BANCO,
+                    "cor": "#fff700",
                 })
 
             if valor_pendente_taxas_banco > 0:
                 grupos.append({
                     "grupo": "Pendente - Taxas Banco",
                     "valor": valor_pendente_taxas_banco,
-                    "cor": "#f5a3a3",
+                    "cor": "#d4d4d4",
                 })
 
             pizza_df = pd.DataFrame(grupos)

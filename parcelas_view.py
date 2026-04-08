@@ -90,8 +90,8 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             encerrado = valor_encerrado in ["true", "1", "sim"]
 
             if encerrado:
-                return f"{int(numero)}/{int(total)}"
-            return f"{int(numero)}"
+                return f"{int(numero)}/{int(total)}" if pd.notnull(numero) and pd.notnull(total) else "-"
+            return f"{int(numero)}" if pd.notnull(numero) else "-"
 
         if "taxas cartoriais" in contrato:
             if tipo_parcela == "taxas banco":
@@ -103,6 +103,11 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
                 return f"{int(numero)}/{int(total)}"
 
             return "-"
+
+        if pd.notnull(numero) and pd.notnull(total):
+            return f"{int(numero)}/{int(total)}"
+
+        return "-"
 
         return f"{int(numero)}/{int(total)}"
 
@@ -116,12 +121,13 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
                 return "Taxas Banco"
             return "Taxas C"
 
-        return contrato
+        return contrato if contrato else "-"
 
-    parc_f["descricao_parcela_formatada"] = parc_f.apply(
-        lambda row: f'{_texto_contrato_label_linha(row)} {_texto_parcela_linha(row)}',
-        axis=1
-    )
+    registros = parc_f.to_dict("records")
+    parc_f["descricao_parcela_formatada"] = [
+        f'{_texto_contrato_label_linha(row)} {_texto_parcela_linha(row)}'
+        for row in registros
+    ]
 
     colunas_existentes = [col for col in colunas_show if col in parc_f.columns]
     parc_show = parc_f[colunas_existentes].copy()
