@@ -417,7 +417,6 @@ def _resumo_por_contrato(df):
             valor_total = float(grupo["valor_total_calc"].sum())
 
         if _is_taxas_cartorio(nome):
-            # AQUI considera compradores + corretora
             parcelas_pagas = int(grupo["pago_calc"].sum())
             parcelas_atrasadas = int(grupo["atrasado_calc"].sum()) if "atrasado_calc" in grupo.columns else 0
             parcelas_pendentes = int(grupo["pendente_calc"].sum())

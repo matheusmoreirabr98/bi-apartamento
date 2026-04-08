@@ -27,23 +27,13 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     # FILTROS
     # =========================================================
     if eh_taxas:
-        f1, f2 = st.columns(2)
-
-        with f1:
-            status_filtro = st.selectbox("Status", status_disp, key="taxas_status")
-
-        with f2:
-            resp_disp = ["Todos"] + sorted(
-                parc_f["responsavel_pagamento"].dropna().astype(str).unique().tolist()
-            )
-            resp_filtro = st.selectbox("Responsável", resp_disp, key="taxas_resp")
+        status_filtro = st.selectbox("Status", status_disp, key="taxas_status")
     else:
         status_filtro = st.selectbox(
             "Status",
             status_disp,
             key=f"status_{contrato_selecionado}"
         )
-        resp_filtro = "Todos"
 
     # =========================================================
     # FILTROS FIXOS / CONDICIONAIS
@@ -51,9 +41,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     if eh_direcional:
         if "categoria" in parc_f.columns:
             parc_f = parc_f[parc_f["categoria"] == "Entrada Direcional"]
-
-    if eh_taxas and resp_filtro != "Todos" and "responsavel_pagamento" in parc_f.columns:
-        parc_f = parc_f[parc_f["responsavel_pagamento"] == resp_filtro]
 
     if "status_exibicao" in parc_f.columns:
         parc_f["status_exibicao"] = (
@@ -119,7 +106,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
         return f"{int(numero)}/{int(total)}"
 
-
     def _texto_contrato_label_linha(row):
         contrato = str(row.get("contrato", "")).strip()
         tipo_parcela = str(row.get("tipo_parcela", "")).strip().lower()
@@ -131,7 +117,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
             return "Taxas C"
 
         return contrato
-
 
     parc_f["descricao_parcela_formatada"] = parc_f.apply(
         lambda row: f'{_texto_contrato_label_linha(row)} {_texto_parcela_linha(row)}',
@@ -191,9 +176,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     st.markdown("""
     <style>
-    /* =========================
-       TABELA DE PARCELAS
-    ========================= */
     .parcelas-wrapper-scroll {
         max-height: 400px;
         overflow-y: auto;
@@ -227,10 +209,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         z-index: 1;
     }
 
-    /* =========================
-       TABELA DE RESUMO
-       (permanece como estava)
-    ========================= */
     .resumo-wrapper {
         max-height: 400px;
         overflow-y: auto;
@@ -296,16 +274,10 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     if eh_direcional:
         resumo_base = parc_f.copy()
     else:
-        if eh_taxas and resp_filtro == "Corretora":
-            if "categoria" in parc_f.columns:
-                resumo_base = parc_f[parc_f["categoria"] == "Taxas Banco"].copy()
-            else:
-                resumo_base = parc_f.copy()
+        if "eh_linha_resumo" in parc_f.columns:
+            resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
         else:
-            if "eh_linha_resumo" in parc_f.columns:
-                resumo_base = parc_f[~parc_f["eh_linha_resumo"]].copy()
-            else:
-                resumo_base = parc_f.copy()
+            resumo_base = parc_f.copy()
 
     if not resumo_base.empty and {"status_exibicao", "id", "valor_total"}.issubset(resumo_base.columns):
         st.markdown(

@@ -1,4 +1,4 @@
-# database.py
+#database.py
 
 import pandas as pd
 import streamlit as st
@@ -30,7 +30,6 @@ def load_parcelas(supabase):
             "origem",
             "descricao_parcela",
             "status",
-            "responsavel_pagamento",
         ]:
             if col not in df.columns:
                 df[col] = None
@@ -45,7 +44,7 @@ def load_parcelas(supabase):
             df["valor_pago"] = pd.to_numeric(df["valor_pago"], errors="coerce")
 
         df["eh_linha_resumo"] = (
-            df["categoria"].fillna("").astype(str).str.lower().eq(" banco")
+            df["categoria"].fillna("").astype(str).str.lower().eq("banco")
             | df["descricao_parcela"].fillna("").astype(str).str.lower().str.contains("corretora", na=False)
         )
 
@@ -56,20 +55,19 @@ def load_parcelas(supabase):
         return pd.DataFrame()
 
 
-def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago):
     supabase.table("parcelas").update(
         {
             "status": "pago",
             "data_pagamento": str(data_pagamento),
             "valor_pago": float(valor_pago),
-            "responsavel_pagamento": responsavel_pagamento,
             "updated_by": st.session_state.user_name,
         }
     ).eq("parcela_legacy_id", int(parcela_id)).execute()
 
     res_check = (
         supabase.table("vw_parcelas")
-        .select("parcela_legacy_id,status,data_pagamento,valor_pago,responsavel_pagamento,updated_by")
+        .select("parcela_legacy_id,status,data_pagamento,valor_pago,updated_by")
         .eq("parcela_legacy_id", int(parcela_id))
         .execute()
     )
@@ -77,19 +75,18 @@ def registrar_pagamento(supabase, parcela_id, data_pagamento, valor_pago, respon
     return res_check.data
 
 
-def atualizar_pagamento_existente(supabase, parcela_id, data_pagamento, valor_pago, responsavel_pagamento):
+def atualizar_pagamento_existente(supabase, parcela_id, data_pagamento, valor_pago):
     supabase.table("parcelas").update(
         {
             "data_pagamento": str(data_pagamento),
             "valor_pago": float(valor_pago),
-            "responsavel_pagamento": responsavel_pagamento,
             "updated_by": st.session_state.user_name,
         }
     ).eq("parcela_legacy_id", int(parcela_id)).execute()
 
     res_check = (
         supabase.table("vw_parcelas")
-        .select("parcela_legacy_id,status,data_pagamento,valor_pago,responsavel_pagamento,updated_by")
+        .select("parcela_legacy_id,status,data_pagamento,valor_pago,updated_by")
         .eq("parcela_legacy_id", int(parcela_id))
         .execute()
     )

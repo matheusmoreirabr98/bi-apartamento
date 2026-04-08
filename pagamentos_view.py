@@ -283,7 +283,6 @@ def _garantir_parcelas_evolucao_obra(supabase, parcelas: pd.DataFrame):
                 "valor_total": 0.0,
                 "valor_pago": None,
                 "status": "pendente",
-                "responsavel_pagamento": "Compradores",
                 "contrato_encerrado": False,
                 "created_by": st.session_state.user_name,
                 "updated_by": st.session_state.user_name,
@@ -319,7 +318,6 @@ def registrar_pagamento(
     parcela_id,
     data_pagamento,
     valor_pago,
-    responsavel_pagamento,
     contrato,
     numero_parcela,
     eh_evolucao_obra=False,
@@ -328,7 +326,6 @@ def registrar_pagamento(
     payload = {
         "data_pagamento": _date_to_iso(data_pagamento),
         "valor_pago": float(valor_pago),
-        "responsavel_pagamento": responsavel_pagamento,
         "status": "pago",
         "updated_by": st.session_state.user_name,
     }
@@ -352,7 +349,6 @@ def atualizar_pagamento_existente(
     parcela_id,
     data_pagamento,
     valor_pago,
-    responsavel_pagamento,
     contrato,
     numero_parcela,
     eh_evolucao_obra=False,
@@ -361,7 +357,6 @@ def atualizar_pagamento_existente(
     payload = {
         "data_pagamento": _date_to_iso(data_pagamento),
         "valor_pago": float(valor_pago),
-        "responsavel_pagamento": responsavel_pagamento,
         "status": "pago",
         "updated_by": st.session_state.user_name,
     }
@@ -420,7 +415,6 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
 
     eh_todos = contrato_selecionado == CONTRATO_TODOS
     contrato_eh_evolucao = _is_evolucao_obra(contrato_selecionado)
-    exibir_responsavel = contrato_selecionado == CONTRATO_TAXAS
 
     if not pode_editar:
         st.info("Somente Matheus Moreira pode editar pagamentos.")
@@ -530,63 +524,28 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         parcela_sel = pendentes[pendentes["label"] == parcela_label].iloc[0]
         parcela_eh_evolucao = _is_evolucao_obra(parcela_sel.get("contrato"))
 
-        responsavel_pagamento = "Compradores"
-        if exibir_responsavel:
-            responsaveis_opcoes = ["Compradores"]
-            if parcelas["responsavel_pagamento"].fillna("").astype(str).eq("Corretora").any():
-                responsaveis_opcoes.append("Corretora")
-
         if parcela_eh_evolucao:
             ref_mes = _formatar_mes_referencia(parcela_sel.get("data_vencimento"))
             data_pag_fixa = _to_date_or_none(parcela_sel.get("data_vencimento")) or date.today()
 
-            if exibir_responsavel:
-                c1, c2, c3 = st.columns(3, gap="large")
+            c1, c2 = st.columns(2)
 
-                with c1:
-                    st.text_input(
-                        "Mês de referência",
-                        value=ref_mes,
-                        disabled=True,
-                        key="novo_pagamento_mes_ref_evolucao",
-                    )
+            with c1:
+                st.text_input(
+                    "Mês de referência",
+                    value=ref_mes,
+                    disabled=True,
+                    key="novo_pagamento_mes_ref_evolucao",
+                )
 
-                with c2:
-                    st.date_input(
-                        "Data do pagamento",
-                        value=data_pag_fixa,
-                        format="DD/MM/YYYY",
-                        disabled=True,
-                        key="novo_pagamento_data_evolucao",
-                    )
-
-                with c3:
-                    st.selectbox(
-                        "Responsável pelo pagamento",
-                        options=["Compradores"],
-                        index=0,
-                        disabled=True,
-                        key="novo_pagamento_resp_evolucao",
-                    )
-            else:
-                c1, c2 = st.columns(2)
-
-                with c1:
-                    st.text_input(
-                        "Mês de referência",
-                        value=ref_mes,
-                        disabled=True,
-                        key="novo_pagamento_mes_ref_evolucao",
-                    )
-
-                with c2:
-                    st.date_input(
-                        "Data do pagamento",
-                        value=data_pag_fixa,
-                        format="DD/MM/YYYY",
-                        disabled=True,
-                        key="novo_pagamento_data_evolucao",
-                    )
+            with c2:
+                st.date_input(
+                    "Data do pagamento",
+                    value=data_pag_fixa,
+                    format="DD/MM/YYYY",
+                    disabled=True,
+                    key="novo_pagamento_data_evolucao",
+                )
 
             valor_pago = st.number_input(
                 "Valor pago",
@@ -606,58 +565,25 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
             data_pagamento = data_pag_fixa
 
         else:
-            if exibir_responsavel:
-                c1, c2, c3 = st.columns(3)
+            c1, c2 = st.columns(2)
 
-                with c1:
-                    data_pagamento = st.date_input(
-                        "Data do pagamento",
-                        value=date.today(),
-                        format="DD/MM/YYYY",
-                        key="novo_pagamento_data",
-                    )
+            with c1:
+                data_pagamento = st.date_input(
+                    "Data do pagamento",
+                    value=date.today(),
+                    format="DD/MM/YYYY",
+                    key="novo_pagamento_data",
+                )
 
-                with c2:
-                    valor_pago = st.number_input(
-                        "Valor pago",
-                        min_value=0.0,
-                        value=float(parcela_sel["valor_total"]) if pd.notnull(parcela_sel.get("valor_total")) else 0.0,
-                        step=0.01,
-                        format="%.2f",
-                        key="novo_pagamento_valor",
-                    )
-
-                with c3:
-                    idx_resp = 0
-                    if parcela_sel.get("responsavel_pagamento") in responsaveis_opcoes:
-                        idx_resp = responsaveis_opcoes.index(parcela_sel["responsavel_pagamento"])
-
-                    responsavel_pagamento = st.selectbox(
-                        "Responsável pelo pagamento",
-                        options=responsaveis_opcoes,
-                        index=idx_resp,
-                        key="novo_pagamento_resp",
-                    )
-            else:
-                c1, c2 = st.columns(2)
-
-                with c1:
-                    data_pagamento = st.date_input(
-                        "Data do pagamento",
-                        value=date.today(),
-                        format="DD/MM/YYYY",
-                        key="novo_pagamento_data",
-                    )
-
-                with c2:
-                    valor_pago = st.number_input(
-                        "Valor pago",
-                        min_value=0.0,
-                        value=float(parcela_sel["valor_total"]) if pd.notnull(parcela_sel.get("valor_total")) else 0.0,
-                        step=0.01,
-                        format="%.2f",
-                        key="novo_pagamento_valor",
-                    )
+            with c2:
+                valor_pago = st.number_input(
+                    "Valor pago",
+                    min_value=0.0,
+                    value=float(parcela_sel["valor_total"]) if pd.notnull(parcela_sel.get("valor_total")) else 0.0,
+                    step=0.01,
+                    format="%.2f",
+                    key="novo_pagamento_valor",
+                )
 
             ultima_parcela = False
 
@@ -686,7 +612,6 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                         parcela_id=parcela_sel["id"],
                         data_pagamento=data_pagamento,
                         valor_pago=valor_pago,
-                        responsavel_pagamento=responsavel_pagamento,
                         contrato=str(parcela_sel.get("contrato", "")),
                         numero_parcela=int(parcela_sel["numero_parcela"]) if pd.notnull(parcela_sel.get("numero_parcela")) else 0,
                         eh_evolucao_obra=parcela_eh_evolucao,
@@ -728,65 +653,29 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
     parcela_paga = pagas[pagas["label"] == parcela_paga_label].iloc[0]
     parcela_paga_eh_evolucao = _is_evolucao_obra(parcela_paga.get("contrato"))
 
-    novo_responsavel = "Compradores"
-    if exibir_responsavel:
-        responsaveis_opcoes_edit = ["Compradores"]
-        if parcelas["responsavel_pagamento"].fillna("").astype(str).eq("Corretora").any():
-            responsaveis_opcoes_edit.append("Corretora")
-
     if parcela_paga_eh_evolucao:
         ref_mes_edit = _formatar_mes_referencia(parcela_paga.get("data_vencimento"))
         data_pagamento_fixa_edit = _to_date_or_none(parcela_paga.get("data_vencimento")) or date.today()
 
-        if exibir_responsavel:
-            e1, e2, e3 = st.columns(3)
+        e1, e2 = st.columns(2)
 
-            with e1:
-                st.text_input(
-                    "Mês de referência",
-                    value=ref_mes_edit,
-                    disabled=True,
-                    key="edit_mes_ref_evolucao",
-                )
+        with e1:
+            st.text_input(
+                "Mês de referência",
+                value=ref_mes_edit,
+                disabled=True,
+                key="edit_mes_ref_evolucao",
+            )
 
-            with e2:
-                st.date_input(
-                    "Data do pagamento",
-                    value=data_pagamento_fixa_edit,
-                    format="DD/MM/YYYY",
-                    disabled=True,
-                    key="edit_data_pagamento_evolucao",
-                )
-                nova_data_pagamento = data_pagamento_fixa_edit
-
-            with e3:
-                st.selectbox(
-                    "Responsável",
-                    options=["Compradores"],
-                    index=0,
-                    disabled=True,
-                    key="edit_responsavel_evolucao",
-                )
-        else:
-            e1, e2 = st.columns(2)
-
-            with e1:
-                st.text_input(
-                    "Mês de referência",
-                    value=ref_mes_edit,
-                    disabled=True,
-                    key="edit_mes_ref_evolucao",
-                )
-
-            with e2:
-                st.date_input(
-                    "Data do pagamento",
-                    value=data_pagamento_fixa_edit,
-                    format="DD/MM/YYYY",
-                    disabled=True,
-                    key="edit_data_pagamento_evolucao",
-                )
-                nova_data_pagamento = data_pagamento_fixa_edit
+        with e2:
+            st.date_input(
+                "Data do pagamento",
+                value=data_pagamento_fixa_edit,
+                format="DD/MM/YYYY",
+                disabled=True,
+                key="edit_data_pagamento_evolucao",
+            )
+            nova_data_pagamento = data_pagamento_fixa_edit
 
         novo_valor_pago = st.number_input(
             "Novo valor pago",
@@ -805,60 +694,26 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
         )
 
     else:
-        if exibir_responsavel:
-            e1, e2, e3 = st.columns(3)
+        e1, e2 = st.columns(2)
 
-            with e1:
-                valor_data_atual = _to_date_or_none(parcela_paga.get("data_pagamento")) or date.today()
-                nova_data_pagamento = st.date_input(
-                    "Nova data do pagamento",
-                    value=valor_data_atual,
-                    format="DD/MM/YYYY",
-                    key="edit_data_pagamento",
-                )
+        with e1:
+            valor_data_atual = _to_date_or_none(parcela_paga.get("data_pagamento")) or date.today()
+            nova_data_pagamento = st.date_input(
+                "Nova data do pagamento",
+                value=valor_data_atual,
+                format="DD/MM/YYYY",
+                key="edit_data_pagamento",
+            )
 
-            with e2:
-                novo_valor_pago = st.number_input(
-                    "Novo valor pago",
-                    min_value=0.0,
-                    value=float(parcela_paga["valor_pago"]) if pd.notnull(parcela_paga.get("valor_pago")) else 0.0,
-                    step=0.01,
-                    format="%.2f",
-                    key="edit_valor_pago",
-                )
-
-            with e3:
-                idx_edit = 0
-                if parcela_paga.get("responsavel_pagamento") in responsaveis_opcoes_edit:
-                    idx_edit = responsaveis_opcoes_edit.index(parcela_paga["responsavel_pagamento"])
-
-                novo_responsavel = st.selectbox(
-                    "Responsável",
-                    options=responsaveis_opcoes_edit,
-                    index=idx_edit,
-                    key="edit_responsavel",
-                )
-        else:
-            e1, e2 = st.columns(2)
-
-            with e1:
-                valor_data_atual = _to_date_or_none(parcela_paga.get("data_pagamento")) or date.today()
-                nova_data_pagamento = st.date_input(
-                    "Nova data do pagamento",
-                    value=valor_data_atual,
-                    format="DD/MM/YYYY",
-                    key="edit_data_pagamento",
-                )
-
-            with e2:
-                novo_valor_pago = st.number_input(
-                    "Novo valor pago",
-                    min_value=0.0,
-                    value=float(parcela_paga["valor_pago"]) if pd.notnull(parcela_paga.get("valor_pago")) else 0.0,
-                    step=0.01,
-                    format="%.2f",
-                    key="edit_valor_pago",
-                )
+        with e2:
+            novo_valor_pago = st.number_input(
+                "Novo valor pago",
+                min_value=0.0,
+                value=float(parcela_paga["valor_pago"]) if pd.notnull(parcela_paga.get("valor_pago")) else 0.0,
+                step=0.01,
+                format="%.2f",
+                key="edit_valor_pago",
+            )
 
         ultima_parcela_edit = False
 
@@ -879,7 +734,6 @@ def render_pagamentos_tab(parcelas_contrato, contrato_selecionado, supabase, pod
                     parcela_id=parcela_paga["id"],
                     data_pagamento=nova_data_pagamento,
                     valor_pago=novo_valor_pago,
-                    responsavel_pagamento=novo_responsavel,
                     contrato=str(parcela_paga.get("contrato", "")),
                     numero_parcela=int(parcela_paga["numero_parcela"]) if pd.notnull(parcela_paga.get("numero_parcela")) else 0,
                     eh_evolucao_obra=parcela_paga_eh_evolucao,
@@ -933,7 +787,6 @@ def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
             "descricao_parcela",
             "valor_principal",
             "valor_total",
-            "responsavel_pagamento",
         ]
         if col in tabela.columns
     ]
@@ -954,16 +807,10 @@ def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
             lambda x: brl(x) if pd.notnull(x) else "-"
         )
 
-    if "responsavel_pagamento" in tabela.columns:
-        tabela["responsavel_pagamento"] = tabela["responsavel_pagamento"].apply(
-            lambda x: "-" if pd.isnull(x) or str(x).lower() == "none" else x
-        )
-
     tabela = tabela.rename(columns={
         "descricao_parcela": "Descrição da Parcela",
         "valor_principal": "Valor Principal",
         "valor_total": "Valor Total",
-        "responsavel_pagamento": "Responsável",
     })
 
     html_tabela = tabela.to_html(index=False, classes="parcelas-tabela-scrollavel")
@@ -1094,7 +941,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
 
     parcela_escolhida = parcelas[parcelas["label_parcela"] == parcela_label].iloc[0]
     parcela_escolhida_eh_evolucao = _is_evolucao_obra(parcela_escolhida.get("contrato"))
-    exibir_responsavel = contrato_selecionado == CONTRATO_TAXAS
 
     if not pode_editar:
         st.warning("Você não tem permissão para atualizar parcelas.")
@@ -1104,13 +950,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
     data_venc_inicial = _to_date_or_none(parcela_escolhida.get("data_vencimento"))
     valor_principal_inicial = _to_float(parcela_escolhida.get("valor_principal"))
     valor_total_inicial = _to_float(parcela_escolhida.get("valor_total"))
-    responsavel_atual = str(parcela_escolhida.get("responsavel_pagamento", "") or "").strip()
-
-    opcoes_responsavel = ["Compradores", "Corretora"]
-    if responsavel_atual and responsavel_atual not in opcoes_responsavel:
-        opcoes_responsavel.append(responsavel_atual)
-
-    indice_resp = opcoes_responsavel.index(responsavel_atual) if responsavel_atual in opcoes_responsavel else 0
 
     with st.form("form_atualizar_parcela"):
         col1, col2 = st.columns(2)
@@ -1126,7 +965,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 value=data_venc_inicial or pd.Timestamp.today().date(),
             )
 
-            # 👇 CONTRATO AGORA AQUI
             st.text_input(
                 "Contrato",
                 value=str(parcela_escolhida.get("contrato", "-")),
@@ -1150,17 +988,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 format="%.2f",
             )
 
-            # 👇 RESPONSÁVEL AGORA AQUI
-            if exibir_responsavel:
-                novo_responsavel = st.selectbox(
-                    "Responsável",
-                    opcoes_responsavel,
-                    index=indice_resp,
-                    disabled=parcela_escolhida_eh_evolucao,
-                )
-            else:
-                novo_responsavel = "Compradores"
-
         st.markdown("<br>", unsafe_allow_html=True)
 
         submitted = st.form_submit_button(
@@ -1178,7 +1005,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 "data_vencimento": _date_to_iso(nova_data_vencimento),
                 "valor_principal": float(novo_valor_principal),
                 "valor_total": float(novo_valor_total),
-                "responsavel_pagamento": "Compradores" if (parcela_escolhida_eh_evolucao or not exibir_responsavel) else novo_responsavel,
                 "updated_by": st.session_state.user_name,
             }
 
