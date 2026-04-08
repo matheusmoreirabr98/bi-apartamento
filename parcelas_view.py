@@ -93,9 +93,10 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
     def _texto_parcela_linha(row):
         contrato = str(row.get("contrato", "")).strip().lower()
+        tipo_parcela = str(row.get("tipo_parcela", "")).strip().lower()
 
-        numero = row.get("numero_parcela")
-        total = row.get("total_parcelas")
+        numero = pd.to_numeric(row.get("numero_parcela"), errors="coerce")
+        total = pd.to_numeric(row.get("total_parcelas"), errors="coerce")
 
         if "evolução de obra" in contrato or "evolucao de obra" in contrato:
             valor_encerrado = str(row.get("contrato_encerrado", "")).strip().lower()
@@ -103,8 +104,21 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
             if encerrado:
                 return f"{int(numero)}/{int(total)}"
-            else:
+            return f"{int(numero)}"
+
+        if "taxas cartoriais" in contrato:
+            ordem_global = pd.to_numeric(row.get("ordem_global"), errors="coerce")
+
+            if pd.notnull(ordem_global):
+                return f"{int(ordem_global)}"
+
+            if tipo_parcela == "taxas banco" and pd.notnull(numero):
+                return f"{int(numero) + 40}"
+
+            if pd.notnull(numero):
                 return f"{int(numero)}"
+
+            return "-"
 
         return f"{int(numero)}/{int(total)}"
 

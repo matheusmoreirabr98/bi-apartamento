@@ -111,6 +111,8 @@ def _proximo_mes(ano, mes):
 
 def _texto_parcela(row):
     num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
+    contrato = str(row.get("contrato", "")).strip().lower()
+    tipo_parcela = str(row.get("tipo_parcela", "")).strip().lower()
 
     if _is_evolucao_obra(row.get("contrato")):
         valor_encerrado = str(row.get("contrato_encerrado", "")).strip().lower()
@@ -119,8 +121,18 @@ def _texto_parcela(row):
         if encerrado:
             total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else num
             return f"{num}/{total}"
-        else:
-            return f"{num}"
+        return f"{num}"
+
+    if "taxas cartoriais" in contrato:
+        ordem_global = pd.to_numeric(row.get("ordem_global"), errors="coerce")
+
+        if pd.notnull(ordem_global):
+            return f"{int(ordem_global)}"
+
+        if tipo_parcela == "taxas banco":
+            return f"{num + 40}"
+
+        return f"{num}"
 
     total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
     return f"{num}/{total}"
