@@ -734,7 +734,7 @@ def render_dashboard_todos(parcelas):
 
             titulo_contrato = row["Contrato"]
             if bool(row.get("Eh_atrasada", False)):
-                titulo_contrato = f"{titulo_contrato} - Atrasada"
+                titulo_contrato = f"{titulo_contrato}"
 
             _render_tres_cards_linha(
                 card_html(titulo_contrato, row["Parcela"], small=True),
