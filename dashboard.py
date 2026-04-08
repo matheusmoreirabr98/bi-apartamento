@@ -1352,7 +1352,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                                 ordem_exibicao = int(numero_parcela)
 
                         parcela_label = (
-                            f"{int(ordem_exibicao)}/48"
+                            f"{int(ordem_exibicao)}"
                             if pd.notnull(ordem_exibicao)
                             else "-"
                         )
@@ -1369,7 +1369,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     else:
                         _render_card_triplo_parcela(
                             "Parcela",
-                            _texto_parcela(prox),
+                            _texto_parcela(prox, somente_numero=True),
                             "Valor",
                             brl(_to_numeric_brl(prox["valor_total"])),
                             "Vencimento",
