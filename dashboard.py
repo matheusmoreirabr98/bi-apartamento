@@ -973,12 +973,15 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_restante_compradores = 0
         total_restante_corretora = 0
 
-    total_parcelas_calc = _calcular_total_parcelas_base(contagem_base)
+        total_parcelas_calc = _calcular_total_parcelas_base(contagem_base)
 
-    progresso_pct = _calcular_progresso_percentual_qtd(
-        total_pago_qtd,
-        total_parcelas_calc,
-    )
+        if eh_taxas_cartorio:
+            total_parcelas_calc = 48
+
+        progresso_pct = _calcular_progresso_percentual_qtd(
+            total_pago_qtd,
+            total_parcelas_calc,
+        )
 
     contrato_encerrado = False
     if eh_evolucao_obra and "contrato_encerrado" in parcelas_contrato.columns:
@@ -1175,13 +1178,12 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             else:
                 abertas = contagem_base[contagem_base["aberta_calc"]].copy()
 
-        elif eh_entrada_direcional or eh_direcional or eh_taxas_cartorio:
-            if "atrasado_calc" not in contagem_base.columns:
-                contagem_base["atrasado_calc"] = False
+        elif eh_taxas_cartorio:
+            abertas = contagem_base[
+                contagem_base["pendente_calc"] | contagem_base["atrasado_calc"]
+            ].copy()
 
-            if "pendente_calc" not in contagem_base.columns:
-                contagem_base["pendente_calc"] = False
-
+        elif eh_entrada_direcional or eh_direcional:
             abertas = contagem_base[
                 contagem_base["pendente_calc"] | contagem_base["atrasado_calc"]
             ].copy()
@@ -1283,15 +1285,20 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
                             atrasado=is_atrasada,
                         )
-                    else:
-                        parcela_exibicao = _texto_parcela(prox)
-
-                        if eh_taxas_cartorio:
-                            parcela_exibicao = f"{total_pago_qtd}/{total_parcelas_calc}"
-
+                    elif eh_taxas_cartorio:
                         _render_card_triplo_parcela(
                             "Parcela",
-                            parcela_exibicao,
+                            f"{total_pago_qtd}/48",
+                            "Valor",
+                            brl(_to_numeric_brl(prox["valor_total"])),
+                            "Vencimento",
+                            data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-",
+                            atrasado=is_atrasada,
+                        )
+                    else:
+                        _render_card_triplo_parcela(
+                            "Parcela",
+                            _texto_parcela(prox),
                             "Valor",
                             brl(_to_numeric_brl(prox["valor_total"])),
                             "Vencimento",
