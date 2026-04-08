@@ -1078,7 +1078,7 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
 
     parcelas["label_parcela"] = parcelas.apply(
         lambda row: (
-            f"{str(row.get('contrato', '')).strip()} | "
+            f"{_texto_contrato_label(row)} | "
             f"{_texto_parcela(row)} | "
             f"vence "
             f"{pd.to_datetime(row['data_vencimento'], errors='coerce').strftime('%d/%m/%Y') if pd.notnull(row.get('data_vencimento')) else '-'}"

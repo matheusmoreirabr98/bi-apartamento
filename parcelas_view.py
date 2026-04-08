@@ -123,8 +123,21 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         return f"{int(numero)}/{int(total)}"
 
 
+    def _texto_contrato_label_linha(row):
+        contrato = str(row.get("contrato", "")).strip()
+        tipo_parcela = str(row.get("tipo_parcela", "")).strip().lower()
+        descricao = str(row.get("descricao_parcela", "")).strip().lower()
+
+        if "taxas cartoriais" in contrato.lower():
+            if tipo_parcela == "taxas banco" or "taxas banco" in descricao:
+                return "Taxas Banco"
+            return "Taxas C"
+
+        return contrato
+
+
     parc_f["descricao_parcela_formatada"] = parc_f.apply(
-        lambda row: f'{row["contrato"]} {_texto_parcela_linha(row)}',
+        lambda row: f'{_texto_contrato_label_linha(row)} {_texto_parcela_linha(row)}',
         axis=1
     )
 
