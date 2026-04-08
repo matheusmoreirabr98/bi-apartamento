@@ -476,11 +476,13 @@ def _aplicar_regra_direcional(df):
         df = df.copy()
         df["pago_calc"] = False
         df["pendente_calc"] = False
+        df["atrasado_calc"] = False
         return df
 
     df = df.copy()
     df["pago_calc"] = df.apply(_eh_parcela_direcional_paga, axis=1)
     df["pendente_calc"] = ~df["pago_calc"]
+    df["atrasado_calc"] = False
     return df
 
 
@@ -584,12 +586,14 @@ def _aplicar_regra_taxas_cartorio(df):
         df["responsavel_calc"] = ""
         df["pago_calc"] = False
         df["pendente_calc"] = False
+        df["atrasado_calc"] = False
         return df
 
     df = df.copy()
     df["responsavel_calc"] = df.apply(_responsavel_taxas_cartorio, axis=1)
     df["pago_calc"] = df.apply(_eh_parcela_taxas_cartorio_paga, axis=1)
     df["pendente_calc"] = ~df["pago_calc"]
+    df["atrasado_calc"] = False
     return df
 
 
