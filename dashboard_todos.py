@@ -71,7 +71,7 @@ def inject_styles():
         max-width: 100%;
         overflow: hidden;
         box-sizing: border-box;
-        margin-bottom: 0.6rem;
+        margin-bottom: 2.0rem;
     }
 
     .cards-row-3 > div {
@@ -178,7 +178,7 @@ def _render_tres_cards_linha(card1, card2, card3, atrasado=False):
             max-width: 100%;
             overflow: hidden;
             box-sizing: border-box;
-            margin-bottom: 0.6rem;
+            margin-bottom: 2.0rem;
         }}
 
         .cards-row-3-normal > div,
