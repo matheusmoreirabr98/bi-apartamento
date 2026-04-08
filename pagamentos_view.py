@@ -113,7 +113,13 @@ def _texto_parcela(row):
     num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
 
     if _is_evolucao_obra(row.get("contrato")):
-        return f"{num}/{num}"
+        encerrado = bool(row.get("contrato_encerrado", False))
+
+        if encerrado:
+            total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else num
+            return f"{num}/{total}"
+        else:
+            return f"{num}"
 
     total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
     return f"{num}/{total}"

@@ -91,12 +91,26 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         "valor_pago",
     ]
 
-    parc_f["descricao_parcela_formatada"] = (
-        parc_f["contrato"].astype(str)
-        + " "
-        + parc_f["numero_parcela"].astype(str)
-        + "/"
-        + parc_f["total_parcelas"].astype(str)
+    def _texto_parcela_linha(row):
+        contrato = str(row.get("contrato", "")).strip().lower()
+
+        numero = row.get("numero_parcela")
+        total = row.get("total_parcelas")
+
+        if "evolução de obra" in contrato or "evolucao de obra" in contrato:
+            encerrado = bool(row.get("contrato_encerrado", False))
+
+            if encerrado:
+                return f"{int(numero)}/{int(total)}"
+            else:
+                return f"{int(numero)}"
+
+        return f"{int(numero)}/{int(total)}"
+
+
+    parc_f["descricao_parcela_formatada"] = parc_f.apply(
+        lambda row: f'{row["contrato"]} {_texto_parcela_linha(row)}',
+        axis=1
     )
 
     colunas_existentes = [col for col in colunas_show if col in parc_f.columns]
