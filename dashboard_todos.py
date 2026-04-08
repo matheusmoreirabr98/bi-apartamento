@@ -30,15 +30,15 @@ ORDEM_CONTRATOS = [
     "Sinal Ato",
     "Diferença",
     "Evolução de Obra",
-    "Taxas Cartoriais",
     "Entrada Direcional",
+    "Taxas Cartoriais",
     "Financiamento Caixa",
 ]
 
 ORDEM_PROXIMAS = [
     "Evolução de Obra",
-    "Taxas Cartoriais",
     "Entrada Direcional",
+    "Taxas Cartoriais",
     "Financiamento Caixa",
 ]
 
@@ -164,10 +164,38 @@ def _ordem_contrato(nome):
     except ValueError:
         return 999
 
-def _render_tres_cards_linha(card1, card2, card3):
+def _render_tres_cards_linha(card1, card2, card3, atrasado=False):
+    classe_linha = "cards-row-3-atrasada" if atrasado else "cards-row-3-normal"
+
     st.markdown(
         f"""
-        <div class="cards-row-3">
+        <style>
+        .cards-row-3-normal,
+        .cards-row-3-atrasada {{
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+            margin-bottom: 0.5rem;
+        }}
+
+        .cards-row-3-normal > div,
+        .cards-row-3-atrasada > div {{
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: calc((100% - 12px) / 3);
+            box-sizing: border-box;
+        }}
+
+        .cards-row-3-atrasada .metric-card {{
+            background: #ffeaea !important;
+            border: 1px solid #f3b6b6 !important;
+        }}
+        </style>
+
+        <div class="{classe_linha}">
             <div>{card1}</div>
             <div>{card2}</div>
             <div>{card3}</div>
@@ -465,7 +493,6 @@ def _proximas_parcelas(df):
     else:
         base["ordem_global_calc"] = pd.NA
 
-    # Para Taxas Cartoriais, usar ordem_global como ordem real da parcela
     mask_taxas = base["contrato"].astype(str).str.strip().eq("Taxas Cartoriais")
     base.loc[mask_taxas & base["ordem_global_calc"].isna(), "ordem_global_calc"] = base.loc[
         mask_taxas & base["ordem_global_calc"].isna(), "numero_parcela_calc"
@@ -474,64 +501,69 @@ def _proximas_parcelas(df):
     base["parcela_ordem_exibicao"] = base["numero_parcela_calc"]
     base.loc[mask_taxas, "parcela_ordem_exibicao"] = base.loc[mask_taxas, "ordem_global_calc"]
 
-    abertas = base[
-        base["contrato"].isin(ORDEM_PROXIMAS)
-        & (base["pendente_calc"] | base["atrasado_calc"])
-    ].copy()
-
-    if abertas.empty:
-        return pd.DataFrame()
-
-    abertas = abertas.sort_values(
-        ["vencimento_ordem", "parcela_ordem_exibicao", "contrato"],
-        na_position="last",
-    )
-
     linhas_saida = []
 
-    for contrato, grupo in abertas.groupby("contrato", sort=False):
-        grupo = grupo.copy()
+    for contrato in ORDEM_PROXIMAS:
+        grupo = base[base["contrato"] == contrato].copy()
+        if grupo.empty:
+            continue
 
         if contrato == "Financiamento Caixa":
             regime_iniciado = bool(grupo["regime_iniciado"].any()) if "regime_iniciado" in grupo.columns else False
 
             if regime_iniciado:
-                grupo = grupo.sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
-                linhas_saida.append(grupo.iloc[0])
+                abertas_fc = grupo[grupo["pendente_calc"] | grupo["atrasado_calc"]].copy()
+                if abertas_fc.empty:
+                    continue
+
+                abertas_fc = abertas_fc.sort_values(
+                    ["vencimento_ordem", "parcela_ordem_exibicao"],
+                    na_position="last"
+                )
+                linha = abertas_fc.iloc[0].copy()
+                linha["regime_iniciado_saida"] = True
+                linhas_saida.append(linha)
             else:
                 grupo = grupo.sort_values(["parcela_ordem_exibicao"], na_position="last")
-                linhas_saida.append(grupo.iloc[0])
+                linha = grupo.iloc[0].copy()
+                linha["vencimento_ordem"] = pd.NaT
+                linha["atrasado_calc"] = False
+                linha["pendente_calc"] = True
+                linha["regime_iniciado_saida"] = False
+                linhas_saida.append(linha)
 
             continue
 
-        grupo_atrasado = grupo[
-            grupo["atrasado_calc"]
+        abertas = grupo[grupo["pendente_calc"] | grupo["atrasado_calc"]].copy()
+        if abertas.empty:
+            continue
+
+        grupo_atrasado = abertas[
+            abertas["atrasado_calc"]
         ].sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
 
-        grupo_pendente = grupo[
-            ~grupo["atrasado_calc"] & grupo["pendente_calc"]
+        grupo_pendente = abertas[
+            (~abertas["atrasado_calc"]) & abertas["pendente_calc"]
         ].sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
 
         if not grupo_atrasado.empty:
-            linhas_saida.append(grupo_atrasado.iloc[0])
+            linha = grupo_atrasado.iloc[0].copy()
+            linha["regime_iniciado_saida"] = True
+            linhas_saida.append(linha)
 
         if not grupo_pendente.empty:
-            linhas_saida.append(grupo_pendente.iloc[0])
-
-        if grupo_atrasado.empty and grupo_pendente.empty:
-            grupo = grupo.sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
-            linhas_saida.append(grupo.iloc[0])
+            linha = grupo_pendente.iloc[0].copy()
+            linha["regime_iniciado_saida"] = True
+            linhas_saida.append(linha)
 
     if not linhas_saida:
         return pd.DataFrame()
 
     proximas = pd.DataFrame(linhas_saida).copy()
-    venc = pd.to_datetime(proximas["vencimento_ordem"], errors="coerce")
 
     parcela_txt = []
     for _, row in proximas.iterrows():
         n = pd.to_numeric(row.get("parcela_ordem_exibicao"), errors="coerce")
-
         if pd.notnull(n):
             parcela_txt.append(str(int(n)))
         else:
@@ -543,19 +575,15 @@ def _proximas_parcelas(df):
     for _, row in proximas.iterrows():
         contrato_nome = str(row.get("contrato", "")).strip()
         valor_num = float(row.get("valor_total_calc", 0) or 0)
+        regime_iniciado_saida = bool(row.get("regime_iniciado_saida", False))
 
         if contrato_nome == "Evolução de Obra":
             valores_exibicao.append("A definir")
             valores_numericos.append(0.0)
 
         elif contrato_nome == "Financiamento Caixa":
-            regime_iniciado = bool(row.get("regime_iniciado", False))
             valores_exibicao.append(brl(valor_num))
-
-            if regime_iniciado:
-                valores_numericos.append(valor_num)
-            else:
-                valores_numericos.append(0.0)
+            valores_numericos.append(valor_num if regime_iniciado_saida else 0.0)
 
         else:
             valores_exibicao.append(brl(valor_num))
@@ -566,7 +594,7 @@ def _proximas_parcelas(df):
         contrato_nome = str(row.get("contrato", "")).strip()
         data_venc = pd.to_datetime(row.get("vencimento_ordem"), errors="coerce")
 
-        if contrato_nome == "Financiamento Caixa" and pd.isna(data_venc):
+        if contrato_nome == "Financiamento Caixa" and not bool(row.get("regime_iniciado_saida", False)):
             vencimentos_exibicao.append("A definir")
         else:
             vencimentos_exibicao.append(data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-")
@@ -578,14 +606,16 @@ def _proximas_parcelas(df):
         "Valor_num": valores_numericos,
         "Vencimento": vencimentos_exibicao,
         "Eh_atrasada": proximas["atrasado_calc"].fillna(False).astype(bool),
-        "vencimento_ordem": venc,
-        "parcela_ordem_exibicao": pd.to_numeric(proximas["parcela_ordem_exibicao"], errors="coerce"),
+        "Regime_iniciado": proximas["regime_iniciado_saida"].fillna(False).astype(bool),
+        "ordem_contrato": proximas["contrato"].map(_ordem_contrato),
+        "ordem_parcela": pd.to_numeric(proximas["parcela_ordem_exibicao"], errors="coerce"),
     })
 
     return resultado.sort_values(
-        ["vencimento_ordem", "parcela_ordem_exibicao", "Contrato"],
+        ["ordem_contrato", "Eh_atrasada", "ordem_parcela"],
+        ascending=[True, False, True],
         na_position="last"
-    ).drop(columns=["vencimento_ordem", "parcela_ordem_exibicao"]).reset_index(drop=True)
+    ).drop(columns=["ordem_contrato", "ordem_parcela"]).reset_index(drop=True)
 
 
 def render_dashboard_todos(parcelas):
@@ -681,11 +711,16 @@ def render_dashboard_todos(parcelas):
     proximas = _proximas_parcelas(base_regras)
 
     if not proximas.empty:
+        mask_total = (
+            proximas["Contrato"].isin(["Entrada Direcional", "Taxas Cartoriais"])
+            | (
+                (proximas["Contrato"] == "Financiamento Caixa")
+                & (proximas["Regime_iniciado"])
+            )
+        )
+
         total_proximas_parcelas = float(
-            proximas.loc[
-                proximas["Contrato"].isin(["Entrada Direcional", "Taxas Cartoriais"]),
-                "Valor_num"
-            ].sum()
+            proximas.loc[mask_total, "Valor_num"].sum()
         )
     else:
         total_proximas_parcelas = 0.0
@@ -695,20 +730,17 @@ def render_dashboard_todos(parcelas):
     else:
         for _, row in proximas.iterrows():
             valor_exibicao = row["Valor"]
-
-            if row["Contrato"] == "Financiamento Caixa" and str(row["Vencimento"]).strip() in ["-", "", "NaT"]:
-                vencimento_exibicao = "A definir"
-            else:
-                vencimento_exibicao = row["Vencimento"]
+            vencimento_exibicao = row["Vencimento"]
 
             titulo_contrato = row["Contrato"]
             if bool(row.get("Eh_atrasada", False)):
-                titulo_contrato = f'{titulo_contrato} - Atrasada'
+                titulo_contrato = f"{titulo_contrato} - Atrasada"
 
             _render_tres_cards_linha(
                 card_html(titulo_contrato, row["Parcela"], small=True),
                 card_html("Valor", valor_exibicao, small=True),
                 card_html("Vencimento", vencimento_exibicao, small=True),
+                atrasado=bool(row.get("Eh_atrasada", False)),
             )
 
         render_cards_grid([
