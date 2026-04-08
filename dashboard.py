@@ -558,26 +558,15 @@ def _responsavel_taxas_cartorio(row) -> str:
 
 
 def _eh_parcela_taxas_cartorio_paga(row) -> bool:
-    num = pd.to_numeric(row.get("numero_parcela"), errors="coerce")
-    total = pd.to_numeric(row.get("total_parcelas"), errors="coerce")
+    status = str(row.get("status", "")).strip().lower()
+    data_pagamento = pd.to_datetime(row.get("data_pagamento"), errors="coerce", dayfirst=True)
+    valor_pago = pd.to_numeric(row.get("valor_pago"), errors="coerce")
 
-    if pd.isna(num):
-        return False
-
-    num = int(num)
-    total = int(total) if pd.notnull(total) else None
-
-    if _eh_taxas_banco(row):
-        if total == 8 and 1 <= num <= 8:
-            return True
-        return False
-
-    if _eh_taxas_c(row):
-        if total == 40 and ((1 <= num <= 16) or num in [39, 40]):
-            return True
-        return False
-
-    return str(row.get("status", "")).strip().lower() == "pago"
+    return (
+        status == "pago"
+        or pd.notnull(data_pagamento)
+        or (pd.notnull(valor_pago) and float(valor_pago) > 0)
+    )
 
 
 def _aplicar_regra_taxas_cartorio(df):
@@ -592,6 +581,30 @@ def _aplicar_regra_taxas_cartorio(df):
     df = df.copy()
     df["responsavel_calc"] = df.apply(_responsavel_taxas_cartorio, axis=1)
     df["pago_calc"] = df.apply(_eh_parcela_taxas_cartorio_paga, axis=1)
+
+    if "ordem_global" in df.columns:
+        df["ordem_global"] = pd.to_numeric(df["ordem_global"], errors="coerce")
+    else:
+        df["ordem_global"] = pd.NA
+
+    mask_sem_ordem = df["ordem_global"].isna()
+
+    if mask_sem_ordem.any():
+        df.loc[
+            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Registro"),
+            "ordem_global"
+        ] = pd.to_numeric(df.loc[
+            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Registro"),
+            "numero_parcela"
+        ], errors="coerce")
+
+        df.loc[
+            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Taxas Banco"),
+            "ordem_global"
+        ] = pd.to_numeric(df.loc[
+            mask_sem_ordem & df["tipo_parcela"].astype(str).str.strip().eq("Taxas Banco"),
+            "numero_parcela"
+        ], errors="coerce") + 40
 
     df["data_vencimento_ref"] = _to_datetime_br(df["data_vencimento"]) if "data_vencimento" in df.columns else pd.NaT
     hoje = pd.Timestamp.today().normalize()
@@ -1242,10 +1255,23 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                     )
             else:
                 abertas["data_ref_ordem"] = _to_datetime_br(abertas["data_vencimento"])
-                abertas["numero_parcela_ord"] = pd.to_numeric(
-                    abertas["numero_parcela"],
-                    errors="coerce"
-                )
+
+                if eh_taxas_cartorio:
+                    if "ordem_global" in abertas.columns:
+                        abertas["numero_parcela_ord"] = pd.to_numeric(
+                            abertas["ordem_global"],
+                            errors="coerce"
+                        )
+                    else:
+                        abertas["numero_parcela_ord"] = pd.to_numeric(
+                            abertas["numero_parcela"],
+                            errors="coerce"
+                        )
+                else:
+                    abertas["numero_parcela_ord"] = pd.to_numeric(
+                        abertas["numero_parcela"],
+                        errors="coerce"
+        )
 
             hoje = pd.Timestamp.today().normalize()
 
@@ -1302,9 +1328,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                             atrasado=is_atrasada,
                         )
                     elif eh_taxas_cartorio:
+                        ordem_exibicao = pd.to_numeric(prox.get("ordem_global"), errors="coerce")
+
+                        if pd.isna(ordem_exibicao):
+                            tipo_parcela = str(prox.get("tipo_parcela", "")).strip()
+                            numero_parcela = pd.to_numeric(prox.get("numero_parcela"), errors="coerce")
+
+                            if tipo_parcela == "Taxas Banco" and pd.notnull(numero_parcela):
+                                ordem_exibicao = int(numero_parcela) + 40
+                            elif pd.notnull(numero_parcela):
+                                ordem_exibicao = int(numero_parcela)
+
+                        parcela_label = (
+                            f"{int(ordem_exibicao)}/48"
+                            if pd.notnull(ordem_exibicao)
+                            else "-"
+                        )
+
                         _render_card_triplo_parcela(
                             "Parcela",
-                            f"{total_pago_qtd}/48",
+                            parcela_label,
                             "Valor",
                             brl(_to_numeric_brl(prox["valor_total"])),
                             "Vencimento",
