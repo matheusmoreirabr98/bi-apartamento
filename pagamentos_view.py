@@ -1032,16 +1032,21 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
     )
 
     qtd_pendentes = int((parcelas["status"] != "pago").sum()) if "status" in parcelas.columns else 0
+    total_pendente = (
+        parcelas.loc[parcelas["status"] != "pago", "valor_total"].fillna(0).sum()
+        if "status" in parcelas.columns and "valor_total" in parcelas.columns
+        else 0
+    )
 
     if _is_evolucao_obra(contrato_selecionado):
         total_pendente_exibicao = "A definir"
     else:
-        total_pendente = (
-            parcelas.loc[parcelas["status"] != "pago", "valor_total"].fillna(0).sum()
-            if "status" in parcelas.columns and "valor_total" in parcelas.columns
-            else 0
-        )
         total_pendente_exibicao = brl(total_pendente)
+
+    render_cards_grid([
+        card_html("Parcelas Pagas", str(qtd_pagas), small=True),
+        card_html("Valor Total Pago", brl(total_pago), small=True),
+    ], cols=2)
 
     render_cards_grid([
         card_html("Parcelas Pendentes", str(qtd_pendentes), small=True),
