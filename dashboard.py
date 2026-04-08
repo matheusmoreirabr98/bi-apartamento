@@ -843,9 +843,9 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_restante = valor_total_col[parcelas_base["pendente_calc"]].sum()
         total_geral = valor_total_col.sum()
 
-        total_pago_qtd = int(parcelas_base["pago_calc"].sum())
-        total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
-        total_atrasado_qtd = 0
+        total_pago_qtd = int(contagem_base["pago_calc"].sum())
+        total_pendente_qtd = int(contagem_base["pendente_calc"].sum())
+        total_atrasado_qtd = int(contagem_base["atrasado_calc"].sum())
 
         total_pago_compradores = 0
         total_pago_corretora = 0
@@ -856,19 +856,22 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         parcelas_base = _aplicar_regra_direcional(parcelas_base)
         contagem_base = _aplicar_regra_direcional(contagem_base)
 
-        total_pago_geral = _to_numeric_brl(parcelas_base.loc[
-            parcelas_base["pago_calc"], "valor_pago"
-        ]).sum()
+        total_pago_geral = _to_numeric_brl(
+            parcelas_base.loc[parcelas_base["pago_calc"], "valor_pago"]
+        ).sum()
 
-        total_restante = _to_numeric_brl(parcelas_base.loc[
-            parcelas_base["pendente_calc"], "valor_total"
-        ]).sum()
+        total_restante = _to_numeric_brl(
+            parcelas_base.loc[
+                parcelas_base["pendente_calc"] | parcelas_base["atrasado_calc"],
+                "valor_total"
+            ]
+        ).sum()
 
         total_geral = _to_numeric_brl(parcelas_base["valor_total"]).sum()
 
-        total_pago_qtd = int(parcelas_base["pago_calc"].sum())
-        total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
-        total_atrasado_qtd = 0
+        total_pago_qtd = int(contagem_base["pago_calc"].sum())
+        total_pendente_qtd = int(contagem_base["pendente_calc"].sum())
+        total_atrasado_qtd = int(contagem_base["atrasado_calc"].sum())
 
         total_pago_compradores = 0
         total_pago_corretora = 0
@@ -879,19 +882,31 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         parcelas_base = _aplicar_regra_financiamento_caixa(parcelas_base)
         contagem_base = _aplicar_regra_financiamento_caixa(contagem_base)
 
-        valor_pago_col = _to_numeric_brl(parcelas_base["valor_pago"]) if "valor_pago" in parcelas_base.columns else pd.Series(0, index=parcelas_base.index)
-        valor_total_col = _to_numeric_brl(parcelas_base["valor_total"]) if "valor_total" in parcelas_base.columns else pd.Series(0, index=parcelas_base.index)
+        valor_pago_col = (
+            _to_numeric_brl(parcelas_base["valor_pago"])
+            if "valor_pago" in parcelas_base.columns
+            else pd.Series(0, index=parcelas_base.index)
+        )
+        valor_total_col = (
+            _to_numeric_brl(parcelas_base["valor_total"])
+            if "valor_total" in parcelas_base.columns
+            else pd.Series(0, index=parcelas_base.index)
+        )
 
-        regime_iniciado = bool(parcelas_base["regime_iniciado"].any()) if "regime_iniciado" in parcelas_base.columns else False
+        regime_iniciado = (
+            bool(parcelas_base["regime_iniciado"].any())
+            if "regime_iniciado" in parcelas_base.columns
+            else False
+        )
 
         total_pago_geral = valor_pago_col[parcelas_base["pago_calc"]].sum()
         total_geral = valor_total_col.sum()
 
         if regime_iniciado:
             total_restante = valor_total_col[parcelas_base["aberta_calc"]].sum()
-            total_pago_qtd = int(parcelas_base["pago_calc"].sum())
-            total_pendente_qtd = int(parcelas_base["pendente_calc"].sum())
-            total_atrasado_qtd = int(parcelas_base["atrasado_calc"].sum())
+            total_pago_qtd = int(contagem_base["pago_calc"].sum())
+            total_pendente_qtd = int(contagem_base["pendente_calc"].sum())
+            total_atrasado_qtd = int(contagem_base["atrasado_calc"].sum())
         else:
             total_restante = 0.0
             total_pago_qtd = 0
@@ -940,48 +955,58 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         total_atrasado_qtd = int(contagem_base["atrasado_calc"].sum())
 
     else:
-        total_pago_geral = _to_numeric_brl(parcelas_base.loc[
-            parcelas_base["status"] == "pago", "valor_pago"
-        ]).sum()
+        total_pago_geral = _to_numeric_brl(
+            parcelas_base.loc[parcelas_base["status"] == "pago", "valor_pago"]
+        ).sum()
 
         if "responsavel_pagamento" in parcelas_contrato.columns:
-            total_pago_compradores = _to_numeric_brl(parcelas_contrato.loc[
-                (parcelas_contrato["status"] == "pago")
-                & (parcelas_contrato["responsavel_pagamento"] == "Compradores"),
-                "valor_pago",
-            ]).sum()
+            total_pago_compradores = _to_numeric_brl(
+                parcelas_contrato.loc[
+                    (parcelas_contrato["status"] == "pago")
+                    & (parcelas_contrato["responsavel_pagamento"] == "Compradores"),
+                    "valor_pago",
+                ]
+            ).sum()
 
-            total_pago_corretora = _to_numeric_brl(parcelas_contrato.loc[
-                (parcelas_contrato["status"] == "pago")
-                & (parcelas_contrato["responsavel_pagamento"] == "Corretora"),
-                "valor_pago",
-            ]).sum()
+            total_pago_corretora = _to_numeric_brl(
+                parcelas_contrato.loc[
+                    (parcelas_contrato["status"] == "pago")
+                    & (parcelas_contrato["responsavel_pagamento"] == "Corretora"),
+                    "valor_pago",
+                ]
+            ).sum()
         else:
             total_pago_compradores = 0
             total_pago_corretora = 0
 
-        total_restante = _to_numeric_brl(parcelas_base.loc[
-            parcelas_base["status"] != "pago", "valor_total"
-        ]).sum()
+        total_restante = _to_numeric_brl(
+            parcelas_base.loc[parcelas_base["status"] != "pago", "valor_total"]
+        ).sum()
 
         total_geral = _to_numeric_brl(parcelas_base["valor_total"]).sum()
 
         total_pago_qtd = int((contagem_base["status"] == "pago").sum())
-        total_pendente_qtd = int((contagem_base["status_exibicao"] == "pendente").sum()) if "status_exibicao" in contagem_base.columns else 0
-        total_atrasado_qtd = int((contagem_base["status_exibicao"] == "atrasado").sum()) if "status_exibicao" in contagem_base.columns else 0
+        total_pendente_qtd = (
+            int((contagem_base["status_exibicao"] == "pendente").sum())
+            if "status_exibicao" in contagem_base.columns else 0
+        )
+        total_atrasado_qtd = (
+            int((contagem_base["status_exibicao"] == "atrasado").sum())
+            if "status_exibicao" in contagem_base.columns else 0
+        )
 
         total_restante_compradores = 0
         total_restante_corretora = 0
 
-        total_parcelas_calc = _calcular_total_parcelas_base(contagem_base)
+    total_parcelas_calc = _calcular_total_parcelas_base(contagem_base)
 
-        if eh_taxas_cartorio:
-            total_parcelas_calc = 48
+    if eh_taxas_cartorio:
+        total_parcelas_calc = 48
 
-        progresso_pct = _calcular_progresso_percentual_qtd(
-            total_pago_qtd,
-            total_parcelas_calc,
-        )
+    progresso_pct = _calcular_progresso_percentual_qtd(
+        total_pago_qtd,
+        total_parcelas_calc,
+    )
 
     contrato_encerrado = False
     if eh_evolucao_obra and "contrato_encerrado" in parcelas_contrato.columns:
