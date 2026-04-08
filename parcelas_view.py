@@ -98,7 +98,8 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
         total = row.get("total_parcelas")
 
         if "evolução de obra" in contrato or "evolucao de obra" in contrato:
-            encerrado = bool(row.get("contrato_encerrado", False))
+            valor_encerrado = str(row.get("contrato_encerrado", "")).strip().lower()
+            encerrado = valor_encerrado in ["true", "1", "sim"]
 
             if encerrado:
                 return f"{int(numero)}/{int(total)}"

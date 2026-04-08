@@ -113,7 +113,8 @@ def _texto_parcela(row):
     num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
 
     if _is_evolucao_obra(row.get("contrato")):
-        encerrado = bool(row.get("contrato_encerrado", False))
+        valor_encerrado = str(row.get("contrato_encerrado", "")).strip().lower()
+        encerrado = valor_encerrado in ["true", "1", "sim"]
 
         if encerrado:
             total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else num
