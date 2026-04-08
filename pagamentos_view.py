@@ -1048,16 +1048,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
         card_html("Valor Total Pendente", total_pendente_exibicao, small=True),
     ], cols=2)
 
-    render_cards_grid([
-        card_html("Parcelas Pagas", str(qtd_pagas), small=True),
-        card_html("Valor Total Pago", brl(total_pago), small=True),
-    ], cols=2)
-
-    render_cards_grid([
-        card_html("Parcelas Pendentes", str(qtd_pendentes), small=True),
-        card_html("Valor Total Pendente", brl(total_pendente), small=True),
-    ], cols=2)
-
     st.markdown("---")
 
     st.markdown(
