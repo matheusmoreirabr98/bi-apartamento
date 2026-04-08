@@ -111,31 +111,30 @@ def _proximo_mes(ano, mes):
 
 def _texto_parcela(row):
     num = int(row["numero_parcela"]) if pd.notnull(row.get("numero_parcela")) else 0
-    contrato = str(row.get("contrato", "")).strip().lower()
-    tipo_parcela = str(row.get("tipo_parcela", "")).strip().lower()
+    total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
 
     if _is_evolucao_obra(row.get("contrato")):
         valor_encerrado = str(row.get("contrato_encerrado", "")).strip().lower()
         encerrado = valor_encerrado in ["true", "1", "sim"]
 
         if encerrado:
-            total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else num
-            return f"{num}/{total}"
+            return f"{num}/{total if total > 0 else num}"
         return f"{num}"
 
-    if "taxas cartoriais" in contrato:
-        ordem_global = pd.to_numeric(row.get("ordem_global"), errors="coerce")
-
-        if pd.notnull(ordem_global):
-            return f"{int(ordem_global)}"
-
-        if tipo_parcela == "taxas banco":
-            return f"{num + 40}"
-
-        return f"{num}"
-
-    total = int(row["total_parcelas"]) if pd.notnull(row.get("total_parcelas")) else 0
     return f"{num}/{total}"
+
+
+def _texto_contrato_label(row):
+    contrato = str(row.get("contrato", "")).strip()
+    tipo_parcela = str(row.get("tipo_parcela", "")).strip().lower()
+    descricao = str(row.get("descricao_parcela", "")).strip().lower()
+
+    if "taxas cartoriais" in contrato.lower():
+        if tipo_parcela == "taxas banco" or "taxas banco" in descricao:
+            return "Taxas Banco"
+        return "Taxas C"
+
+    return contrato
 
 
 def _formatar_dataframe_pagamentos(df: pd.DataFrame) -> pd.DataFrame:
@@ -302,17 +301,17 @@ def _garantir_parcelas_evolucao_obra(supabase, parcelas: pd.DataFrame):
 def _build_label_pendente(row, eh_todos=False):
     data_venc = pd.to_datetime(row.get("data_vencimento"), errors="coerce")
     data_venc_str = data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-"
-    contrato = str(row.get("contrato", "")).strip()
+    contrato_label = _texto_contrato_label(row)
     parcela_txt = _texto_parcela(row)
-    return f"{contrato} | {parcela_txt} |  {data_venc_str}"
+    return f"{contrato_label} | {parcela_txt} | vence {data_venc_str}"
 
 
 def _build_label_pago(row, eh_todos=False):
     data_venc = pd.to_datetime(row.get("data_vencimento"), errors="coerce")
     data_venc_str = data_venc.strftime("%d/%m/%Y") if pd.notnull(data_venc) else "-"
-    contrato = str(row.get("contrato", "")).strip()
+    contrato_label = _texto_contrato_label(row)
     parcela_txt = _texto_parcela(row)
-    return f"{contrato} | {parcela_txt} | {data_venc_str}"
+    return f"{contrato_label} | {parcela_txt} | vence {data_venc_str}"
 
 
 def registrar_pagamento(
