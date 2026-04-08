@@ -893,25 +893,14 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             else pd.Series(0, index=parcelas_base.index)
         )
 
-        regime_iniciado = (
-            bool(parcelas_base["regime_iniciado"].any())
-            if "regime_iniciado" in parcelas_base.columns
-            else False
-        )
-
         total_pago_geral = valor_pago_col[parcelas_base["pago_calc"]].sum()
         total_geral = valor_total_col.sum()
 
-        if regime_iniciado:
-            total_restante = valor_total_col[parcelas_base["aberta_calc"]].sum()
-            total_pago_qtd = int(contagem_base["pago_calc"].sum())
-            total_pendente_qtd = int(contagem_base["pendente_calc"].sum())
-            total_atrasado_qtd = int(contagem_base["atrasado_calc"].sum())
-        else:
-            total_restante = 0.0
-            total_pago_qtd = 0
-            total_pendente_qtd = 0
-            total_atrasado_qtd = 0
+        total_pago_qtd = int(contagem_base["pago_calc"].sum())
+        total_pendente_qtd = max(420 - total_pago_qtd, 0)
+        total_atrasado_qtd = int(contagem_base["atrasado_calc"].sum())
+
+        total_restante = max(total_geral - total_pago_geral, 0)
 
         total_pago_compradores = total_pago_geral
         total_pago_corretora = 0
@@ -1002,6 +991,8 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
 
     if eh_taxas_cartorio:
         total_parcelas_calc = 48
+    elif eh_financiamento_caixa:
+        total_parcelas_calc = 420
 
     progresso_pct = _calcular_progresso_percentual_qtd(
         total_pago_qtd,
