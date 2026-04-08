@@ -388,18 +388,12 @@ def _resumo_por_contrato(df):
         else:
             valor_total = float(grupo["valor_total_calc"].sum())
 
-        parcelas_pagas = int(grupo["pago_calc"].sum())
-        parcelas_atrasadas = int(grupo["atrasado_calc"].sum()) if "atrasado_calc" in grupo.columns else 0
-
-        total_parcelas = _calcular_total_parcelas_df(grupo)
-
         if _is_taxas_cartorio(nome):
-            grupo_qtd = grupo[grupo["responsavel_calc"] == "Compradores"].copy() if "responsavel_calc" in grupo.columns else grupo.copy()
-
-            parcelas_pagas = int(grupo_qtd["pago_calc"].sum())
-            parcelas_atrasadas = int(grupo_qtd["atrasado_calc"].sum()) if "atrasado_calc" in grupo_qtd.columns else 0
-            total_parcelas = _calcular_total_parcelas_df(grupo_qtd)
-            parcelas_pendentes = int(grupo_qtd["pendente_calc"].sum())
+            # AQUI considera compradores + corretora
+            parcelas_pagas = int(grupo["pago_calc"].sum())
+            parcelas_atrasadas = int(grupo["atrasado_calc"].sum()) if "atrasado_calc" in grupo.columns else 0
+            parcelas_pendentes = int(grupo["pendente_calc"].sum())
+            total_parcelas = 48
 
         else:
             parcelas_pagas = int(grupo["pago_calc"].sum())
@@ -466,25 +460,34 @@ def _proximas_parcelas(df):
         else:
             base["total_parcelas_calc"] = pd.NA
 
-    mask_abertas = (
-        (base["pendente_calc"])
-        | (base["atrasado_calc"])
-        | (base["contrato"] == "Financiamento Caixa")
-    )
+    if "ordem_global" in base.columns:
+        base["ordem_global_calc"] = pd.to_numeric(base["ordem_global"], errors="coerce")
+    else:
+        base["ordem_global_calc"] = pd.NA
+
+    # Para Taxas Cartoriais, usar ordem_global como ordem real da parcela
+    mask_taxas = base["contrato"].astype(str).str.strip().eq("Taxas Cartoriais")
+    base.loc[mask_taxas & base["ordem_global_calc"].isna(), "ordem_global_calc"] = base.loc[
+        mask_taxas & base["ordem_global_calc"].isna(), "numero_parcela_calc"
+    ]
+
+    base["parcela_ordem_exibicao"] = base["numero_parcela_calc"]
+    base.loc[mask_taxas, "parcela_ordem_exibicao"] = base.loc[mask_taxas, "ordem_global_calc"]
 
     abertas = base[
-        base["contrato"].isin(ORDEM_PROXIMAS) & mask_abertas
+        base["contrato"].isin(ORDEM_PROXIMAS)
+        & (base["pendente_calc"] | base["atrasado_calc"])
     ].copy()
 
     if abertas.empty:
         return pd.DataFrame()
 
     abertas = abertas.sort_values(
-        ["vencimento_ordem", "numero_parcela_calc", "contrato"],
+        ["vencimento_ordem", "parcela_ordem_exibicao", "contrato"],
         na_position="last",
     )
 
-    proximas_linhas = []
+    linhas_saida = []
 
     for contrato, grupo in abertas.groupby("contrato", sort=False):
         grupo = grupo.copy()
@@ -493,30 +496,43 @@ def _proximas_parcelas(df):
             regime_iniciado = bool(grupo["regime_iniciado"].any()) if "regime_iniciado" in grupo.columns else False
 
             if regime_iniciado:
-                linha = grupo.iloc[0]
+                grupo = grupo.sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
+                linhas_saida.append(grupo.iloc[0])
             else:
-                grupo = grupo.sort_values(["numero_parcela_calc"], na_position="last")
-                linha = grupo.iloc[0]
-        else:
-            linha = grupo.iloc[0]
+                grupo = grupo.sort_values(["parcela_ordem_exibicao"], na_position="last")
+                linhas_saida.append(grupo.iloc[0])
 
-        proximas_linhas.append(linha)
+            continue
 
-    if not proximas_linhas:
+        grupo_atrasado = grupo[
+            grupo["atrasado_calc"]
+        ].sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
+
+        grupo_pendente = grupo[
+            ~grupo["atrasado_calc"] & grupo["pendente_calc"]
+        ].sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
+
+        if not grupo_atrasado.empty:
+            linhas_saida.append(grupo_atrasado.iloc[0])
+
+        if not grupo_pendente.empty:
+            linhas_saida.append(grupo_pendente.iloc[0])
+
+        if grupo_atrasado.empty and grupo_pendente.empty:
+            grupo = grupo.sort_values(["vencimento_ordem", "parcela_ordem_exibicao"], na_position="last")
+            linhas_saida.append(grupo.iloc[0])
+
+    if not linhas_saida:
         return pd.DataFrame()
 
-    proximas = pd.DataFrame(proximas_linhas).copy()
-
+    proximas = pd.DataFrame(linhas_saida).copy()
     venc = pd.to_datetime(proximas["vencimento_ordem"], errors="coerce")
 
     parcela_txt = []
     for _, row in proximas.iterrows():
-        n = pd.to_numeric(row.get("numero_parcela_calc"), errors="coerce")
-        t = pd.to_numeric(row.get("total_parcelas_calc"), errors="coerce")
+        n = pd.to_numeric(row.get("parcela_ordem_exibicao"), errors="coerce")
 
-        if pd.notnull(n) and pd.notnull(t) and t > 0:
-            parcela_txt.append(f"{int(n)}/{int(t)}")
-        elif pd.notnull(n):
+        if pd.notnull(n):
             parcela_txt.append(str(int(n)))
         else:
             parcela_txt.append("-")
@@ -561,13 +577,16 @@ def _proximas_parcelas(df):
         "Valor": valores_exibicao,
         "Valor_num": valores_numericos,
         "Vencimento": vencimentos_exibicao,
+        "Eh_atrasada": proximas["atrasado_calc"].fillna(False).astype(bool),
         "vencimento_ordem": venc,
+        "parcela_ordem_exibicao": pd.to_numeric(proximas["parcela_ordem_exibicao"], errors="coerce"),
     })
 
     return resultado.sort_values(
-        ["vencimento_ordem", "Contrato"],
+        ["vencimento_ordem", "parcela_ordem_exibicao", "Contrato"],
         na_position="last"
-    ).drop(columns="vencimento_ordem").reset_index(drop=True)
+    ).drop(columns=["vencimento_ordem", "parcela_ordem_exibicao"]).reset_index(drop=True)
+
 
 def render_dashboard_todos(parcelas):
     inject_styles()
@@ -660,7 +679,16 @@ def render_dashboard_todos(parcelas):
     _titulo_centralizado("Próximas Parcelas")
 
     proximas = _proximas_parcelas(base_regras)
-    total_proximas_parcelas = float(proximas["Valor_num"].sum()) if not proximas.empty else 0.0
+
+    if not proximas.empty:
+        total_proximas_parcelas = float(
+            proximas.loc[
+                proximas["Contrato"].isin(["Entrada Direcional", "Taxas Cartoriais"]),
+                "Valor_num"
+            ].sum()
+        )
+    else:
+        total_proximas_parcelas = 0.0
 
     if proximas.empty:
         st.success("✅ Não há parcelas em aberto.")
@@ -673,8 +701,12 @@ def render_dashboard_todos(parcelas):
             else:
                 vencimento_exibicao = row["Vencimento"]
 
+            titulo_contrato = row["Contrato"]
+            if bool(row.get("Eh_atrasada", False)):
+                titulo_contrato = f'{titulo_contrato} - Atrasada'
+
             _render_tres_cards_linha(
-                card_html(row["Contrato"], row["Parcela"], small=True),
+                card_html(titulo_contrato, row["Parcela"], small=True),
                 card_html("Valor", valor_exibicao, small=True),
                 card_html("Vencimento", vencimento_exibicao, small=True),
             )
