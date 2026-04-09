@@ -1018,6 +1018,13 @@ def render_dashboard_todos(parcelas):
                 margin=dict(t=7, b=80, l=10, r=10)
             )
 
+            fig_valor_mes.update_yaxes(
+                range=[0, 7000],
+                tickmode="array",
+                tickvals=[0, 1000, 2000, 3000, 4000, 5000, 6000, 7000],
+                ticktext=["0", "1k", "2k", "3k", "4k", "5k", "6k", "7k"],
+)
+
             st.plotly_chart(
                 fig_valor_mes,
                 use_container_width=True,
