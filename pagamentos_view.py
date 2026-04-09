@@ -965,12 +965,6 @@ def render_atualizar_parcelas_tab(parcelas_contrato, contrato_selecionado, supab
                 value=data_venc_inicial or pd.Timestamp.today().date(),
             )
 
-            st.text_input(
-                "Contrato",
-                value=str(parcela_escolhida.get("contrato", "-")),
-                disabled=True,
-            )
-
         with col2:
             novo_valor_principal = st.number_input(
                 "Valor principal",
