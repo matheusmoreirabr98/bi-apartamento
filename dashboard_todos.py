@@ -882,8 +882,8 @@ def render_dashboard_todos(parcelas):
                 fig_mensal.update_yaxes(
                     range=[0, valor_max_grafico],
                     tickmode="array",
-                    tickvals=[0, 1000, 2000, 3000],
-                    ticktext=["0", "1k", "2k", "3k"],
+                    tickvals=[0, 1000, 2000, 3000, 4000, 5000],
+                    ticktext=["0", "1k", "2k", "3k", "4k", "5k"],
                 )
 
                 fig_mensal.update_layout(
