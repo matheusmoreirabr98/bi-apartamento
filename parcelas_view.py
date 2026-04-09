@@ -10,6 +10,8 @@ from utils import (
     brl,
 )
 
+from dashboard import _filtrar_base_entrada_direcional
+
 
 def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     eh_direcional = contrato_selecionado == CONTRATO_DIRECIONAL
@@ -39,8 +41,7 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
     # FILTROS FIXOS / CONDICIONAIS
     # =========================================================
     if eh_direcional:
-        if "categoria" in parc_f.columns:
-            parc_f = parc_f[parc_f["categoria"] == "Entrada Direcional"]
+        parc_f = _filtrar_base_entrada_direcional(parc_f)
 
     if "status_exibicao" in parc_f.columns:
         parc_f["status_exibicao"] = (
