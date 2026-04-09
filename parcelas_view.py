@@ -109,8 +109,6 @@ def render_parcelas_tab(parcelas_contrato, contrato_selecionado):
 
         return "-"
 
-        return f"{int(numero)}/{int(total)}"
-
     def _texto_contrato_label_linha(row):
         contrato = str(row.get("contrato", "")).strip()
         tipo_parcela = str(row.get("tipo_parcela", "")).strip().lower()
