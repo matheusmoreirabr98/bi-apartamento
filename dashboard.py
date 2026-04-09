@@ -1453,12 +1453,26 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
             .sort_values("mes_ordem")
         )
 
+        periodo_completo = pd.period_range(
+            start=evolucao_pago["mes_ref"].min(),
+            end=evolucao_pago["mes_ref"].max(),
+            freq="M"
+        )
+
+        ordem_meses = pd.DataFrame({
+            "mes_ordem": periodo_completo.astype(str)
+        })
+
+        mensal_df = ordem_meses.merge(mensal_df, on="mes_ordem", how="left")
+        mensal_df["total_pago"] = mensal_df["total_pago"].fillna(0)
+        mensal_df["qtd_parcelas"] = mensal_df["qtd_parcelas"].fillna(0).astype(int)
+
         mensal_df["Mes"] = _formatar_mes_pt(mensal_df["mes_ordem"])
         mensal_df = mensal_df.reset_index(drop=True)
         mensal_df["x_pos"] = range(len(mensal_df))
 
         textos = [
-            str(int(qtd)) if qtd > 0 else ""
+            str(int(qtd))
             for qtd in mensal_df["qtd_parcelas"]
         ]
 
@@ -1502,9 +1516,10 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
         if eh_sinal_ato or contrato_selecionado.strip().lower() == "sinal":
             _configurar_eixo_y_valor(fig_mensal, 1500, 500)
         else:
+            faixa_max = mensal_df["total_pago"].max() if not mensal_df.empty else 1000
             _configurar_eixo_y_valor(
                 fig_mensal,
-                float(mensal_df["total_pago"].max()) * 1.2 if not mensal_df.empty else 1000,
+                float(faixa_max) * 1.2 if faixa_max > 0 else 1000,
                 1000,
             )
 
