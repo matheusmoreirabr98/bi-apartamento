@@ -1614,7 +1614,7 @@ def render_dashboard(parcelas_contrato, parcelas_contagem, contrato_selecionado)
                 grupos.append({
                     "grupo": "Pendente - Taxas C",
                     "valor": valor_pendente_taxas_c,
-                    "cor": "#d4c300",
+                    "cor": "#d4d4d4",
                 })
 
             if valor_pago_taxas_banco > 0:
