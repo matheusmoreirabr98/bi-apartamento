@@ -785,11 +785,18 @@ def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
     colunas_show = [
         col for col in [
             "descricao_parcela",
+            "data_vencimento",
             "valor_principal",
             "valor_total",
         ]
         if col in tabela.columns
     ]
+
+    if "data_vencimento" in tabela.columns:
+        tabela["data_vencimento"] = pd.to_datetime(
+            tabela["data_vencimento"], errors="coerce"
+        ).dt.strftime("%d/%m/%Y")
+        tabela["data_vencimento"] = tabela["data_vencimento"].fillna("-")
 
     tabela = tabela[colunas_show].copy()
 
@@ -809,6 +816,7 @@ def _render_tabela_pagamentos(parcelas_tabela: pd.DataFrame):
 
     tabela = tabela.rename(columns={
         "descricao_parcela": "Descrição da Parcela",
+        "data_vencimento": "Vencimento",
         "valor_principal": "Valor Principal",
         "valor_total": "Valor Total",
     })
